@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'thrift'
 
-$LOAD_PATH << "#{File.dirname($0)}/../vendor/gen-rb"
+$LOAD_PATH << "#{File.expand_path(File.dirname(__FILE__))}/../vendor/gen-rb"
 require 'cassandra'
 
 class CassandraClient
