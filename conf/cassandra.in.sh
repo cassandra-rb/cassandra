@@ -33,8 +33,6 @@ for jar in $cassandra_home/lib/*.jar; do
     CLASSPATH=$CLASSPATH:$jar
 done
 
-echo $cassandra_home
-
 # Arguments to pass to the JVM
 JVM_OPTS=" \
         -ea \
