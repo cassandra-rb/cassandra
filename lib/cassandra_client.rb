@@ -1,8 +1,7 @@
 require 'rubygems'
 require 'thrift'
-require 'json'
 
-$LOAD_PATH << "gen-rb"
+$LOAD_PATH << "#{File.dirname($0)}/../vendor/gen-rb"
 require 'cassandra'
 
 class CassandraClient

@@ -1,6 +1,6 @@
 
 require 'test/unit'
-require 'cassandra_client'
+require "#{File.dirname($0)}/../lib/cassandra_client"
 require 'ruby-debug'
 
 class CassandraClientTest < Test::Unit::TestCase
