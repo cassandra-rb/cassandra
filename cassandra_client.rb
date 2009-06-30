@@ -6,17 +6,19 @@ $LOAD_PATH << "gen-rb"
 require 'cassandra'
 
 class CassandraClient
-  attr_reader :table, :client, :transport, :schema
+  attr_reader :client, :transport, :schema
+  attr_accessor :table, :tables
 
   # Instantiate a new CassandraClient and open the connection.
-  def initialize(table, host, port = 9160, block_for = 1)
+  def initialize(table = nil, host = '127.0.0.1', port = 9160, block_for = 1)
     socket = Thrift::Socket.new(host, port)
     @transport = Thrift::BufferedTransport.new(socket)
     protocol = Thrift::BinaryProtocol.new(@transport)    
     @client = Cassandra::Client.new(protocol)    
     
-    @transport.open    
-    @table, @block_for = table, block_for
+    @transport.open
+    @tables = @client.getStringListProperty("tables")
+    @table, @block_for = table || tables.first, block_for
     @schema = @client.describeTable(@table)
   end
   
