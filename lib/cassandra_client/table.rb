@@ -5,7 +5,7 @@ class CassandraClient
     def initialize(name, parent)
       @parent = parent
       @client = parent.client
-      @transport = parent.transport, 
+      @transport = parent.transport
       @block_for = parent.block_for
       
       @name = name
@@ -22,14 +22,14 @@ class CassandraClient
     
     # Insert a row for a key. Pass a flat hash for a regular column family, and 
     # a nested hash for a super column family.
-    def insert(column_family, key, hash, timestamp = Time.now.to_i)
+    def insert(column_family, key, hash, timestamp = useconds)
       insert = is_super(column_family) ? :insert_super : :insert_standard
       send(insert, column_family, key, hash, timestamp)
     end
     
     private
   
-    def insert_standard(column_family, key, hash, timestamp = Time.now.to_i)
+    def insert_standard(column_family, key, hash, timestamp = useconds)
       mutation = Batch_mutation_t.new(
         :table => @name, 
         :key => key, 
@@ -37,7 +37,7 @@ class CassandraClient
       @client.batch_insert(mutation, @block_for)
     end 
   
-    def insert_super(column_family, key, hash, timestamp = Time.now.to_i)
+    def insert_super(column_family, key, hash, timestamp = useconds)
       mutation = Batch_mutation_super_t.new(
         :table => @name, 
         :key => key, 
@@ -51,7 +51,7 @@ class CassandraClient
     
     # Remove the element at the column_family:key:super_column:column 
     # path you request.
-    def remove(column_family, key, super_column = nil, column = nil, timestamp = Time.now.to_i)
+    def remove(column_family, key, super_column = nil, column = nil, timestamp = useconds)
       column_family += ":#{super_column}" if super_column
       column_family += ":#{column}" if column
       @client.remove(@name, key, column_family, timestamp, @block_for )
@@ -150,6 +150,11 @@ class CassandraClient
       hash.map do |super_column, columns|
         SuperColumn_t.new(:name => super_column, :columns => hash_to_columns(columns, timestamp))
       end
+    end
+    
+    def useconds
+      now = Time.now
+      now.to_i * 1_000_000 + now.usec
     end
   end
 end
