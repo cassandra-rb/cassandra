@@ -1,7 +1,8 @@
 
 require 'test/unit'
 require "#{File.expand_path(File.dirname(__FILE__))}/../lib/cassandra_client"
-require 'ruby-debug'
+
+begin; require 'ruby-debug'; rescue LoadError; end
 
 class CassandraClientTest < Test::Unit::TestCase
   def setup
