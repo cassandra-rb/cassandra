@@ -5,7 +5,7 @@ require 'ruby-debug'
 
 class CassandraClientTest < Test::Unit::TestCase
   def setup
-    @c = CassandraClient.new('Twitter', '127.0.0.1')  
+    @c = CassandraClient.new('127.0.0.1').table('Twitter')
     @c.get_key_range('Statuses').each { |key| @c.remove('Statuses', key) }
     @c.get_key_range('StatusRelationships').each { |key| @c.remove('StatusRelationships', key) }
   end

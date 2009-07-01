@@ -27,10 +27,14 @@ class CassandraClient
     string += ", @block_for=#{block_for.inspect}, @tables=[#{tables.map {|t| t.inspect(false) }.join(', ')}]" if full
     string + ">"
   end
+  
+  def table(table_name)
+    @tables.detect {|table| table.name == table_name }
+  end
 end
   
 class CassandraClient::Table
-  attr_reader :table, :schema, :parent
+  attr_reader :name, :schema, :parent
 
   def initialize(name, parent)
     @parent = parent
@@ -38,12 +42,12 @@ class CassandraClient::Table
     @transport = parent.transport, 
     @block_for = parent.block_for
     
-    @table = name
-    @schema = @client.describeTable(@table)
+    @name = name
+    @schema = @client.describeTable(@name)
   end
   
   def inspect(full = true)
-    string = "#<CassandraClient::Table:#{object_id}, @table=#{table.inspect}"
+    string = "#<CassandraClient::Table:#{object_id}, @name=#{table.inspect}"
     string += ", @schema=[#{schema.map {|name, hash| "#{name}<#{hash['type']}>"}.join(', ')}], @parent=#{parent.inspect(false)}" if full
     string + ">"
   end
@@ -61,7 +65,7 @@ class CassandraClient::Table
 
   def insert_standard(column_family, key, hash, timestamp = Time.now.to_i)
     mutation = Batch_mutation_t.new(
-      :table => @table, 
+      :table => @name, 
       :key => key, 
       :cfmap => {column_family => hash_to_columns(hash, timestamp)})
     @client.batch_insert(mutation, @block_for)
@@ -69,7 +73,7 @@ class CassandraClient::Table
 
   def insert_super(column_family, key, hash, timestamp = Time.now.to_i)
     mutation = Batch_mutation_super_t.new(
-      :table => @table, 
+      :table => @name, 
       :key => key, 
       :cfmap => {column_family => hash_to_super_columns(hash, timestamp)})
     @client.batch_insert_superColumn(mutation, @block_for)
@@ -84,7 +88,7 @@ class CassandraClient::Table
   def remove(column_family, key, super_column = nil, column = nil, timestamp = Time.now.to_i)
     column_family += ":#{super_column}" if super_column
     column_family += ":#{column}" if column
-    @client.remove(@table, key, column_family, timestamp, @block_for )
+    @client.remove(@name, key, column_family, timestamp, @block_for )
   end   
   
   ## Read
@@ -93,7 +97,7 @@ class CassandraClient::Table
   # request.
   def count(column_family, key, super_column = nil)
     column_family += ":#{super_column}" if super_column
-    @client.get_column_count(@table, key, column_family)
+    @client.get_column_count(@name, key, column_family)
   end
   
   # Return a list of single values for the elements at the
@@ -107,7 +111,7 @@ class CassandraClient::Table
       columns = Array(super_columns)
     end
         
-    hash = columns_to_hash(@client.send(get_slice_by_names, @table, key, column_family, columns))
+    hash = columns_to_hash(@client.send(get_slice_by_names, @name, key, column_family, columns))
     columns.map { |column| hash[column] }
   end
         
@@ -120,19 +124,19 @@ class CassandraClient::Table
     # You have got to be kidding
     if is_super(column_family)
       if column
-        @client.get_column(@table, key, column_family).value
+        @client.get_column(@name, key, column_family).value
       elsif super_column
-        columns_to_hash(@client.get_superColumn(@table, key, column_family).columns)
+        columns_to_hash(@client.get_superColumn(@name, key, column_family).columns)
       else
-        columns_to_hash(@client.get_slice_super(@table, key, "#{column_family}:", -1, limit))
+        columns_to_hash(@client.get_slice_super(@name, key, "#{column_family}:", -1, limit))
       end
     else
       if super_column
-        @client.get_column(@table, key, column_family).value
+        @client.get_column(@name, key, column_family).value
       elsif is_sorted_by_time(column_family)
-        columns_to_hash(@client.get_columns_since(@table, key, column_family, 0))
+        columns_to_hash(@client.get_columns_since(@name, key, column_family, 0))
       else
-        columns_to_hash(@client.get_slice(@table, key, "#{column_family}:", -1, limit))
+        columns_to_hash(@client.get_slice(@name, key, "#{column_family}:", -1, limit))
       end 
     end
   rescue NotFoundException
@@ -142,7 +146,7 @@ class CassandraClient::Table
   # Return a list of keys in the column_family you request. Requires the
   # table to be partitioned with OrderPreservingHash.
   def get_key_range(column_family, key_range = ''..'', limit = 100)
-    @client.get_key_range(@table, Array(column_family), key_range.begin, key_range.end, limit)
+    @client.get_key_range(@name, Array(column_family), key_range.begin, key_range.end, limit)
   end
   
   private
