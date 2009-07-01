@@ -22,14 +22,14 @@ class CassandraClient
     
     # Insert a row for a key. Pass a flat hash for a regular column family, and 
     # a nested hash for a super column family.
-    def insert(column_family, key, hash, timestamp = useconds)
+    def insert(column_family, key, hash, timestamp = now)
       insert = is_super(column_family) ? :insert_super : :insert_standard
       send(insert, column_family, key, hash, timestamp)
     end
     
     private
   
-    def insert_standard(column_family, key, hash, timestamp = useconds)
+    def insert_standard(column_family, key, hash, timestamp = now)
       mutation = Batch_mutation_t.new(
         :table => @name, 
         :key => key, 
@@ -37,7 +37,7 @@ class CassandraClient
       @client.batch_insert(mutation, @block_for)
     end 
   
-    def insert_super(column_family, key, hash, timestamp = useconds)
+    def insert_super(column_family, key, hash, timestamp = now)
       mutation = Batch_mutation_super_t.new(
         :table => @name, 
         :key => key, 
@@ -51,7 +51,7 @@ class CassandraClient
     
     # Remove the element at the column_family:key:super_column:column 
     # path you request.
-    def remove(column_family, key, super_column = nil, column = nil, timestamp = useconds)
+    def remove(column_family, key, super_column = nil, column = nil, timestamp = now)
       column_family += ":#{super_column}" if super_column
       column_family += ":#{column}" if column
       @client.remove(@name, key, column_family, timestamp, @block_for )
@@ -152,9 +152,11 @@ class CassandraClient
       end
     end
     
-    def useconds
-      now = Time.now
-      now.to_i * 1_000_000 + now.usec
+    def time_in_microseconds
+      time = Time.now
+      time.to_i * 1_000_000 + time.usec
     end
+    alias :now :time_in_microseconds
+        
   end
 end
