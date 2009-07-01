@@ -28,6 +28,9 @@ class CassandraClient
     string + ">"
   end
   
+  # Return the CassandraClient::Table instance for the table_name you 
+  # request. You can get an array of all available tables with the #tables 
+  # method.
   def table(table_name)
     @tables.detect {|table| table.name == table_name }
   end
