@@ -7,20 +7,33 @@ begin; require 'ruby-debug'; rescue LoadError; end
 class CassandraClientTest < Test::Unit::TestCase
   def setup
     @c = CassandraClient.new('127.0.0.1').table('Twitter')
+    @c.get_key_range('Users').each { |key| @c.remove('Users', key) }
     @c.get_key_range('Statuses').each { |key| @c.remove('Statuses', key) }
     @c.get_key_range('StatusRelationships').each { |key| @c.remove('StatusRelationships', key) }
-  end
-
-  def test_get_key_time_sorted
-    @c.insert('Statuses', key, {'body' => 'v', 'user' => 'v'})
-    assert_equal({'body' => 'v', 'user' => 'v'}, @c.get('Statuses', key))
-    assert_equal({}, @c.get('Statuses', 'bogus'))
   end
 
   def test_get_key_name_sorted
     @c.insert('Users', key, {'body' => 'v', 'user' => 'v'})
     assert_equal({'body' => 'v', 'user' => 'v'}, @c.get('Users', key))
     assert_equal({}, @c.get('Users', 'bogus'))
+  end
+  
+  def test_get_key_name_sorted_preserving_order
+    # In-order hash is preserved
+    hash = CassandraClient::OrderedHash['b', '', 'c', '', 'd', '']    
+    @c.insert('Users', key, hash)
+    assert_equal(hash.keys, @c.get('Users', key).keys)
+    
+    # Out-of-order hash is not preserved
+    hash = CassandraClient::OrderedHash['b', '', 'c', '', 'd', '', 'a', '']    
+    @c.insert('Users', key, hash)
+    assert_not_equal(hash.keys, @c.get('Users', key).keys)
+  end  
+
+  def test_get_key_time_sorted
+    @c.insert('Statuses', key, {'body' => 'v', 'user' => 'v'})
+    assert_equal({'body' => 'v', 'user' => 'v'}, @c.get('Statuses', key))
+    assert_equal({}, @c.get('Statuses', 'bogus'))
   end
 
   def test_get_value
