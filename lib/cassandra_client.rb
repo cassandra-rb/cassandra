@@ -5,22 +5,49 @@ $LOAD_PATH << "#{File.expand_path(File.dirname(__FILE__))}/../vendor/gen-rb"
 require 'cassandra'
 
 class CassandraClient
-  attr_reader :client, :transport, :schema, :tables
-  attr_accessor :table
+  attr_reader :client, :transport, :tables, :host, :port, :block_for
 
   # Instantiate a new CassandraClient and open the connection.
-  def initialize(table = nil, host = '127.0.0.1', port = 9160, block_for = 1)
-    socket = Thrift::Socket.new(host, port)
+  def initialize(host = '127.0.0.1', port = 9160, block_for = 1)
+    @host, @port = host, port
+    socket = Thrift::Socket.new(@host, @port)
     @transport = Thrift::BufferedTransport.new(socket)
     protocol = Thrift::BinaryProtocol.new(@transport)    
     @client = Cassandra::Client.new(protocol)    
+    @block_for = block_for
     
-    @transport.open
-    @tables = @client.getStringListProperty("tables")
-    @table, @block_for = table || tables.first, block_for
+    @transport.open    
+    @tables = @client.getStringListProperty("tables").map do |table_name|
+      ::CassandraClient::Table.new(table_name, self)
+    end    
+  end
+ 
+  def inspect(full = true)
+    string = "#<CassandraClient:#{object_id}, @host=#{host.inspect}, @port=#{@port.inspect}"
+    string += ", @block_for=#{block_for.inspect}, @tables=[#{tables.map {|t| t.inspect(false) }.join(', ')}]" if full
+    string + ">"
+  end
+end
+  
+class CassandraClient::Table
+  attr_reader :table, :schema, :parent
+
+  def initialize(name, parent)
+    @parent = parent
+    @client = parent.client
+    @transport = parent.transport, 
+    @block_for = parent.block_for
+    
+    @table = name
     @schema = @client.describeTable(@table)
   end
   
+  def inspect(full = true)
+    string = "#<CassandraClient::Table:#{object_id}, @table=#{table.inspect}"
+    string += ", @schema=[#{schema.map {|name, hash| "#{name}<#{hash['type']}>"}.join(', ')}], @parent=#{parent.inspect(false)}" if full
+    string + ">"
+  end
+
   ## Write
   
   # Insert a row for a key. Pass a flat hash for a regular column family, and 
@@ -68,7 +95,7 @@ class CassandraClient
     column_family += ":#{super_column}" if super_column
     @client.get_column_count(@table, key, column_family)
   end
- 
+  
   # Return a list of single values for the elements at the
   # column_family:key:super_column:column path you request.
   def get_columns(column_family, key, super_columns, columns = nil)
