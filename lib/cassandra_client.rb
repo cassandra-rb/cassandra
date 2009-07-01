@@ -5,8 +5,8 @@ $LOAD_PATH << "#{File.expand_path(File.dirname(__FILE__))}/../vendor/gen-rb"
 require 'cassandra'
 
 class CassandraClient
-  attr_reader :client, :transport, :schema
-  attr_accessor :table, :tables
+  attr_reader :client, :transport, :schema, :tables
+  attr_accessor :table
 
   # Instantiate a new CassandraClient and open the connection.
   def initialize(table = nil, host = '127.0.0.1', port = 9160, block_for = 1)
