@@ -9,14 +9,17 @@ class CassandraClient
       @client = parent.client
       @transport = parent.transport
       @block_for = parent.block_for
-      
+
       @name = name
       @schema = @client.describeTable(@name)
+
+      # FIXME Don't use eval
+      eval("class << self; include #{parent.serialization.name}; end")
     end
     
     def inspect(full = true)
       string = "#<CassandraClient::Table:#{object_id}, @name=#{name.inspect}"
-      string += ", @schema=[#{schema.map {|name, hash| ":#{name}<#{hash['type']}>"}.join(', ')}], @parent=#{parent.inspect(false)}" if full
+      string += ", @schema={#{schema.map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')}}, @parent=#{parent.inspect(false)}" if full
       string + ">"
     end
   
@@ -105,7 +108,7 @@ class CassandraClient
       # You have got to be kidding
       if is_super(column_family)
         if column
-          @client.get_column(@name, key, column_family).value
+          load(@client.get_column(@name, key, column_family).value)
         elsif super_column
           columns_to_hash(@client.get_superColumn(@name, key, column_family).columns)
         else
@@ -113,7 +116,7 @@ class CassandraClient
         end
       else
         if super_column
-          @client.get_column(@name, key, column_family).value
+          load(@client.get_column(@name, key, column_family).value)
         elsif is_sorted_by_time(column_family)
           columns_to_hash(@client.get_columns_since(@name, key, column_family, 0))
         else
@@ -126,7 +129,7 @@ class CassandraClient
   
     # Return a list of keys in the column_family you request. Requires the
     # table to be partitioned with OrderPreservingHash.
-    def get_key_range(key_range = ''..'', column_family = nil, limit = 100)      
+    def get_key_range(key_range, column_family = nil, limit = 100)      
       column_family, key_range = key_range, ''..'' unless column_family
       column_families = Array(column_family).map {|c| c.to_s}
       @client.get_key_range(@name, column_families, key_range.begin, key_range.end, limit)
@@ -134,7 +137,7 @@ class CassandraClient
     
     # Count all rows in the column_family you request. Requires the table 
     # to be partitioned with OrderPreservingHash.
-    def count(key_range = ''..'', column_family = nil, limit = MAX_INT)
+    def count(key_range, column_family = nil, limit = MAX_INT)
       get_key_range(key_range, column_family, limit).size
     end
       
@@ -161,7 +164,7 @@ class CassandraClient
         if c.is_a?(SuperColumn_t)
           hash[c.name] = columns_to_hash(c.columns)
         else
-          hash[c.columnName] = c.value
+          hash[c.columnName] = load(c.value)
         end
       end
       hash
@@ -169,7 +172,7 @@ class CassandraClient
     
     def hash_to_columns(hash, timestamp)
       hash.map do |column, value|
-        Column_t.new(:columnName => column, :value => value, :timestamp => timestamp)
+        Column_t.new(:columnName => column, :value => dump(value), :timestamp => timestamp)
       end    
     end
     
