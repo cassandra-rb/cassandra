@@ -11,6 +11,13 @@ class CassandraClientTest < Test::Unit::TestCase
     @c.get_key_range('Statuses').each { |key| @c.remove('Statuses', key) }
     @c.get_key_range('StatusRelationships').each { |key| @c.remove('StatusRelationships', key) }
   end
+  
+  def test_inspect
+    assert_nothing_raised do
+      @c.inspect
+      @c.parent.inspect
+    end
+  end
 
   def test_get_key_name_sorted
     @c.insert('Users', key, {'body' => 'v', 'user' => 'v'})

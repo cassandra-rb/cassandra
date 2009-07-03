@@ -13,7 +13,7 @@ class CassandraClient
     end
     
     def inspect(full = true)
-      string = "#<CassandraClient::Table:#{object_id}, @name=#{table.inspect}"
+      string = "#<CassandraClient::Table:#{object_id}, @name=#{name.inspect}"
       string += ", @schema=[#{schema.map {|name, hash| "#{name}<#{hash['type']}>"}.join(', ')}], @parent=#{parent.inspect(false)}" if full
       string + ">"
     end
