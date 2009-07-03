@@ -16,7 +16,7 @@ class CassandraClient
     
     def inspect(full = true)
       string = "#<CassandraClient::Table:#{object_id}, @name=#{name.inspect}"
-      string += ", @schema=[#{schema.map {|name, hash| "#{name}<#{hash['type']}>"}.join(', ')}], @parent=#{parent.inspect(false)}" if full
+      string += ", @schema=[#{schema.map {|name, hash| ":#{name}<#{hash['type']}>"}.join(', ')}], @parent=#{parent.inspect(false)}" if full
       string + ">"
     end
   
@@ -24,14 +24,15 @@ class CassandraClient
     
     # Insert a row for a key. Pass a flat hash for a regular column family, and 
     # a nested hash for a super column family.
-    def insert(column_family, key, hash, timestamp = now)
+    def insert(key, column_family, hash, timestamp = now)
+      column_family = column_family.to_s    
       insert = is_super(column_family) ? :insert_super : :insert_standard
-      send(insert, column_family, key, hash, timestamp)
+      send(insert, key, column_family, hash, timestamp)
     end
     
     private
   
-    def insert_standard(column_family, key, hash, timestamp = now)
+    def insert_standard(key, column_family, hash, timestamp = now)
       mutation = Batch_mutation_t.new(
         :table => @name, 
         :key => key, 
@@ -39,7 +40,7 @@ class CassandraClient
       @client.batch_insert(mutation, @block_for)
     end 
   
-    def insert_super(column_family, key, hash, timestamp = now)
+    def insert_super(key, column_family, hash, timestamp = now)
       mutation = Batch_mutation_super_t.new(
         :table => @name, 
         :key => key, 
@@ -53,7 +54,8 @@ class CassandraClient
     
     # Remove the element at the column_family:key:super_column:column 
     # path you request.
-    def remove(column_family, key, super_column = nil, column = nil, timestamp = now)
+    def remove(key, column_family, super_column = nil, column = nil, timestamp = now)
+      column_family = column_family.to_s
       column_family += ":#{super_column}" if super_column
       column_family += ":#{column}" if column
       @client.remove(@name, key, column_family, timestamp, @block_for )
@@ -62,7 +64,7 @@ class CassandraClient
     # Remove all rows in the column family you request.
     def remove_all(column_family)
       get_key_range(column_family).each do |key| 
-        remove(column_family, key)
+        remove(key, column_family)
       end
     end
     
@@ -70,14 +72,16 @@ class CassandraClient
   
     # Count the elements at the column_family:key:super_column path you 
     # request.
-    def count_columns(column_family, key, super_column = nil)
+    def count_columns(key, column_family, super_column = nil)
+      column_family = column_family.to_s
       column_family += ":#{super_column}" if super_column
       @client.get_column_count(@name, key, column_family)
     end
     
     # Return a list of single values for the elements at the
     # column_family:key:super_column:column path you request.
-    def get_columns(column_family, key, super_columns, columns = nil)
+    def get_columns(key, column_family, super_columns, columns = nil)
+      column_family = column_family.to_s
       get_slice_by_names = (is_super(column_family) && !columns) ? :get_slice_super_by_names : :get_slice_by_names
       if super_columns and columns
         column_family += ":#{super_columns}" 
@@ -93,7 +97,8 @@ class CassandraClient
     # Return a hash (actually, a CassandraClient::OrderedHash) or a single value 
     # representing the element at the column_family:key:super_column:column 
     # path you request.
-    def get(column_family, key, super_column = nil, column = nil, limit = 100)
+    def get(key, column_family, super_column = nil, column = nil, limit = 100)
+      column_family = column_family.to_s
       column_family += ":#{super_column}" if super_column
       column_family += ":#{column}" if column    
       
@@ -121,27 +126,33 @@ class CassandraClient
   
     # Return a list of keys in the column_family you request. Requires the
     # table to be partitioned with OrderPreservingHash.
-    def get_key_range(column_family, key_range = ''..'', limit = 100)
-      @client.get_key_range(@name, Array(column_family), key_range.begin, key_range.end, limit)
+    def get_key_range(key_range = ''..'', column_family = nil, limit = 100)      
+      column_family, key_range = key_range, ''..'' unless column_family
+      column_families = Array(column_family).map {|c| c.to_s}
+      @client.get_key_range(@name, column_families, key_range.begin, key_range.end, limit)
     end
     
     # Count all rows in the column_family you request. Requires the table 
     # to be partitioned with OrderPreservingHash.
-    def count(column_family, key_range = ''..'', limit = MAX_INT)
-      # FIXME Dubious implementation
-      get_key_range(column_family, key_range, limit).size
+    def count(key_range = ''..'', column_family = nil, limit = MAX_INT)
+      get_key_range(key_range, column_family, limit).size
     end
       
     private
     
     def is_super(column_family)
-      @schema[column_family.split(':').first]['type'] == 'Super'
-    rescue NoMethodError
-      raise "Invalid column_family #{column_family}"
+      column_family_property(column_family, 'type') == 'Super'
+    end
+
+    def is_sorted_by_time(column_family)
+      column_family_property(column_family, 'sort') == 'Time'
     end
     
-    def is_sorted_by_time(column_family)
-      @schema[column_family.split(':').first]['sort'] == 'Time'
+    def column_family_property(column_family_or_path, key)
+      column_family = column_family_or_path.to_s.split(':').first    
+      @schema[column_family][key]
+    rescue NoMethodError
+      raise AccessError, "Invalid column family \":#{column_family}\""    
     end
     
     def columns_to_hash(columns)

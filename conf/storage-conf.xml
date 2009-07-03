@@ -30,26 +30,21 @@
     -->
     <Tables>
       <Table Name="Users">
-          <ColumnFamily ColumnSort="Name" Name="Rows" />
-          <ColumnFamily ColumnSort="Name" Name="Audits" />
-          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="Relationships" />
+          <ColumnFamily ColumnSort="Name" Name="row" />
+          <ColumnFamily ColumnSort="Name" Name="audit" />
+          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="relationships" />
           <ColumnFamily ColumnSort="Time" Name="Usernames" />
       </Table>
 
       <Table Name="Statuses">
-          <ColumnFamily ColumnSort="Time" Name="Rows" />
-          <ColumnFamily ColumnSort="Name" Name="Audits" />
-          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="Relationships" />  
+          <ColumnFamily ColumnSort="Time" Name="row" />
+          <ColumnFamily ColumnSort="Name" Name="audit" />
+          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="relationships" />  
       </Table>
 
-      <Table Name="Blog1">      
-        <ColumnFamily ColumnSort="Time" Name="Posts"/>
-        <ColumnFamily ColumnSort="Time" Name="Comments"/>
-      </Table>
-
-      <Table Name="Blog2">      
-        <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="Posts"/>
-        <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="Comments"/>
+      <Table Name="Blog">      
+        <ColumnFamily ColumnSort="Time" Name="posts"/>
+        <ColumnFamily ColumnSort="Time" Name="comments"/>
       </Table>
     </Tables>
 
