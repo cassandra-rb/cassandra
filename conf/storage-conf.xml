@@ -29,12 +29,17 @@
          There is an implicit table named 'system' for Cassandra internals.
     -->
     <Tables>
-      <Table Name="Twitter">
-          <ColumnFamily ColumnSort="Time" Name="Statuses" />
-          <ColumnFamily ColumnSort="Name" Name="Users" />
+      <Table Name="Users">
+          <ColumnFamily ColumnSort="Name" Name="Rows" />
+          <ColumnFamily ColumnSort="Name" Name="Audits" />
+          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="Relationships" />
           <ColumnFamily ColumnSort="Time" Name="Usernames" />
-          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="UserRelationships" />
-          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="StatusRelationships" />  
+      </Table>
+
+      <Table Name="Statuses">
+          <ColumnFamily ColumnSort="Time" Name="Rows" />
+          <ColumnFamily ColumnSort="Name" Name="Audits" />
+          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="Relationships" />  
       </Table>
 
       <Table Name="Blog1">      

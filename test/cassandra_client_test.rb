@@ -6,172 +6,176 @@ begin; require 'ruby-debug'; rescue LoadError; end
 
 class CassandraClientTest < Test::Unit::TestCase
   def setup
-    @c = CassandraClient.new('127.0.0.1').table('Twitter')
-    @c.get_key_range('Users').each { |key| @c.remove('Users', key) }
-    @c.get_key_range('Statuses').each { |key| @c.remove('Statuses', key) }
-    @c.get_key_range('StatusRelationships').each { |key| @c.remove('StatusRelationships', key) }
+    @client = CassandraClient.new('127.0.0.1')
+    @statuses = @client.table('Statuses')
+    @users = @client.table('Users')
+    [@statuses, @users].each do |table|
+      table.schema.keys.each do |column_family|
+        table.get_key_range(column_family).each { |key| table.remove(column_family, key) }
+      end
+    end
   end
   
   def test_inspect
     assert_nothing_raised do
-      @c.inspect
-      @c.parent.inspect
+      @statuses.inspect
+      @client.inspect
     end
   end
 
   def test_get_key_name_sorted
-    @c.insert('Users', key, {'body' => 'v', 'user' => 'v'})
-    assert_equal({'body' => 'v', 'user' => 'v'}, @c.get('Users', key))
-    assert_equal({}, @c.get('Users', 'bogus'))
+    @users.insert('Rows', key, {'body' => 'v', 'user' => 'v'})
+    assert_equal({'body' => 'v', 'user' => 'v'}, @users.get('Rows', key))
+    assert_equal({}, @users.get('Rows', 'bogus'))
   end
   
   def test_get_key_name_sorted_preserving_order
     # In-order hash is preserved
     hash = CassandraClient::OrderedHash['a', '', 'b', '', 'c', '', 'd', '',]    
-    @c.insert('Users', key, hash)
-    assert_equal(hash.keys, @c.get('Users', key).keys)
+    @users.insert('Rows', key, hash)
+    assert_equal(hash.keys, @users.get('Rows', key).keys)
     
-    @c.remove('Users', key)
+    @users.remove('Rows', key)
         
     # Out-of-order hash is returned sorted
     hash = CassandraClient::OrderedHash['b', '', 'c', '', 'd', '', 'a', '']    
-    @c.insert('Users', key, hash)
-    assert_equal(hash.keys.sort, @c.get('Users', key).keys)
-    assert_not_equal(hash.keys, @c.get('Users', key).keys)
+    @users.insert('Rows', key, hash)
+    assert_equal(hash.keys.sort, @users.get('Rows', key).keys)
+    assert_not_equal(hash.keys, @users.get('Rows', key).keys)
   end  
 
   def test_get_key_time_sorted
-    @c.insert('Statuses', key, {'body' => 'v', 'user' => 'v'})
-    assert_equal({'body' => 'v', 'user' => 'v'}, @c.get('Statuses', key))
-    assert_equal({}, @c.get('Statuses', 'bogus'))
+    @statuses.insert('Rows', key, {'body' => 'v', 'user' => 'v'})
+    assert_equal({'body' => 'v', 'user' => 'v'}, @statuses.get('Rows', key))
+    assert_equal({}, @statuses.get('Rows', 'bogus'))
   end
 
   def test_get_value
-    @c.insert('Statuses', key, {'body' => 'v'})
-    assert_equal 'v', @c.get('Statuses', key, 'body')
-    assert_nil @c.get('Statuses', 'bogus', 'body')
+    @statuses.insert('Rows', key, {'body' => 'v'})
+    assert_equal 'v', @statuses.get('Rows', key, 'body')
+    assert_nil @statuses.get('Rows', 'bogus', 'body')
   end
   
   def test_get_super_key
-    @c.insert('StatusRelationships', key, {'user_timelines' => {'4' => 'v', '5' => 'v'}})
-    assert_equal({'user_timelines' => {'4' => 'v', '5' => 'v'}}, @c.get('StatusRelationships', key))
-    assert_equal({}, @c.get('StatusRelationships', 'bogus'))
+    @statuses.insert('Relationships', key, {'user_timelines' => {'4' => 'v', '5' => 'v'}})
+    assert_equal({'user_timelines' => {'4' => 'v', '5' => 'v'}}, @statuses.get('Relationships', key))
+    assert_equal({}, @statuses.get('Relationships', 'bogus'))
   end
 
   def test_get_super_key_multi
-    @c.insert('StatusRelationships', key, {
+    @statuses.insert('Relationships', key, {
       'user_timelines' => {'1' => 'v1'}, 
       'mentions_timelines' => {'2' => 'v2'}})
     assert_equal({
       'user_timelines' => {'1' => 'v1'}, 
-      'mentions_timelines' => {'2' => 'v2'}}, @c.get('StatusRelationships', key))
-    assert_equal({}, @c.get('StatusRelationships', 'bogus'))
+      'mentions_timelines' => {'2' => 'v2'}}, @statuses.get('Relationships', key))
+    assert_equal({}, @statuses.get('Relationships', 'bogus'))
   end
 
   def test_get_super_sub_key
-    @c.insert('StatusRelationships', key, {'user_timelines' => {'4' => 'v', '5' => 'v'}})
-    assert_equal({'4' => 'v', '5' => 'v'}, @c.get('StatusRelationships', key, 'user_timelines'))
-    assert_equal({}, @c.get('StatusRelationships', 'bogus', 'user_timelines'))
+    @statuses.insert('Relationships', key, {'user_timelines' => {'4' => 'v', '5' => 'v'}})
+    assert_equal({'4' => 'v', '5' => 'v'}, @statuses.get('Relationships', key, 'user_timelines'))
+    assert_equal({}, @statuses.get('Relationships', 'bogus', 'user_timelines'))
   end
   
   def test_get_super_value
-    @c.insert('StatusRelationships', key, {'user_timelines' => {'1' => 'v'}})
-    assert_equal('v', @c.get('StatusRelationships', key, 'user_timelines', '1'))
-    assert_nil @c.get('StatusRelationships', 'bogus', 'user_timelines', '1')
+    @statuses.insert('Relationships', key, {'user_timelines' => {'1' => 'v'}})
+    assert_equal('v', @statuses.get('Relationships', key, 'user_timelines', '1'))
+    assert_nil @statuses.get('Relationships', 'bogus', 'user_timelines', '1')
   end  
   
   def test_get_key_range
-    @c.insert('Statuses', '3', {'body' => 'v'})
-    @c.insert('Statuses', '4', {'body' => 'v'})
-    @c.insert('Statuses', '5', {'body' => 'v'})
-    assert_equal(['3', '4', '5'], @c.get_key_range('Statuses', '3'..'5'))
+    @statuses.insert('Rows', '3', {'body' => 'v'})
+    @statuses.insert('Rows', '4', {'body' => 'v'})
+    @statuses.insert('Rows', '5', {'body' => 'v'})
+    assert_equal(['3', '4', '5'], @statuses.get_key_range('Rows', '3'..'5'))
   end
 
   # Not supported
   #  def test_get_key_range_super
-  #    @c.insert('StatusRelationships', '3', {'user_timelines' => {'1' => 'v'}})
-  #    @c.insert('StatusRelationships', '4', {'user_timelines' => {'1' => 'v'}})
-  #    @c.insert('StatusRelationships', '5', {'user_timelines' => {'1' => 'v'}})
-  #    assert_equal(['3', '4', '5'], @c.get_key_range('StatusRelationships', '3'..'5', 'user_timelines'))
+  #    @statuses.insert('Relationships', '3', {'user_timelines' => {'1' => 'v'}})
+  #    @statuses.insert('Relationships', '4', {'user_timelines' => {'1' => 'v'}})
+  #    @statuses.insert('Relationships', '5', {'user_timelines' => {'1' => 'v'}})
+  #    assert_equal(['3', '4', '5'], @statuses.get_key_range('Relationships', '3'..'5', 'user_timelines'))
   #  end
   
   def test_remove_key
-    @c.insert('Statuses', key, {'body' => 'v'})
-    @c.remove('Statuses', key)
-    assert_equal({}, @c.get('Statuses', key))
+    @statuses.insert('Rows', key, {'body' => 'v'})
+    @statuses.remove('Rows', key)
+    assert_equal({}, @statuses.get('Rows', key))
   end
 
   def test_remove_value
-    @c.insert('Statuses', key, {'body' => 'v'})
-    @c.remove('Statuses', key, 'body')
-    assert_nil @c.get('Statuses', key, 'body')    
+    @statuses.insert('Rows', key, {'body' => 'v'})
+    @statuses.remove('Rows', key, 'body')
+    assert_nil @statuses.get('Rows', key, 'body')    
   end
 
   def test_remove_super_key
-    @c.insert('StatusRelationships', key, {'user_timelines' => {'1' => 'v'}})
-    @c.remove('StatusRelationships', key)
-    assert_equal({}, @c.get('StatusRelationships', key))
+    @statuses.insert('Relationships', key, {'user_timelines' => {'1' => 'v'}})
+    @statuses.remove('Relationships', key)
+    assert_equal({}, @statuses.get('Relationships', key))
   end
 
   def test_remove_super_sub_key
-    @c.insert('StatusRelationships', key, {'user_timelines' => {'1' => 'v'}})
-    @c.remove('StatusRelationships', key, 'user_timelines')
-    assert_equal({}, @c.get('StatusRelationships', key, 'user_timelines'))
+    @statuses.insert('Relationships', key, {'user_timelines' => {'1' => 'v'}})
+    @statuses.remove('Relationships', key, 'user_timelines')
+    assert_equal({}, @statuses.get('Relationships', key, 'user_timelines'))
   end
 
   def test_remove_super_value
-    @c.insert('StatusRelationships', key, {'user_timelines' => {'1' => 'v'}})
-    @c.remove('StatusRelationships', key, 'user_timelines', '1')
-    assert_nil @c.get('StatusRelationships', key, 'user_timelines', '1')    
+    @statuses.insert('Relationships', key, {'user_timelines' => {'1' => 'v'}})
+    @statuses.remove('Relationships', key, 'user_timelines', '1')
+    assert_nil @statuses.get('Relationships', key, 'user_timelines', '1')    
   end
 
   def test_insert_key
-    @c.insert('Statuses', key, {'body' => 'v', 'user' => 'v'})
-    assert_equal({'body' => 'v', 'user' => 'v'}, @c.get('Statuses', key))  
+    @statuses.insert('Rows', key, {'body' => 'v', 'user' => 'v'})
+    assert_equal({'body' => 'v', 'user' => 'v'}, @statuses.get('Rows', key))  
   end
 
   def test_insert_super_key
-    @c.insert('StatusRelationships', key, {'user_timelines' => {'1' => 'v', key => 'v'}})
-    assert_equal({'1' => 'v' , key => 'v'}, @c.get('StatusRelationships', key, 'user_timelines'))  
+    @statuses.insert('Relationships', key, {'user_timelines' => {'1' => 'v', key => 'v'}})
+    assert_equal({'1' => 'v' , key => 'v'}, @statuses.get('Relationships', key, 'user_timelines'))  
   end
   
   def test_get_column_values
-    @c.insert('Statuses', key, {'body' => 'v1', 'user' => 'v2'})
-    assert_equal(['v1' , 'v2'], @c.get_columns('Statuses', key, ['body', 'user']))
+    @statuses.insert('Rows', key, {'body' => 'v1', 'user' => 'v2'})
+    assert_equal(['v1' , 'v2'], @statuses.get_columns('Rows', key, ['body', 'user']))
   end  
 
   def test_get_column_values_super
-    @c.insert('StatusRelationships', key, {
+    @statuses.insert('Relationships', key, {
       'user_timelines' => {'1' => 'v1'}, 
       'mentions_timelines' => {'2' => 'v2'}})
     assert_equal [{'1' => 'v1'}, {'2' => 'v2'}], 
-      @c.get_columns('StatusRelationships', key, ['user_timelines', 'mentions_timelines'])
+      @statuses.get_columns('Relationships', key, ['user_timelines', 'mentions_timelines'])
   end  
 
   # Not supported
   #  def test_get_columns_super_sub
-  #    @c.insert('StatusRelationships', key, {
+  #    @statuses.insert('Relationships', key, {
   #      'user_timelines' => {'1' => 'v1'}, 
   #      'mentions_timelines' => {'2' => 'v2'}})
   #    assert_equal ['v1', 'v2'], 
-  #      @c.get_columns('StatusRelationships', key, 'user_timelines', ['1', key])
+  #      @statuses.get_columns('Relationships', key, 'user_timelines', ['1', key])
   #  end    
   
   def test_count_keys
-    @c.insert('Statuses', key, {'body' => 'v1', 'user' => 'v2'})
-    assert_equal 2, @c.count('Statuses', key)
+    @statuses.insert('Rows', key, {'body' => 'v1', 'user' => 'v2'})
+    assert_equal 2, @statuses.count('Rows', key)
   end 
 
   def test_count_super_keys
-    @c.insert('StatusRelationships', key, {
+    @statuses.insert('Relationships', key, {
       'user_timelines' => {'1' => 'v1'}, 
       'mentions_timelines' => {'2' => 'v2'}})
-    assert_equal 2, @c.count('StatusRelationships', key)
+    assert_equal 2, @statuses.count('Relationships', key)
   end 
 
   def test_count_super_sub_keys
-    @c.insert('StatusRelationships', key, {'user_timelines' => {'1' => 'v1', key => 'v2'}})
-    assert_equal 2, @c.count('StatusRelationships', key, 'user_timelines')
+    @statuses.insert('Relationships', key, {'user_timelines' => {'1' => 'v1', key => 'v2'}})
+    assert_equal 2, @statuses.count('Relationships', key, 'user_timelines')
   end
   
   def key
