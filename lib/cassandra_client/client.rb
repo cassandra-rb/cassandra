@@ -5,15 +5,18 @@ class CassandraClient
 
   # Instantiate a new CassandraClient and open the connection.
   def initialize(host = '127.0.0.1', port = 9160, block_for = 1, serialization = CassandraClient::Serialization::JSON)
-    @host, @port = host, port
-    socket = Thrift::Socket.new(@host, @port)
-    @transport = Thrift::BufferedTransport.new(socket)
-    protocol = Thrift::BinaryProtocol.new(@transport)
-    @client = Cassandra::Client.new(protocol)
+    @host = host
+    @port = port
     @serialization = serialization
     @block_for = block_for
-
+    
+    @transport = Thrift::BufferedTransport.new(Thrift::Socket.new(@host, @port))
     @transport.open
+
+    @client = SafeClient.new(
+      Cassandra::Client.new(Thrift::BinaryProtocol.new(@transport)), 
+      @transport)
+
     @tables = @client.getStringListProperty("tables").map do |table_name|
       ::CassandraClient::Table.new(table_name, self)
     end
@@ -42,4 +45,21 @@ class CassandraClient
       end
     end
   end
+  
+  class SafeClient  
+    def initialize(client, transport)
+      @client = client 
+      @transport = transport
+    end
+    
+    def method_missing(*args)
+      @client.send(*args)
+    rescue IOError
+      @transport.open
+      raise if defined?(once)
+      once = true
+      retry
+    end
+  end
+  
 end

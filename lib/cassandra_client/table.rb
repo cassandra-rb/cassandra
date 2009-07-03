@@ -7,7 +7,6 @@ class CassandraClient
     def initialize(name, parent)
       @parent = parent
       @client = parent.client
-      @transport = parent.transport
       @block_for = parent.block_for
 
       @name = name

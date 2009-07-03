@@ -18,6 +18,15 @@ class CassandraClientTest < Test::Unit::TestCase
       @client.inspect
     end
   end
+  
+  def test_connection_reopens
+    assert_raises(NoMethodError) do
+      @statuses.insert(1, :row, {'body' => 'v'})
+    end
+    assert_nothing_raised do
+      @statuses.insert(key, :row, {'body' => 'v'})
+    end
+  end  
 
   def test_get_key_name_sorted
     @users.insert(key, :row, {'body' => 'v', 'user' => 'v'})
@@ -51,7 +60,7 @@ class CassandraClientTest < Test::Unit::TestCase
     assert_equal 'v', @statuses.get(key, :row, 'body')
     assert_nil @statuses.get('bogus', :row, 'body')
   end
-  
+    
   def test_get_super_key
     @statuses.insert(key, :relationships, {'user_timelines' => {'4' => 'v', '5' => 'v'}})
     assert_equal({'user_timelines' => {'4' => 'v', '5' => 'v'}}, @statuses.get(key, :relationships))
