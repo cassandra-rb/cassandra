@@ -32,5 +32,14 @@ class CassandraClient
     raise AccessError, "No such table #{table_name.inspect}" unless table
     table
   end
+  
+  # Remove all rows in all column families in all tables.
+  def remove_all
+    tables.each do |table| 
+      table.schema.keys.each do |column_family|
+        table.remove_all(column_family)
+      end
+    end
+  end
 end
  

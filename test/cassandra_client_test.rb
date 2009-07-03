@@ -7,13 +7,9 @@ begin; require 'ruby-debug'; rescue LoadError; end
 class CassandraClientTest < Test::Unit::TestCase
   def setup
     @client = CassandraClient.new('127.0.0.1')
+    @client.remove_all
     @statuses = @client.table('Statuses')
     @users = @client.table('Users')
-    [@statuses, @users].each do |table|
-      table.schema.keys.each do |column_family|
-        table.get_key_range(column_family).each { |key| table.remove(column_family, key) }
-      end
-    end
   end
   
   def test_inspect

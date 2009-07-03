@@ -57,7 +57,14 @@ class CassandraClient
       column_family += ":#{super_column}" if super_column
       column_family += ":#{column}" if column
       @client.remove(@name, key, column_family, timestamp, @block_for )
-    end   
+    end
+    
+    # Remove all rows in the column family you request.
+    def remove_all(column_family)
+      get_key_range(column_family).each do |key| 
+        remove(column_family, key)
+      end
+    end
     
     ## Read
   
