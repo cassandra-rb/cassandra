@@ -22,13 +22,20 @@ class CassandraClient
     end
 
     module JSON
-      # FIXME Support yajl-ruby
       def dump(object)
         ::JSON.dump(object)
       end
 
-      def load(object)
-        ::JSON.load("[#{object}]").first
+      begin
+        require 'yajl/json_gem'
+        def load(object)
+          ::JSON.load(object)
+        end
+      rescue LoadError      
+        require 'json/ext'        
+        def load(object)
+          ::JSON.load("[#{object}]").first # :-(
+        end
       end
     end
       

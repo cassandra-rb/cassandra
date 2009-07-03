@@ -4,7 +4,7 @@ class CassandraClient
   class AccessError < StandardError; end
 
   # Instantiate a new CassandraClient and open the connection.
-  def initialize(host = '127.0.0.1', port = 9160, block_for = 1, serialization = CassandraClient::Serialization::CompressedJSON)
+  def initialize(host = '127.0.0.1', port = 9160, block_for = 1, serialization = CassandraClient::Serialization::JSON)
     @host, @port = host, port
     socket = Thrift::Socket.new(@host, @port)
     @transport = Thrift::BufferedTransport.new(socket)

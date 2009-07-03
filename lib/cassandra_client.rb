@@ -2,8 +2,6 @@
 require 'zlib'
 require 'rubygems'
 require 'thrift'
-require 'json/ext'
-require 'json/add/core'
 
 HERE = File.expand_path(File.dirname(__FILE__))
 
