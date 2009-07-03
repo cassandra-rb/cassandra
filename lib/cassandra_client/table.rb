@@ -1,6 +1,8 @@
 class CassandraClient
   class Table
     attr_reader :name, :schema, :parent
+    
+    MAX_INT = 2**31 - 1
   
     def initialize(name, parent)
       @parent = parent
@@ -61,7 +63,7 @@ class CassandraClient
   
     # Count the elements at the column_family:key:super_column path you 
     # request.
-    def count(column_family, key, super_column = nil)
+    def count_columns(column_family, key, super_column = nil)
       column_family += ":#{super_column}" if super_column
       @client.get_column_count(@name, key, column_family)
     end
@@ -116,6 +118,13 @@ class CassandraClient
       @client.get_key_range(@name, Array(column_family), key_range.begin, key_range.end, limit)
     end
     
+    # Count all rows in the column_family you request. Requires the table 
+    # to be partitioned with OrderPreservingHash.
+    def count(column_family, key_range = ''..'', limit = MAX_INT)
+      # FIXME Dubious implementation
+      get_key_range(column_family, key_range, limit).size
+    end
+      
     private
     
     def is_super(column_family)

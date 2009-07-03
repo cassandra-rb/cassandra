@@ -162,20 +162,27 @@ class CassandraClientTest < Test::Unit::TestCase
   #  end    
   
   def test_count_keys
+    @statuses.insert('Rows', key + "1", {'body' => 'v1'})
+    @statuses.insert('Rows', key + "2", {'body' => 'v1'})
+    @statuses.insert('Rows', key + "3", {'body' => 'v1'})
+    assert_equal 3, @statuses.count('Rows')  
+  end
+  
+  def test_count_columns
     @statuses.insert('Rows', key, {'body' => 'v1', 'user' => 'v2'})
-    assert_equal 2, @statuses.count('Rows', key)
+    assert_equal 2, @statuses.count_columns('Rows', key)
   end 
 
-  def test_count_super_keys
+  def test_count_super_columns
     @statuses.insert('Relationships', key, {
       'user_timelines' => {'1' => 'v1'}, 
       'mentions_timelines' => {'2' => 'v2'}})
-    assert_equal 2, @statuses.count('Relationships', key)
+    assert_equal 2, @statuses.count_columns('Relationships', key)
   end 
 
-  def test_count_super_sub_keys
+  def test_count_super_sub_columns
     @statuses.insert('Relationships', key, {'user_timelines' => {'1' => 'v1', key => 'v2'}})
-    assert_equal 2, @statuses.count('Relationships', key, 'user_timelines')
+    assert_equal 2, @statuses.count_columns('Relationships', key, 'user_timelines')
   end
   
   def key
