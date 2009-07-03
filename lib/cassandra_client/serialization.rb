@@ -2,7 +2,7 @@
 class CassandraClient
   module Serialization
     module String
-      def dump(object)
+      def dump(object); 
         object.to_s
       end
       
@@ -39,19 +39,26 @@ class CassandraClient
       end
     end
       
-    module CompressedJSON
-      include JSON
-      def dump(object)
-        Zlib::Deflate.deflate(super(object))
-      end
-
-      def load(object)        
-        super(Zlib::Inflate.inflate(object))
-      end
-    end
-    
     # module Avro
     #  # Someday!
     # end
+    
+    # Decorate all available modules with compression
+    self.constants.each do |module_name|
+      eval <<-MODULE
+        module Compressed#{module_name}
+          include #{module_name}
+          def dump(object)
+            Zlib::Deflate.deflate(super(object))
+          end
+    
+          def load(object)        
+            super(Zlib::Inflate.inflate(object))
+          end
+        end
+      MODULE
+    end
+    
   end
 end
+
