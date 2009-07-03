@@ -1,5 +1,7 @@
 class CassandraClient
   attr_reader :client, :transport, :tables, :host, :port, :block_for
+  
+  class AccessError < StandardError; end
 
   # Instantiate a new CassandraClient and open the connection.
   def initialize(host = '127.0.0.1', port = 9160, block_for = 1)
@@ -26,7 +28,9 @@ class CassandraClient
   # request. You can get an array of all available tables with the #tables 
   # method.
   def table(table_name)
-    @tables.detect {|table| table.name == table_name }
+    table = @tables.detect {|table| table.name == table_name }
+    raise AccessError, "No such table #{table_name.inspect}" unless table
+    table
   end
 end
  
