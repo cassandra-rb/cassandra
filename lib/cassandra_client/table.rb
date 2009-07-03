@@ -11,9 +11,7 @@ class CassandraClient
 
       @name = name
       @schema = @client.describeTable(@name)
-
-      # FIXME Don't use eval
-      eval("class << self; include #{parent.serialization.name}; end")
+      extend(parent.serialization)
     end
     
     def inspect(full = true)
