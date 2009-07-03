@@ -40,12 +40,13 @@ class CassandraClient
     end
       
     module CompressedJSON
+      include JSON
       def dump(object)
-        Zlib::Deflate.deflate(::JSON.dump(object))
+        Zlib::Deflate.deflate(super(object))
       end
 
       def load(object)        
-        ::JSON.load("[#{Zlib::Inflate.inflate(object)}]").first
+        super(Zlib::Inflate.inflate(object))
       end
     end
     
