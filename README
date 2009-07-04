@@ -19,7 +19,9 @@ The public certificate for this gem is here[http://rubyforge.org/frs/download.ph
 
 This is an alpha release and does not yet support the full Thrift API. 
 
-Cassandra is a rapidly moving target; this library is currently tested against Cassandra trunk revision 789419.
+Cassandra is a rapidly moving target; this library is currently tested against {Cassandra trunk revision 789419}[http://blog.evanweaver.com/files/cassandra/cassandra-r789419.tar.bz2]. 
+
+The Github source repository is {here}[http://github.com/fauna/cassandra_client/]; patches and contributions are very welcome.
 
 == Installation
 
@@ -63,4 +65,3 @@ See CassandraClient and CassandraClient::Table for more methods.
 
 The Github issue tracker is {here}[http://github.com/fauna/cassandra_client/issues]. If you have problems with Cassandra itself, please use the {cassandra-user mailing list}[http://mail-archives.apache.org/mod_mbox/incubator-cassandra-user/].
 
-Patches and contributions are very welcome. Please note that contributors are required to assign copyright for their additions to Twitter, Inc.
