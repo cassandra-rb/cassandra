@@ -97,10 +97,10 @@ class CassandraClient
     # Return a hash (actually, a CassandraClient::OrderedHash) or a single value 
     # representing the element at the column_family:key:super_column:column 
     # path you request.
-    def get(key, column_family, super_column = nil, column = nil, limit = 100)
+    def get(key, column_family, super_column = nil, column = nil, offset = -1, limit = 100)
       column_family = column_family.to_s
       column_family += ":#{super_column}" if super_column
-      column_family += ":#{column}" if column    
+      column_family += ":#{column}" if column          
       
       # You have got to be kidding
       if is_super(column_family)
@@ -109,20 +109,28 @@ class CassandraClient
         elsif super_column
           columns_to_hash(@client.get_superColumn(@name, key, column_family).columns)
         else
-          columns_to_hash(@client.get_slice_super(@name, key, "#{column_family}:", -1, limit))
+          columns_to_hash(@client.get_slice_super(@name, key, "#{column_family}:", offset, limit))
         end
       else
         if super_column
           load(@client.get_column(@name, key, column_family).value)
         elsif is_sorted_by_time(column_family)
-          columns_to_hash(@client.get_columns_since(@name, key, column_family, 0))
+          result = columns_to_hash(@client.get_columns_since(@name, key, column_family, 0))
+
+          # FIXME Hack until get_slice on a time-sorted column family works again
+          result = OrderedHash[*flatten_once(result.to_a[offset, limit])] if offset > -1
+          result
         else
-          columns_to_hash(@client.get_slice(@name, key, "#{column_family}:", -1, limit))
+          columns_to_hash(@client.get_slice(@name, key, "#{column_family}:", offset, limit))
         end 
       end
     rescue NotFoundException
       is_super(column_family) && !column ? {} : nil
     end  
+    
+    # FIXME
+    # def get_recent(key, column_family, super_column = nil, column = nil, timestamp = 0)
+    # end
   
     # Return a list of keys in the column_family you request. Requires the
     # table to be partitioned with OrderPreservingHash.
@@ -184,6 +192,11 @@ class CassandraClient
       time.to_i * 1_000_000 + time.usec
     end
     alias :now :time_in_microseconds
-        
+    
+    def flatten_once(array)
+      result = []
+      array.each { |el| result.concat(el) }
+      result
+    end    
   end
 end

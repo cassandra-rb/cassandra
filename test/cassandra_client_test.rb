@@ -58,7 +58,7 @@ class CassandraClientTest < Test::Unit::TestCase
   def test_get_key_time_sorted_with_limit
     @statuses.insert(key, :row, {'first' => 'v'})
     @statuses.insert(key, :row, {'second' => 'v'})
-    assert_equal({'second' => 'v'}, @statuses.get(key, :row, nil, nil, 1))
+    assert_equal({'second' => 'v'}, @statuses.get(key, :row, nil, nil, 0, 1))
   end    
 
   def test_get_value
