@@ -3,6 +3,7 @@ conf/cassandra.in.sh
 conf/log4j.properties
 conf/storage-conf.xml
 lib/cassandra_client/client.rb
+lib/cassandra_client/ordered_hash.rb
 lib/cassandra_client/serialization.rb
 lib/cassandra_client/table.rb
 lib/cassandra_client.rb
@@ -15,4 +16,3 @@ test/cassandra_client_test.rb
 vendor/gen-rb/cassandra.rb
 vendor/gen-rb/cassandra_constants.rb
 vendor/gen-rb/cassandra_types.rb
-vendor/ordered_hash.rb
