@@ -1,2 +1,66 @@
 
-Copyright 2009 Twitter, Inc. See included LICENSE file.
+
+
+cassandra_client
+
+A client for the Cassandra distributed database.
+
+== License
+
+Copyright 2009 Twitter, Inc. See included LICENSE file. Portions copyright 2004-2009 David Heinemeier Hansson, and used with permission.
+
+The public certificate for this gem is here[http://rubyforge.org/frs/download.php/25331/evan_weaver-original-public_cert.pem]. 
+
+== Features
+
+* clean encapsulation of the Thrift API
+* pluggable serialization and compression
+* Ruby 1.9 compatibility
+
+This is an alpha release and does not yet support the full Thrift API. 
+
+Cassandra is a rapidly moving target; this library is currently tested againt Cassandra trunk revision 789419.
+
+== Installation
+
+You need Ruby 1.8 or 1.9, and Thrift. 
+
+If you don't want to install Thrift from {source}[http://incubator.apache.org/thrift/download/], you can use {this pre-packaged gem}[http://blog.evanweaver.com/files/cassandra/thrift-0.1.0.gem]. Once you have Thrift, just run:
+
+  sudo gem install cassandra_client
+  
+== Usage
+
+Require the library:
+  
+  require 'cassandra_client'
+  
+Connect to a server:
+  
+  client = CassandraClient.new("127.0.0.1")
+  
+Get a keyspace:
+
+  users = client.table('Users')  
+
+Insert into a column family. You can insert a CassandraClient::OrderedHash, or a regular Hash, if order doesn't matter:
+
+  users.insert("5", :row, {'screen_name' => "buttonscat"})  
+
+Insert into a super column family:
+
+  users.insert("5", :relationships, {"user_timeline" => {"1" => ""}})
+
+Query a super column:
+
+  timeline = users.get("5", :relationships, "user_timeline")
+  
+The returned result will always be a CassandraClient::OrderedHash.
+
+See CassandraClient::Table for more methods.
+
+== Reporting problems
+
+The Github issue tracker is {here}[http://github.com/fauna/cassandra_client/issues]. If you have problems with Cassandra itself, please use the {cassandra-user mailing list}[http://mail-archives.apache.org/mod_mbox/incubator-cassandra-user/].
+
+Patches and contributions are very welcome. Please note that contributors are required to assign copyright for their additions to Twitter, Inc.
