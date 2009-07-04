@@ -33,7 +33,7 @@
           <ColumnFamily ColumnSort="Name" Name="row" />
           <ColumnFamily ColumnSort="Name" Name="audit" />
           <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="relationships" />
-          <ColumnFamily ColumnSort="Time" Name="Usernames" />
+          <ColumnFamily ColumnSort="Time" Name="usernames" />
       </Table>
 
       <Table Name="Statuses">
