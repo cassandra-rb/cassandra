@@ -19,7 +19,7 @@ The public certificate for this gem is here[http://rubyforge.org/frs/download.ph
 
 This is an alpha release and does not yet support the full Thrift API. 
 
-Cassandra is a rapidly moving target; this library is currently tested againt Cassandra trunk revision 789419.
+Cassandra is a rapidly moving target; this library is currently tested against Cassandra trunk revision 789419.
 
 == Installation
 
@@ -57,7 +57,7 @@ Query a super column:
   
 The returned result will always be a CassandraClient::OrderedHash.
 
-See CassandraClient::Table for more methods.
+See CassandraClient and CassandraClient::Table for more methods.
 
 == Reporting problems
 
