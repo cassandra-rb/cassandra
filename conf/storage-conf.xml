@@ -42,7 +42,7 @@
           <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="relationships" />  
       </Table>
 
-      <Table Name="Blogs">      
+      <Table Name="Blog">      
         <ColumnFamily ColumnSort="Time" Name="posts"/>
         <ColumnFamily ColumnSort="Time" Name="comments"/>
       </Table>
