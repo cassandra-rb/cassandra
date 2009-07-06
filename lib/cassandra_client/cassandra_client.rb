@@ -31,9 +31,9 @@ class CassandraClient
   end
     
   def inspect
-    "#<CassandraClient:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={
-      #{schema.map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')}
-    }, @host=#{host.inspect}, @port=#{port}, @quorum=#{quorum}, @serialization=#{serialization.name}>"
+    "#<CassandraClient:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
+      schema.map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
+    }}, @host=#{host.inspect}, @port=#{port}, @quorum=#{quorum}, @serialization=#{serialization.name}>"
   end
 
   ## Write

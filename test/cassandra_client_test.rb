@@ -8,7 +8,7 @@ class CassandraClientTest < Test::Unit::TestCase
   def setup
     @twitter = CassandraClient.new('Twitter', '127.0.0.1')
     @twitter.clear_keyspace!
-    @blogs = CassandraClient.new('Blogs', '127.0.0.1')
+    @blogs = CassandraClient.new('Multiblog', '127.0.0.1')
     @blogs.clear_keyspace!
   end
   
