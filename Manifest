@@ -2,10 +2,11 @@ CHANGELOG
 conf/cassandra.in.sh
 conf/log4j.properties
 conf/storage-conf.xml
-lib/cassandra_client/client.rb
+lib/cassandra_client/cassandra_client.rb
+lib/cassandra_client/helper.rb
 lib/cassandra_client/ordered_hash.rb
+lib/cassandra_client/safe_client.rb
 lib/cassandra_client/serialization.rb
-lib/cassandra_client/table.rb
 lib/cassandra_client.rb
 LICENSE
 Manifest

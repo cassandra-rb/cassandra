@@ -39,7 +39,7 @@
           <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="StatusRelationships" />  
       </Table>
 
-      <Table Name="Blogs">      
+      <Table Name="Multiblog">      
         <ColumnFamily ColumnSort="Time" Name="Posts"/>
         <ColumnFamily ColumnSort="Time" Name="Comments"/>
       </Table>
