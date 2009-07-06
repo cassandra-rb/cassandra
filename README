@@ -37,25 +37,21 @@ Require the library:
   
   require 'cassandra_client'
   
-Connect to a server:
+Connect to a server and keyspace:
   
-  client = CassandraClient.new("127.0.0.1")
+  client = CassandraClient.new('Twitter', "127.0.0.1")
   
-Get a keyspace:
-
-  users = client.table('Users')  
-
 Insert into a column family. You can insert a CassandraClient::OrderedHash, or a regular Hash, if order doesn't matter:
 
-  users.insert("5", :row, {'screen_name' => "buttonscat"})  
+  client.insert(:Users, "5", {'screen_name' => "buttonscat"})  
 
 Insert into a super column family:
 
-  users.insert("5", :relationships, {"user_timeline" => {"1" => ""}})
+  client.insert(:UserRelationships, "5", {"user_timeline" => {"1" => ""}})
 
 Query a super column:
 
-  timeline = users.get("5", :relationships, "user_timeline")
+  timeline = client.get(:UserRelationships, "5", "user_timeline")
   
 The returned result will always be a CassandraClient::OrderedHash.
 

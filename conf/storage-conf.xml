@@ -20,7 +20,7 @@
     <!--======================================================================-->
     <!-- Basic Configuration                                                  -->
     <!--======================================================================-->
-    <ClusterName>Up and Running</ClusterName>
+    <ClusterName>Test</ClusterName>
 
     <!-- Tables and ColumnFamilies                                            
          Think of a table as a namespace, not a relational table.
@@ -29,22 +29,19 @@
          There is an implicit table named 'system' for Cassandra internals.
     -->
     <Tables>
-      <Table Name="Users">
-          <ColumnFamily ColumnSort="Name" Name="row" />
-          <ColumnFamily ColumnSort="Name" Name="audit" />
-          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="relationships" />
-          <ColumnFamily ColumnSort="Time" Name="usernames" />
-      </Table>
-
-      <Table Name="Statuses">
-          <ColumnFamily ColumnSort="Time" Name="row" />
-          <ColumnFamily ColumnSort="Name" Name="audit" />
-          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="relationships" />  
+      <Table Name="Twitter">
+          <ColumnFamily ColumnSort="Name" Name="Users" />
+          <ColumnFamily ColumnSort="Name" Name="UserAudits" />
+          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="UsersRelationships" />
+          <ColumnFamily ColumnSort="Time" Name="Usernames" />
+          <ColumnFamily ColumnSort="Time" Name="Statuses" />
+          <ColumnFamily ColumnSort="Name" Name="StatusAudits" />
+          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="StatusRelationships" />  
       </Table>
 
       <Table Name="Blogs">      
-        <ColumnFamily ColumnSort="Time" Name="posts"/>
-        <ColumnFamily ColumnSort="Time" Name="comments"/>
+        <ColumnFamily ColumnSort="Time" Name="Posts"/>
+        <ColumnFamily ColumnSort="Time" Name="Comments"/>
       </Table>
     </Tables>
 

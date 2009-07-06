@@ -1,2 +1,4 @@
 
+v0.2. Re-factor table vs. column family interface per discussion with jbellis.
+
 v0.1. First release.
