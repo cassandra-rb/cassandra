@@ -2,20 +2,18 @@ class CassandraClient
   include Helper  
   class AccessError < StandardError; end
   
-  MAX_INT = 2**31 - 1  
-
-  attr_reader :keyspace, :host, :port, :quorum, :serialization, :transport, :client, :schema
+  MAX_INT = 2**31 - 1
+  
+  attr_reader :keyspace, :host, :port, :quorum, :serializer, :transport, :client, :schema
 
   # Instantiate a new CassandraClient and open the connection.
-  def initialize(keyspace, host = '127.0.0.1', port = 9160, quorum = 1, serialization = CassandraClient::Serialization::JSON)
+  def initialize(keyspace, host = '127.0.0.1', port = 9160, quorum = 1, serializer = CassandraClient::Serialization::JSON)
     @keyspace = keyspace
     @host = host
     @port = port
     @quorum = quorum
-    @serialization = serialization
+    @serializer = serializer
 
-    extend(@serialization)
-    
     @transport = Thrift::BufferedTransport.new(Thrift::Socket.new(@host, @port))
     @transport.open    
     @client = Cassandra::SafeClient.new(
@@ -33,7 +31,7 @@ class CassandraClient
   def inspect
     "#<CassandraClient:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       schema.map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
-    }}, @host=#{host.inspect}, @port=#{port}, @quorum=#{quorum}, @serialization=#{serialization.name}>"
+    }}, @host=#{host.inspect}, @port=#{port}, @quorum=#{quorum}, @serializer=#{serializer.name}>"
   end
 
   ## Write
@@ -167,4 +165,17 @@ class CassandraClient
   def count(column_family, key_range = ''..'', limit = MAX_INT)
     get_key_range(column_family, key_range, limit).size
   end      
+  
+  private
+    
+  def dump(object)
+    # Special-case the empty string, so we don't store worthless serializer overhead on nulls
+    return "" if object == ""
+    @serializer.dump(object)
+  end
+  
+  def load(object)
+    return "" if object == ""  
+    @serializer.load(object)
+  end  
 end
