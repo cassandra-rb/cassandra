@@ -32,7 +32,7 @@
       <Table Name="Twitter">
           <ColumnFamily ColumnSort="Name" Name="Users" />
           <ColumnFamily ColumnSort="Name" Name="UserAudits" />
-          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="UsersRelationships" />
+          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="UserRelationships" />
           <ColumnFamily ColumnSort="Time" Name="Usernames" />
           <ColumnFamily ColumnSort="Time" Name="Statuses" />
           <ColumnFamily ColumnSort="Name" Name="StatusAudits" />
@@ -40,7 +40,7 @@
       </Table>
 
       <Table Name="Multiblog">      
-        <ColumnFamily ColumnSort="Time" Name="Posts"/>
+        <ColumnFamily ColumnSort="Time" Name="Blogs"/>
         <ColumnFamily ColumnSort="Time" Name="Comments"/>
       </Table>
     </Tables>
