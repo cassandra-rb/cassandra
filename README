@@ -55,7 +55,7 @@ Query a super column:
   
 The returned result will always be a CassandraClient::OrderedHash.
 
-See CassandraClient and CassandraClient::Table for more methods.
+See CassandraClient for more methods.
 
 == Reporting problems
 
