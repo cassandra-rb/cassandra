@@ -147,7 +147,11 @@ class CassandraClient
     end
   rescue NotFoundException
     is_super(column_family) && !column ? {} : nil
-  end  
+  end
+  
+  # FIXME
+  # def exists?
+  # end
   
   # FIXME
   # def get_recent(column_family, key, super_column = nil, column = nil, timestamp = 0)
@@ -169,13 +173,13 @@ class CassandraClient
   private
     
   def dump(object)
-    # Special-case the empty string, so we don't store worthless serializer overhead on nulls
-    return "" if object == ""
+    # Special-case nil as the empty byte array
+    return "" if object == nil
     @serializer.dump(object)
   end
   
   def load(object)
-    return "" if object == ""  
+    return nil if object == ""  
     @serializer.load(object)
   end  
 end

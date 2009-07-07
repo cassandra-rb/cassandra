@@ -36,14 +36,14 @@ class CassandraClientTest < Test::Unit::TestCase
   
   def test_get_key_name_sorted_preserving_order
     # In-order hash is preserved
-    hash = CassandraClient::OrderedHash['a', '', 'b', '', 'c', '', 'd', '',]    
+    hash = CassandraClient::OrderedHash['a', nil, 'b', nil, 'c', nil, 'd', nil,]    
     @twitter.insert(:Users, key, hash)
     assert_equal(hash.keys, @twitter.get(:Users, key).keys)
     
     @twitter.remove(:Users, key)
         
     # Out-of-order hash is returned sorted
-    hash = CassandraClient::OrderedHash['b', '', 'c', '', 'd', '', 'a', '']    
+    hash = CassandraClient::OrderedHash['b', nil, 'c', nil, 'd', nil, 'a', nil]    
     @twitter.insert(:Users, key, hash)
     assert_equal(hash.keys.sort, @twitter.get(:Users, key).keys)
     assert_not_equal(hash.keys, @twitter.get(:Users, key).keys)
