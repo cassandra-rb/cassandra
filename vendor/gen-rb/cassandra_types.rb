@@ -5,15 +5,15 @@
 #
 
 
-class Column_t
+class Column
   include ::Thrift::Struct
-  COLUMNNAME = 1
+  NAME = 1
   VALUE = 2
   TIMESTAMP = 3
 
-  ::Thrift::Struct.field_accessor self, :columnName, :value, :timestamp
+  ::Thrift::Struct.field_accessor self, :name, :value, :timestamp
   FIELDS = {
-    COLUMNNAME => {:type => ::Thrift::Types::STRING, :name => 'columnName'},
+    NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
     VALUE => {:type => ::Thrift::Types::STRING, :name => 'value'},
     TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'}
   }
@@ -25,17 +25,15 @@ class Column_t
 
 end
 
-class Batch_mutation_t
+class BatchMutation
   include ::Thrift::Struct
-  TABLE = 1
-  KEY = 2
-  CFMAP = 3
+  KEY = 1
+  CFMAP = 2
 
-  ::Thrift::Struct.field_accessor self, :table, :key, :cfmap
+  ::Thrift::Struct.field_accessor self, :key, :cfmap
   FIELDS = {
-    TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
     KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-    CFMAP => {:type => ::Thrift::Types::MAP, :name => 'cfmap', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => Column_t}}}
+    CFMAP => {:type => ::Thrift::Types::MAP, :name => 'cfmap', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => Column}}}
   }
 
   def struct_fields; FIELDS; end
@@ -45,7 +43,7 @@ class Batch_mutation_t
 
 end
 
-class SuperColumn_t
+class SuperColumn
   include ::Thrift::Struct
   NAME = 1
   COLUMNS = 2
@@ -53,7 +51,7 @@ class SuperColumn_t
   ::Thrift::Struct.field_accessor self, :name, :columns
   FIELDS = {
     NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
-    COLUMNS => {:type => ::Thrift::Types::LIST, :name => 'columns', :element => {:type => ::Thrift::Types::STRUCT, :class => Column_t}}
+    COLUMNS => {:type => ::Thrift::Types::LIST, :name => 'columns', :element => {:type => ::Thrift::Types::STRUCT, :class => Column}}
   }
 
   def struct_fields; FIELDS; end
@@ -63,17 +61,15 @@ class SuperColumn_t
 
 end
 
-class Batch_mutation_super_t
+class BatchMutationSuper
   include ::Thrift::Struct
-  TABLE = 1
-  KEY = 2
-  CFMAP = 3
+  KEY = 1
+  CFMAP = 2
 
-  ::Thrift::Struct.field_accessor self, :table, :key, :cfmap
+  ::Thrift::Struct.field_accessor self, :key, :cfmap
   FIELDS = {
-    TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
     KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-    CFMAP => {:type => ::Thrift::Types::MAP, :name => 'cfmap', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => SuperColumn_t}}}
+    CFMAP => {:type => ::Thrift::Types::MAP, :name => 'cfmap', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => SuperColumn}}}
   }
 
   def struct_fields; FIELDS; end
@@ -83,17 +79,17 @@ class Batch_mutation_super_t
 
 end
 
-class CqlResult_t
+class CqlResult
   include ::Thrift::Struct
-  ERRORCODE = 1
-  ERRORTXT = 2
-  RESULTSET = 3
+  ERROR_CODE = 1
+  ERROR_TXT = 2
+  RESULT_SET = 3
 
-  ::Thrift::Struct.field_accessor self, :errorCode, :errorTxt, :resultSet
+  ::Thrift::Struct.field_accessor self, :error_code, :error_txt, :result_set
   FIELDS = {
-    ERRORCODE => {:type => ::Thrift::Types::I32, :name => 'errorCode'},
-    ERRORTXT => {:type => ::Thrift::Types::STRING, :name => 'errorTxt'},
-    RESULTSET => {:type => ::Thrift::Types::LIST, :name => 'resultSet', :element => {:type => ::Thrift::Types::MAP, :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}}}
+    ERROR_CODE => {:type => ::Thrift::Types::I32, :name => 'error_code'},
+    ERROR_TXT => {:type => ::Thrift::Types::STRING, :name => 'error_txt'},
+    RESULT_SET => {:type => ::Thrift::Types::LIST, :name => 'result_set', :element => {:type => ::Thrift::Types::MAP, :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}}}
   }
 
   def struct_fields; FIELDS; end
@@ -145,6 +141,82 @@ class UnavailableException < ::Thrift::Exception
 
   FIELDS = {
 
+  }
+
+  def struct_fields; FIELDS; end
+
+  def validate
+  end
+
+end
+
+class ColumnParent
+  include ::Thrift::Struct
+  COLUMN_FAMILY = 3
+  SUPER_COLUMN = 4
+
+  ::Thrift::Struct.field_accessor self, :column_family, :super_column
+  FIELDS = {
+    COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
+    SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :optional => true}
+  }
+
+  def struct_fields; FIELDS; end
+
+  def validate
+  end
+
+end
+
+class ColumnPath
+  include ::Thrift::Struct
+  COLUMN_FAMILY = 3
+  SUPER_COLUMN = 4
+  COLUMN = 5
+
+  ::Thrift::Struct.field_accessor self, :column_family, :super_column, :column
+  FIELDS = {
+    COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
+    SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :optional => true},
+    COLUMN => {:type => ::Thrift::Types::STRING, :name => 'column'}
+  }
+
+  def struct_fields; FIELDS; end
+
+  def validate
+  end
+
+end
+
+class SuperColumnPath
+  include ::Thrift::Struct
+  COLUMN_FAMILY = 3
+  SUPER_COLUMN = 4
+
+  ::Thrift::Struct.field_accessor self, :column_family, :super_column
+  FIELDS = {
+    COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
+    SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column'}
+  }
+
+  def struct_fields; FIELDS; end
+
+  def validate
+  end
+
+end
+
+class ColumnPathOrParent
+  include ::Thrift::Struct
+  COLUMN_FAMILY = 3
+  SUPER_COLUMN = 4
+  COLUMN = 5
+
+  ::Thrift::Struct.field_accessor self, :column_family, :super_column, :column
+  FIELDS = {
+    COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
+    SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :optional => true},
+    COLUMN => {:type => ::Thrift::Types::STRING, :name => 'column', :optional => true}
   }
 
   def struct_fields; FIELDS; end

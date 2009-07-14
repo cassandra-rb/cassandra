@@ -11,30 +11,13 @@ module Cassandra
   class Client
     include ::Thrift::Client
 
-    def get_slice_by_name_range(tablename, key, columnParent, start, finish, count)
-      send_get_slice_by_name_range(tablename, key, columnParent, start, finish, count)
-      return recv_get_slice_by_name_range()
-    end
-
-    def send_get_slice_by_name_range(tablename, key, columnParent, start, finish, count)
-      send_message('get_slice_by_name_range', Get_slice_by_name_range_args, :tablename => tablename, :key => key, :columnParent => columnParent, :start => start, :finish => finish, :count => count)
-    end
-
-    def recv_get_slice_by_name_range()
-      result = receive_message(Get_slice_by_name_range_result)
-      return result.success unless result.success.nil?
-      raise result.ire unless result.ire.nil?
-      raise result.nfe unless result.nfe.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_by_name_range failed: unknown result')
-    end
-
-    def get_slice_by_names(tablename, key, columnParent, columnNames)
-      send_get_slice_by_names(tablename, key, columnParent, columnNames)
+    def get_slice_by_names(table, key, column_parent, column_names)
+      send_get_slice_by_names(table, key, column_parent, column_names)
       return recv_get_slice_by_names()
     end
 
-    def send_get_slice_by_names(tablename, key, columnParent, columnNames)
-      send_message('get_slice_by_names', Get_slice_by_names_args, :tablename => tablename, :key => key, :columnParent => columnParent, :columnNames => columnNames)
+    def send_get_slice_by_names(table, key, column_parent, column_names)
+      send_message('get_slice_by_names', Get_slice_by_names_args, :table => table, :key => key, :column_parent => column_parent, :column_names => column_names)
     end
 
     def recv_get_slice_by_names()
@@ -45,13 +28,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_by_names failed: unknown result')
     end
 
-    def get_slice(tablename, key, columnParent, isAscending, count)
-      send_get_slice(tablename, key, columnParent, isAscending, count)
+    def get_slice(table, key, column_parent, start, finish, is_ascending, offset, count)
+      send_get_slice(table, key, column_parent, start, finish, is_ascending, offset, count)
       return recv_get_slice()
     end
 
-    def send_get_slice(tablename, key, columnParent, isAscending, count)
-      send_message('get_slice', Get_slice_args, :tablename => tablename, :key => key, :columnParent => columnParent, :isAscending => isAscending, :count => count)
+    def send_get_slice(table, key, column_parent, start, finish, is_ascending, offset, count)
+      send_message('get_slice', Get_slice_args, :table => table, :key => key, :column_parent => column_parent, :start => start, :finish => finish, :is_ascending => is_ascending, :offset => offset, :count => count)
     end
 
     def recv_get_slice()
@@ -62,13 +45,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice failed: unknown result')
     end
 
-    def get_column(tablename, key, columnPath)
-      send_get_column(tablename, key, columnPath)
+    def get_column(table, key, column_path)
+      send_get_column(table, key, column_path)
       return recv_get_column()
     end
 
-    def send_get_column(tablename, key, columnPath)
-      send_message('get_column', Get_column_args, :tablename => tablename, :key => key, :columnPath => columnPath)
+    def send_get_column(table, key, column_path)
+      send_message('get_column', Get_column_args, :table => table, :key => key, :column_path => column_path)
     end
 
     def recv_get_column()
@@ -79,13 +62,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_column failed: unknown result')
     end
 
-    def get_column_count(tablename, key, columnParent)
-      send_get_column_count(tablename, key, columnParent)
+    def get_column_count(table, key, column_parent)
+      send_get_column_count(table, key, column_parent)
       return recv_get_column_count()
     end
 
-    def send_get_column_count(tablename, key, columnParent)
-      send_message('get_column_count', Get_column_count_args, :tablename => tablename, :key => key, :columnParent => columnParent)
+    def send_get_column_count(table, key, column_parent)
+      send_message('get_column_count', Get_column_count_args, :table => table, :key => key, :column_parent => column_parent)
     end
 
     def recv_get_column_count()
@@ -95,13 +78,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_column_count failed: unknown result')
     end
 
-    def insert(tablename, key, columnPath, cellData, timestamp, block_for)
-      send_insert(tablename, key, columnPath, cellData, timestamp, block_for)
+    def insert(table, key, column_path, value, timestamp, block_for)
+      send_insert(table, key, column_path, value, timestamp, block_for)
       recv_insert()
     end
 
-    def send_insert(tablename, key, columnPath, cellData, timestamp, block_for)
-      send_message('insert', Insert_args, :tablename => tablename, :key => key, :columnPath => columnPath, :cellData => cellData, :timestamp => timestamp, :block_for => block_for)
+    def send_insert(table, key, column_path, value, timestamp, block_for)
+      send_message('insert', Insert_args, :table => table, :key => key, :column_path => column_path, :value => value, :timestamp => timestamp, :block_for => block_for)
     end
 
     def recv_insert()
@@ -111,13 +94,13 @@ module Cassandra
       return
     end
 
-    def batch_insert(batchMutation, block_for)
-      send_batch_insert(batchMutation, block_for)
+    def batch_insert(table, batch_mutation, block_for)
+      send_batch_insert(table, batch_mutation, block_for)
       recv_batch_insert()
     end
 
-    def send_batch_insert(batchMutation, block_for)
-      send_message('batch_insert', Batch_insert_args, :batchMutation => batchMutation, :block_for => block_for)
+    def send_batch_insert(table, batch_mutation, block_for)
+      send_message('batch_insert', Batch_insert_args, :table => table, :batch_mutation => batch_mutation, :block_for => block_for)
     end
 
     def recv_batch_insert()
@@ -127,13 +110,13 @@ module Cassandra
       return
     end
 
-    def remove(tablename, key, columnPathOrParent, timestamp, block_for)
-      send_remove(tablename, key, columnPathOrParent, timestamp, block_for)
+    def remove(table, key, column_path_or_parent, timestamp, block_for)
+      send_remove(table, key, column_path_or_parent, timestamp, block_for)
       recv_remove()
     end
 
-    def send_remove(tablename, key, columnPathOrParent, timestamp, block_for)
-      send_message('remove', Remove_args, :tablename => tablename, :key => key, :columnPathOrParent => columnPathOrParent, :timestamp => timestamp, :block_for => block_for)
+    def send_remove(table, key, column_path_or_parent, timestamp, block_for)
+      send_message('remove', Remove_args, :table => table, :key => key, :column_path_or_parent => column_path_or_parent, :timestamp => timestamp, :block_for => block_for)
     end
 
     def recv_remove()
@@ -143,13 +126,13 @@ module Cassandra
       return
     end
 
-    def get_columns_since(tablename, key, columnParent, timeStamp)
-      send_get_columns_since(tablename, key, columnParent, timeStamp)
+    def get_columns_since(table, key, column_parent, timeStamp)
+      send_get_columns_since(table, key, column_parent, timeStamp)
       return recv_get_columns_since()
     end
 
-    def send_get_columns_since(tablename, key, columnParent, timeStamp)
-      send_message('get_columns_since', Get_columns_since_args, :tablename => tablename, :key => key, :columnParent => columnParent, :timeStamp => timeStamp)
+    def send_get_columns_since(table, key, column_parent, timeStamp)
+      send_message('get_columns_since', Get_columns_since_args, :table => table, :key => key, :column_parent => column_parent, :timeStamp => timeStamp)
     end
 
     def recv_get_columns_since()
@@ -160,13 +143,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_columns_since failed: unknown result')
     end
 
-    def get_slice_super(tablename, key, columnFamily, isAscending, count)
-      send_get_slice_super(tablename, key, columnFamily, isAscending, count)
+    def get_slice_super(table, key, column_family, start, finish, is_ascending, offset, count)
+      send_get_slice_super(table, key, column_family, start, finish, is_ascending, offset, count)
       return recv_get_slice_super()
     end
 
-    def send_get_slice_super(tablename, key, columnFamily, isAscending, count)
-      send_message('get_slice_super', Get_slice_super_args, :tablename => tablename, :key => key, :columnFamily => columnFamily, :isAscending => isAscending, :count => count)
+    def send_get_slice_super(table, key, column_family, start, finish, is_ascending, offset, count)
+      send_message('get_slice_super', Get_slice_super_args, :table => table, :key => key, :column_family => column_family, :start => start, :finish => finish, :is_ascending => is_ascending, :offset => offset, :count => count)
     end
 
     def recv_get_slice_super()
@@ -176,13 +159,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_super failed: unknown result')
     end
 
-    def get_slice_super_by_names(tablename, key, columnFamily, superColumnNames)
-      send_get_slice_super_by_names(tablename, key, columnFamily, superColumnNames)
+    def get_slice_super_by_names(table, key, column_family, super_column_names)
+      send_get_slice_super_by_names(table, key, column_family, super_column_names)
       return recv_get_slice_super_by_names()
     end
 
-    def send_get_slice_super_by_names(tablename, key, columnFamily, superColumnNames)
-      send_message('get_slice_super_by_names', Get_slice_super_by_names_args, :tablename => tablename, :key => key, :columnFamily => columnFamily, :superColumnNames => superColumnNames)
+    def send_get_slice_super_by_names(table, key, column_family, super_column_names)
+      send_message('get_slice_super_by_names', Get_slice_super_by_names_args, :table => table, :key => key, :column_family => column_family, :super_column_names => super_column_names)
     end
 
     def recv_get_slice_super_by_names()
@@ -192,46 +175,46 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_super_by_names failed: unknown result')
     end
 
-    def get_superColumn(tablename, key, superColumnPath)
-      send_get_superColumn(tablename, key, superColumnPath)
-      return recv_get_superColumn()
+    def get_super_column(table, key, super_column_path)
+      send_get_super_column(table, key, super_column_path)
+      return recv_get_super_column()
     end
 
-    def send_get_superColumn(tablename, key, superColumnPath)
-      send_message('get_superColumn', Get_superColumn_args, :tablename => tablename, :key => key, :superColumnPath => superColumnPath)
+    def send_get_super_column(table, key, super_column_path)
+      send_message('get_super_column', Get_super_column_args, :table => table, :key => key, :super_column_path => super_column_path)
     end
 
-    def recv_get_superColumn()
-      result = receive_message(Get_superColumn_result)
+    def recv_get_super_column()
+      result = receive_message(Get_super_column_result)
       return result.success unless result.success.nil?
       raise result.ire unless result.ire.nil?
       raise result.nfe unless result.nfe.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_superColumn failed: unknown result')
+      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_super_column failed: unknown result')
     end
 
-    def batch_insert_superColumn(batchMutationSuper, block_for)
-      send_batch_insert_superColumn(batchMutationSuper, block_for)
-      recv_batch_insert_superColumn()
+    def batch_insert_super_column(table, batch_mutation_super, block_for)
+      send_batch_insert_super_column(table, batch_mutation_super, block_for)
+      recv_batch_insert_super_column()
     end
 
-    def send_batch_insert_superColumn(batchMutationSuper, block_for)
-      send_message('batch_insert_superColumn', Batch_insert_superColumn_args, :batchMutationSuper => batchMutationSuper, :block_for => block_for)
+    def send_batch_insert_super_column(table, batch_mutation_super, block_for)
+      send_message('batch_insert_super_column', Batch_insert_super_column_args, :table => table, :batch_mutation_super => batch_mutation_super, :block_for => block_for)
     end
 
-    def recv_batch_insert_superColumn()
-      result = receive_message(Batch_insert_superColumn_result)
+    def recv_batch_insert_super_column()
+      result = receive_message(Batch_insert_super_column_result)
       raise result.ire unless result.ire.nil?
       raise result.ue unless result.ue.nil?
       return
     end
 
-    def get_key_range(tablename, columnFamilies, startWith, stopAt, maxResults)
-      send_get_key_range(tablename, columnFamilies, startWith, stopAt, maxResults)
+    def get_key_range(table, column_family, startWith, stopAt, maxResults)
+      send_get_key_range(table, column_family, startWith, stopAt, maxResults)
       return recv_get_key_range()
     end
 
-    def send_get_key_range(tablename, columnFamilies, startWith, stopAt, maxResults)
-      send_message('get_key_range', Get_key_range_args, :tablename => tablename, :columnFamilies => columnFamilies, :startWith => startWith, :stopAt => stopAt, :maxResults => maxResults)
+    def send_get_key_range(table, column_family, startWith, stopAt, maxResults)
+      send_message('get_key_range', Get_key_range_args, :table => table, :column_family => column_family, :startWith => startWith, :stopAt => stopAt, :maxResults => maxResults)
     end
 
     def recv_get_key_range()
@@ -307,24 +290,11 @@ module Cassandra
   class Processor
     include ::Thrift::Processor
 
-    def process_get_slice_by_name_range(seqid, iprot, oprot)
-      args = read_args(iprot, Get_slice_by_name_range_args)
-      result = Get_slice_by_name_range_result.new()
-      begin
-        result.success = @handler.get_slice_by_name_range(args.tablename, args.key, args.columnParent, args.start, args.finish, args.count)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      rescue NotFoundException => nfe
-        result.nfe = nfe
-      end
-      write_result(result, oprot, 'get_slice_by_name_range', seqid)
-    end
-
     def process_get_slice_by_names(seqid, iprot, oprot)
       args = read_args(iprot, Get_slice_by_names_args)
       result = Get_slice_by_names_result.new()
       begin
-        result.success = @handler.get_slice_by_names(args.tablename, args.key, args.columnParent, args.columnNames)
+        result.success = @handler.get_slice_by_names(args.table, args.key, args.column_parent, args.column_names)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue NotFoundException => nfe
@@ -337,7 +307,7 @@ module Cassandra
       args = read_args(iprot, Get_slice_args)
       result = Get_slice_result.new()
       begin
-        result.success = @handler.get_slice(args.tablename, args.key, args.columnParent, args.isAscending, args.count)
+        result.success = @handler.get_slice(args.table, args.key, args.column_parent, args.start, args.finish, args.is_ascending, args.offset, args.count)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue NotFoundException => nfe
@@ -350,7 +320,7 @@ module Cassandra
       args = read_args(iprot, Get_column_args)
       result = Get_column_result.new()
       begin
-        result.success = @handler.get_column(args.tablename, args.key, args.columnPath)
+        result.success = @handler.get_column(args.table, args.key, args.column_path)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue NotFoundException => nfe
@@ -363,7 +333,7 @@ module Cassandra
       args = read_args(iprot, Get_column_count_args)
       result = Get_column_count_result.new()
       begin
-        result.success = @handler.get_column_count(args.tablename, args.key, args.columnParent)
+        result.success = @handler.get_column_count(args.table, args.key, args.column_parent)
       rescue InvalidRequestException => ire
         result.ire = ire
       end
@@ -374,7 +344,7 @@ module Cassandra
       args = read_args(iprot, Insert_args)
       result = Insert_result.new()
       begin
-        @handler.insert(args.tablename, args.key, args.columnPath, args.cellData, args.timestamp, args.block_for)
+        @handler.insert(args.table, args.key, args.column_path, args.value, args.timestamp, args.block_for)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue UnavailableException => ue
@@ -387,7 +357,7 @@ module Cassandra
       args = read_args(iprot, Batch_insert_args)
       result = Batch_insert_result.new()
       begin
-        @handler.batch_insert(args.batchMutation, args.block_for)
+        @handler.batch_insert(args.table, args.batch_mutation, args.block_for)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue UnavailableException => ue
@@ -400,7 +370,7 @@ module Cassandra
       args = read_args(iprot, Remove_args)
       result = Remove_result.new()
       begin
-        @handler.remove(args.tablename, args.key, args.columnPathOrParent, args.timestamp, args.block_for)
+        @handler.remove(args.table, args.key, args.column_path_or_parent, args.timestamp, args.block_for)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue UnavailableException => ue
@@ -413,7 +383,7 @@ module Cassandra
       args = read_args(iprot, Get_columns_since_args)
       result = Get_columns_since_result.new()
       begin
-        result.success = @handler.get_columns_since(args.tablename, args.key, args.columnParent, args.timeStamp)
+        result.success = @handler.get_columns_since(args.table, args.key, args.column_parent, args.timeStamp)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue NotFoundException => nfe
@@ -426,7 +396,7 @@ module Cassandra
       args = read_args(iprot, Get_slice_super_args)
       result = Get_slice_super_result.new()
       begin
-        result.success = @handler.get_slice_super(args.tablename, args.key, args.columnFamily, args.isAscending, args.count)
+        result.success = @handler.get_slice_super(args.table, args.key, args.column_family, args.start, args.finish, args.is_ascending, args.offset, args.count)
       rescue InvalidRequestException => ire
         result.ire = ire
       end
@@ -437,44 +407,44 @@ module Cassandra
       args = read_args(iprot, Get_slice_super_by_names_args)
       result = Get_slice_super_by_names_result.new()
       begin
-        result.success = @handler.get_slice_super_by_names(args.tablename, args.key, args.columnFamily, args.superColumnNames)
+        result.success = @handler.get_slice_super_by_names(args.table, args.key, args.column_family, args.super_column_names)
       rescue InvalidRequestException => ire
         result.ire = ire
       end
       write_result(result, oprot, 'get_slice_super_by_names', seqid)
     end
 
-    def process_get_superColumn(seqid, iprot, oprot)
-      args = read_args(iprot, Get_superColumn_args)
-      result = Get_superColumn_result.new()
+    def process_get_super_column(seqid, iprot, oprot)
+      args = read_args(iprot, Get_super_column_args)
+      result = Get_super_column_result.new()
       begin
-        result.success = @handler.get_superColumn(args.tablename, args.key, args.superColumnPath)
+        result.success = @handler.get_super_column(args.table, args.key, args.super_column_path)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue NotFoundException => nfe
         result.nfe = nfe
       end
-      write_result(result, oprot, 'get_superColumn', seqid)
+      write_result(result, oprot, 'get_super_column', seqid)
     end
 
-    def process_batch_insert_superColumn(seqid, iprot, oprot)
-      args = read_args(iprot, Batch_insert_superColumn_args)
-      result = Batch_insert_superColumn_result.new()
+    def process_batch_insert_super_column(seqid, iprot, oprot)
+      args = read_args(iprot, Batch_insert_super_column_args)
+      result = Batch_insert_super_column_result.new()
       begin
-        @handler.batch_insert_superColumn(args.batchMutationSuper, args.block_for)
+        @handler.batch_insert_super_column(args.table, args.batch_mutation_super, args.block_for)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue UnavailableException => ue
         result.ue = ue
       end
-      write_result(result, oprot, 'batch_insert_superColumn', seqid)
+      write_result(result, oprot, 'batch_insert_super_column', seqid)
     end
 
     def process_get_key_range(seqid, iprot, oprot)
       args = read_args(iprot, Get_key_range_args)
       result = Get_key_range_result.new()
       begin
-        result.success = @handler.get_key_range(args.tablename, args.columnFamilies, args.startWith, args.stopAt, args.maxResults)
+        result.success = @handler.get_key_range(args.table, args.column_family, args.startWith, args.stopAt, args.maxResults)
       rescue InvalidRequestException => ire
         result.ire = ire
       end
@@ -517,65 +487,19 @@ module Cassandra
 
   # HELPER FUNCTIONS AND STRUCTURES
 
-  class Get_slice_by_name_range_args
-    include ::Thrift::Struct
-    TABLENAME = 1
-    KEY = 2
-    COLUMNPARENT = 3
-    START = 4
-    FINISH = 5
-    COUNT = 6
-
-    ::Thrift::Struct.field_accessor self, :tablename, :key, :columnParent, :start, :finish, :count
-    FIELDS = {
-      TABLENAME => {:type => ::Thrift::Types::STRING, :name => 'tablename'},
-      KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMNPARENT => {:type => ::Thrift::Types::STRING, :name => 'columnParent'},
-      START => {:type => ::Thrift::Types::STRING, :name => 'start'},
-      FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
-      COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => -1}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_slice_by_name_range_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-    IRE = 1
-    NFE = 2
-
-    ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => Column_t}},
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
-      NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => NotFoundException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
   class Get_slice_by_names_args
     include ::Thrift::Struct
-    TABLENAME = 1
+    TABLE = 1
     KEY = 2
-    COLUMNPARENT = 3
-    COLUMNNAMES = 4
+    COLUMN_PARENT = 3
+    COLUMN_NAMES = 4
 
-    ::Thrift::Struct.field_accessor self, :tablename, :key, :columnParent, :columnNames
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :column_names
     FIELDS = {
-      TABLENAME => {:type => ::Thrift::Types::STRING, :name => 'tablename'},
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMNPARENT => {:type => ::Thrift::Types::STRING, :name => 'columnParent'},
-      COLUMNNAMES => {:type => ::Thrift::Types::LIST, :name => 'columnNames', :element => {:type => ::Thrift::Types::STRING}}
+      COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => ColumnParent},
+      COLUMN_NAMES => {:type => ::Thrift::Types::LIST, :name => 'column_names', :element => {:type => ::Thrift::Types::STRING}}
     }
 
     def struct_fields; FIELDS; end
@@ -593,7 +517,7 @@ module Cassandra
 
     ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
     FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => Column_t}},
+      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => Column}},
       IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
       NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => NotFoundException}
     }
@@ -607,19 +531,25 @@ module Cassandra
 
   class Get_slice_args
     include ::Thrift::Struct
-    TABLENAME = 1
+    TABLE = 1
     KEY = 2
-    COLUMNPARENT = 3
-    ISASCENDING = 4
-    COUNT = 5
+    COLUMN_PARENT = 3
+    START = 4
+    FINISH = 5
+    IS_ASCENDING = 6
+    OFFSET = 7
+    COUNT = 8
 
-    ::Thrift::Struct.field_accessor self, :tablename, :key, :columnParent, :isAscending, :count
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :start, :finish, :is_ascending, :offset, :count
     FIELDS = {
-      TABLENAME => {:type => ::Thrift::Types::STRING, :name => 'tablename'},
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMNPARENT => {:type => ::Thrift::Types::STRING, :name => 'columnParent'},
-      ISASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'isAscending'},
-      COUNT => {:type => ::Thrift::Types::I32, :name => 'count'}
+      COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => ColumnParent},
+      START => {:type => ::Thrift::Types::STRING, :name => 'start'},
+      FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
+      IS_ASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'is_ascending'},
+      OFFSET => {:type => ::Thrift::Types::I32, :name => 'offset'},
+      COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
     }
 
     def struct_fields; FIELDS; end
@@ -637,7 +567,7 @@ module Cassandra
 
     ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
     FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => Column_t}},
+      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => Column}},
       IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
       NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => NotFoundException}
     }
@@ -651,15 +581,15 @@ module Cassandra
 
   class Get_column_args
     include ::Thrift::Struct
-    TABLENAME = 1
+    TABLE = 1
     KEY = 2
-    COLUMNPATH = 3
+    COLUMN_PATH = 3
 
-    ::Thrift::Struct.field_accessor self, :tablename, :key, :columnPath
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_path
     FIELDS = {
-      TABLENAME => {:type => ::Thrift::Types::STRING, :name => 'tablename'},
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMNPATH => {:type => ::Thrift::Types::STRING, :name => 'columnPath'}
+      COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => ColumnPath}
     }
 
     def struct_fields; FIELDS; end
@@ -677,7 +607,7 @@ module Cassandra
 
     ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
     FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => Column_t},
+      SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => Column},
       IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
       NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => NotFoundException}
     }
@@ -691,15 +621,15 @@ module Cassandra
 
   class Get_column_count_args
     include ::Thrift::Struct
-    TABLENAME = 1
+    TABLE = 1
     KEY = 2
-    COLUMNPARENT = 3
+    COLUMN_PARENT = 3
 
-    ::Thrift::Struct.field_accessor self, :tablename, :key, :columnParent
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent
     FIELDS = {
-      TABLENAME => {:type => ::Thrift::Types::STRING, :name => 'tablename'},
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMNPARENT => {:type => ::Thrift::Types::STRING, :name => 'columnParent'}
+      COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => ColumnParent}
     }
 
     def struct_fields; FIELDS; end
@@ -729,19 +659,19 @@ module Cassandra
 
   class Insert_args
     include ::Thrift::Struct
-    TABLENAME = 1
+    TABLE = 1
     KEY = 2
-    COLUMNPATH = 3
-    CELLDATA = 4
+    COLUMN_PATH = 3
+    VALUE = 4
     TIMESTAMP = 5
     BLOCK_FOR = 6
 
-    ::Thrift::Struct.field_accessor self, :tablename, :key, :columnPath, :cellData, :timestamp, :block_for
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_path, :value, :timestamp, :block_for
     FIELDS = {
-      TABLENAME => {:type => ::Thrift::Types::STRING, :name => 'tablename'},
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMNPATH => {:type => ::Thrift::Types::STRING, :name => 'columnPath'},
-      CELLDATA => {:type => ::Thrift::Types::STRING, :name => 'cellData'},
+      COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => ColumnPath},
+      VALUE => {:type => ::Thrift::Types::STRING, :name => 'value'},
       TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
       BLOCK_FOR => {:type => ::Thrift::Types::I32, :name => 'block_for', :default => 0}
     }
@@ -773,12 +703,14 @@ module Cassandra
 
   class Batch_insert_args
     include ::Thrift::Struct
-    BATCHMUTATION = 1
-    BLOCK_FOR = 2
+    TABLE = 1
+    BATCH_MUTATION = 2
+    BLOCK_FOR = 3
 
-    ::Thrift::Struct.field_accessor self, :batchMutation, :block_for
+    ::Thrift::Struct.field_accessor self, :table, :batch_mutation, :block_for
     FIELDS = {
-      BATCHMUTATION => {:type => ::Thrift::Types::STRUCT, :name => 'batchMutation', :class => Batch_mutation_t},
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+      BATCH_MUTATION => {:type => ::Thrift::Types::STRUCT, :name => 'batch_mutation', :class => BatchMutation},
       BLOCK_FOR => {:type => ::Thrift::Types::I32, :name => 'block_for', :default => 0}
     }
 
@@ -809,17 +741,17 @@ module Cassandra
 
   class Remove_args
     include ::Thrift::Struct
-    TABLENAME = 1
+    TABLE = 1
     KEY = 2
-    COLUMNPATHORPARENT = 3
+    COLUMN_PATH_OR_PARENT = 3
     TIMESTAMP = 4
     BLOCK_FOR = 5
 
-    ::Thrift::Struct.field_accessor self, :tablename, :key, :columnPathOrParent, :timestamp, :block_for
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_path_or_parent, :timestamp, :block_for
     FIELDS = {
-      TABLENAME => {:type => ::Thrift::Types::STRING, :name => 'tablename'},
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMNPATHORPARENT => {:type => ::Thrift::Types::STRING, :name => 'columnPathOrParent'},
+      COLUMN_PATH_OR_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_path_or_parent', :class => ColumnPathOrParent},
       TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
       BLOCK_FOR => {:type => ::Thrift::Types::I32, :name => 'block_for', :default => 0}
     }
@@ -851,16 +783,16 @@ module Cassandra
 
   class Get_columns_since_args
     include ::Thrift::Struct
-    TABLENAME = 1
+    TABLE = 1
     KEY = 2
-    COLUMNPARENT = 3
+    COLUMN_PARENT = 3
     TIMESTAMP = 4
 
-    ::Thrift::Struct.field_accessor self, :tablename, :key, :columnParent, :timeStamp
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :timeStamp
     FIELDS = {
-      TABLENAME => {:type => ::Thrift::Types::STRING, :name => 'tablename'},
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMNPARENT => {:type => ::Thrift::Types::STRING, :name => 'columnParent'},
+      COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => ColumnParent},
       TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timeStamp'}
     }
 
@@ -879,7 +811,7 @@ module Cassandra
 
     ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
     FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => Column_t}},
+      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => Column}},
       IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
       NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => NotFoundException}
     }
@@ -893,19 +825,25 @@ module Cassandra
 
   class Get_slice_super_args
     include ::Thrift::Struct
-    TABLENAME = 1
+    TABLE = 1
     KEY = 2
-    COLUMNFAMILY = 3
-    ISASCENDING = 4
-    COUNT = 5
+    COLUMN_FAMILY = 3
+    START = 4
+    FINISH = 5
+    IS_ASCENDING = 6
+    OFFSET = 7
+    COUNT = 8
 
-    ::Thrift::Struct.field_accessor self, :tablename, :key, :columnFamily, :isAscending, :count
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_family, :start, :finish, :is_ascending, :offset, :count
     FIELDS = {
-      TABLENAME => {:type => ::Thrift::Types::STRING, :name => 'tablename'},
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMNFAMILY => {:type => ::Thrift::Types::STRING, :name => 'columnFamily'},
-      ISASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'isAscending'},
-      COUNT => {:type => ::Thrift::Types::I32, :name => 'count'}
+      COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
+      START => {:type => ::Thrift::Types::STRING, :name => 'start'},
+      FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
+      IS_ASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'is_ascending'},
+      OFFSET => {:type => ::Thrift::Types::I32, :name => 'offset'},
+      COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
     }
 
     def struct_fields; FIELDS; end
@@ -922,7 +860,7 @@ module Cassandra
 
     ::Thrift::Struct.field_accessor self, :success, :ire
     FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => SuperColumn_t}},
+      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => SuperColumn}},
       IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException}
     }
 
@@ -935,17 +873,17 @@ module Cassandra
 
   class Get_slice_super_by_names_args
     include ::Thrift::Struct
-    TABLENAME = 1
+    TABLE = 1
     KEY = 2
-    COLUMNFAMILY = 3
-    SUPERCOLUMNNAMES = 4
+    COLUMN_FAMILY = 3
+    SUPER_COLUMN_NAMES = 4
 
-    ::Thrift::Struct.field_accessor self, :tablename, :key, :columnFamily, :superColumnNames
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_family, :super_column_names
     FIELDS = {
-      TABLENAME => {:type => ::Thrift::Types::STRING, :name => 'tablename'},
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMNFAMILY => {:type => ::Thrift::Types::STRING, :name => 'columnFamily'},
-      SUPERCOLUMNNAMES => {:type => ::Thrift::Types::LIST, :name => 'superColumnNames', :element => {:type => ::Thrift::Types::STRING}}
+      COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
+      SUPER_COLUMN_NAMES => {:type => ::Thrift::Types::LIST, :name => 'super_column_names', :element => {:type => ::Thrift::Types::STRING}}
     }
 
     def struct_fields; FIELDS; end
@@ -962,7 +900,7 @@ module Cassandra
 
     ::Thrift::Struct.field_accessor self, :success, :ire
     FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => SuperColumn_t}},
+      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => SuperColumn}},
       IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException}
     }
 
@@ -973,17 +911,17 @@ module Cassandra
 
   end
 
-  class Get_superColumn_args
+  class Get_super_column_args
     include ::Thrift::Struct
-    TABLENAME = 1
+    TABLE = 1
     KEY = 2
-    SUPERCOLUMNPATH = 3
+    SUPER_COLUMN_PATH = 3
 
-    ::Thrift::Struct.field_accessor self, :tablename, :key, :superColumnPath
+    ::Thrift::Struct.field_accessor self, :table, :key, :super_column_path
     FIELDS = {
-      TABLENAME => {:type => ::Thrift::Types::STRING, :name => 'tablename'},
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      SUPERCOLUMNPATH => {:type => ::Thrift::Types::STRING, :name => 'superColumnPath'}
+      SUPER_COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'super_column_path', :class => SuperColumnPath}
     }
 
     def struct_fields; FIELDS; end
@@ -993,7 +931,7 @@ module Cassandra
 
   end
 
-  class Get_superColumn_result
+  class Get_super_column_result
     include ::Thrift::Struct
     SUCCESS = 0
     IRE = 1
@@ -1001,7 +939,7 @@ module Cassandra
 
     ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
     FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => SuperColumn_t},
+      SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => SuperColumn},
       IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
       NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => NotFoundException}
     }
@@ -1013,14 +951,16 @@ module Cassandra
 
   end
 
-  class Batch_insert_superColumn_args
+  class Batch_insert_super_column_args
     include ::Thrift::Struct
-    BATCHMUTATIONSUPER = 1
-    BLOCK_FOR = 2
+    TABLE = 1
+    BATCH_MUTATION_SUPER = 2
+    BLOCK_FOR = 3
 
-    ::Thrift::Struct.field_accessor self, :batchMutationSuper, :block_for
+    ::Thrift::Struct.field_accessor self, :table, :batch_mutation_super, :block_for
     FIELDS = {
-      BATCHMUTATIONSUPER => {:type => ::Thrift::Types::STRUCT, :name => 'batchMutationSuper', :class => Batch_mutation_super_t},
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+      BATCH_MUTATION_SUPER => {:type => ::Thrift::Types::STRUCT, :name => 'batch_mutation_super', :class => BatchMutationSuper},
       BLOCK_FOR => {:type => ::Thrift::Types::I32, :name => 'block_for', :default => 0}
     }
 
@@ -1031,7 +971,7 @@ module Cassandra
 
   end
 
-  class Batch_insert_superColumn_result
+  class Batch_insert_super_column_result
     include ::Thrift::Struct
     IRE = 1
     UE = 2
@@ -1051,20 +991,19 @@ module Cassandra
 
   class Get_key_range_args
     include ::Thrift::Struct
-    TABLENAME = 1
-    COLUMNFAMILIES = 2
+    TABLE = 1
+    COLUMN_FAMILY = 2
     STARTWITH = 3
     STOPAT = 4
     MAXRESULTS = 5
 
-    ::Thrift::Struct.field_accessor self, :tablename, :columnFamilies, :startWith, :stopAt, :maxResults
+    ::Thrift::Struct.field_accessor self, :table, :column_family, :startWith, :stopAt, :maxResults
     FIELDS = {
-      TABLENAME => {:type => ::Thrift::Types::STRING, :name => 'tablename'},
-      COLUMNFAMILIES => {:type => ::Thrift::Types::LIST, :name => 'columnFamilies', :default => [
-      ], :element => {:type => ::Thrift::Types::STRING}},
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+      COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
       STARTWITH => {:type => ::Thrift::Types::STRING, :name => 'startWith', :default => %q""},
       STOPAT => {:type => ::Thrift::Types::STRING, :name => 'stopAt', :default => %q""},
-      MAXRESULTS => {:type => ::Thrift::Types::I32, :name => 'maxResults', :default => 1000}
+      MAXRESULTS => {:type => ::Thrift::Types::I32, :name => 'maxResults', :default => 100}
     }
 
     def struct_fields; FIELDS; end
@@ -1212,7 +1151,7 @@ module Cassandra
 
     ::Thrift::Struct.field_accessor self, :success
     FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CqlResult_t}
+      SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CqlResult}
     }
 
     def struct_fields; FIELDS; end
