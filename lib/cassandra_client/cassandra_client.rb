@@ -57,7 +57,7 @@ class CassandraClient
     mutation = BatchMutationSuper.new(
       :key => key, 
       :cfmap => {column_family => hash_to_super_columns(hash, timestamp)})
-    @client.batch_insert_superColumn(@keyspace, mutation, @quorum)
+    @client.batch_insert_super_column(@keyspace, mutation, @quorum)
   end 
   
   public
@@ -121,11 +121,11 @@ class CassandraClient
     # You have got to be kidding
     if is_super(column_family)
       if column
-        load(@client.get_column(@keyspace, key, column_family).value)
+        load(@client.get_column(@keyspace, key,  ColumnPath.new(:column_family => column_family.to_s, :super_column => super_column, :column => column)).value)
       elsif super_column
-        columns_to_hash(@client.get_superColumn(@keyspace, key, column_family).columns)
+        columns_to_hash(@client.get_super_column(@keyspace, key,  SuperColumnPath.new(:column_family => column_family.to_s, :super_column => super_column)).columns)
       else
-        columns_to_hash(@client.get_slice_super(@keyspace, key, "#{column_family}:", offset, limit))
+        columns_to_hash(@client.get_slice_super(@keyspace, key, ColumnPath.new(:column_family => column_family.to_s), '', '', -1, offset, limit))
       end
     else
       if super_column
