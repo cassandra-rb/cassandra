@@ -30,16 +30,18 @@
     -->
     <Tables>
       <Table Name="Twitter">
+          <KeysCachedFraction>0.01</KeysCachedFraction>
           <ColumnFamily ColumnSort="Name" Name="Users" />
           <ColumnFamily ColumnSort="Name" Name="UserAudits" />
-          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="UserRelationships" />
+          <ColumnFamily ColumnType="Super" Name="UserRelationships" />
           <ColumnFamily ColumnSort="Time" Name="Usernames" />
           <ColumnFamily ColumnSort="Time" Name="Statuses" />
           <ColumnFamily ColumnSort="Name" Name="StatusAudits" />
-          <ColumnFamily ColumnType="Super" ColumnSort="Name" Name="StatusRelationships" />  
+          <ColumnFamily ColumnType="Super" Name="StatusRelationships" />  
       </Table>
 
       <Table Name="Multiblog">      
+        <KeysCachedFraction>0.01</KeysCachedFraction>
         <ColumnFamily ColumnSort="Time" Name="Blogs"/>
         <ColumnFamily ColumnSort="Time" Name="Comments"/>
       </Table>
