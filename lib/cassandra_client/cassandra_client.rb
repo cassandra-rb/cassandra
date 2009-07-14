@@ -131,7 +131,7 @@ class CassandraClient
       if super_column
         load(@client.get_column(@keyspace, key, ColumnPath.new(:column_family => column_family.to_s, :column => super_column)).value)
       elsif is_sorted_by_time(column_family)
-        result = columns_to_hash(@client.get_columns_since(@keyspace, key, column_family, 0))
+        result = columns_to_hash(@client.get_columns_since(@keyspace, key, ColumnParent.new(:column_family => column_family.to_s), 0))
 
         # FIXME Hack until get_slice on a time-sorted column family works again
         result = OrderedHash[*flatten_once(result.to_a[offset, limit])] if offset > -1
