@@ -21,7 +21,7 @@ class CassandraClient
     def columns_to_hash(columns)
       hash = ::CassandraClient::OrderedHash.new
       Array(columns).each do |c| 
-        if c.is_a?(SuperColumn_t)
+        if c.is_a?(SuperColumn)
           hash[c.name] = columns_to_hash(c.columns)
         else
           hash[c.columnName] = load(c.value)
@@ -32,13 +32,13 @@ class CassandraClient
     
     def hash_to_columns(hash, timestamp)
       hash.map do |column, value|
-        Column_t.new(:columnName => column, :value => dump(value), :timestamp => timestamp)
+        Column.new(:name => column, :value => dump(value), :timestamp => timestamp)
       end    
     end
     
     def hash_to_super_columns(hash, timestamp)
       hash.map do |super_column, columns|
-        SuperColumn_t.new(:name => super_column, :columns => hash_to_columns(columns, timestamp))
+        SuperColumn.new(:name => super_column, :columns => hash_to_columns(columns, timestamp))
       end
     end
     

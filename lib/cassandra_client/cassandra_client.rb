@@ -47,19 +47,17 @@ class CassandraClient
   private
 
   def insert_standard(column_family, key, hash, timestamp = now)
-    mutation = Batch_mutation_t.new(
-      :table => @keyspace, 
+    mutation = BatchMutation.new(
       :key => key, 
       :cfmap => {column_family => hash_to_columns(hash, timestamp)})
-    @client.batch_insert(mutation, @quorum)
+    @client.batch_insert(@keyspace, mutation, @quorum)
   end 
 
   def insert_super(column_family, key, hash, timestamp = now)
-    mutation = Batch_mutation_super_t.new(
-      :table => @keyspace, 
+    mutation = BatchMutationSuper.new(
       :key => key, 
       :cfmap => {column_family => hash_to_super_columns(hash, timestamp)})
-    @client.batch_insert_superColumn(mutation, @quorum)
+    @client.batch_insert_superColumn(@keyspace, mutation, @quorum)
   end 
   
   public
@@ -69,10 +67,11 @@ class CassandraClient
   # Remove the element at the column_family:key:super_column:column 
   # path you request.
   def remove(column_family, key, super_column = nil, column = nil, timestamp = now)
-    column_family = column_family.to_s
-    column_family += ":#{super_column}" if super_column
-    column_family += ":#{column}" if column
-    @client.remove(@keyspace, key, column_family, timestamp, @quorum)
+    predicate = ColumnPathOrParent.new(
+      :column_family => column_family.to_s,
+      :super_column => super_column, 
+      :column => column)
+    @client.remove(@keyspace, key, predicate, timestamp, @quorum)
   end
   
   # Remove all rows in the column family you request.
@@ -94,9 +93,9 @@ class CassandraClient
   # Count the elements at the column_family:key:super_column path you 
   # request.
   def count_columns(column_family, key, super_column = nil)
-    column_family = column_family.to_s
-    column_family += ":#{super_column}" if super_column
-    @client.get_column_count(@keyspace, key, column_family)
+    @client.get_column_count(@keyspace, key, 
+      ColumnParent.new(:column_family => column_family.to_s, :super_column => super_column)
+    )
   end
   
   # Return a list of single values for the elements at the
@@ -119,10 +118,6 @@ class CassandraClient
   # representing the element at the column_family:key:super_column:column 
   # path you request.
   def get(column_family, key, super_column = nil, column = nil, offset = -1, limit = 100)
-    column_family = column_family.to_s
-    column_family += ":#{super_column}" if super_column
-    column_family += ":#{column}" if column          
-    
     # You have got to be kidding
     if is_super(column_family)
       if column
@@ -134,7 +129,7 @@ class CassandraClient
       end
     else
       if super_column
-        load(@client.get_column(@keyspace, key, column_family).value)
+        load(@client.get_column(@keyspace, key, ColumnPath.new(:column_family => column_family.to_s, :column => super_column)).value)
       elsif is_sorted_by_time(column_family)
         result = columns_to_hash(@client.get_columns_since(@keyspace, key, column_family, 0))
 
