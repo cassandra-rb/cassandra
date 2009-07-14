@@ -160,8 +160,8 @@ class CassandraClient
   # Return a list of keys in the column_family you request. Requires the
   # table to be partitioned with OrderPreservingHash.
   def get_key_range(column_family, key_range = ''..'', limit = 100)      
-    column_families = Array(column_family).map {|c| c.to_s}
-    @client.get_key_range(@keyspace, column_families, key_range.begin, key_range.end, limit)
+    column_family = column_family.to_s
+    @client.get_key_range(@keyspace, column_family, key_range.begin, key_range.end, limit)
   end
   
   # Count all rows in the column_family you request. Requires the table 
