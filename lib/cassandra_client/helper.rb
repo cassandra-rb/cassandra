@@ -21,10 +21,10 @@ class CassandraClient
     def columns_to_hash(columns)
       hash = ::CassandraClient::OrderedHash.new
       Array(columns).each do |c| 
-        if c.is_a?(SuperColumn)
-          hash[c.name] = columns_to_hash(c.columns)
+        hash[c.name] = if c.is_a?(SuperColumn)
+          columns_to_hash(c.columns)
         else
-          hash[c.columnName] = load(c.value)
+          load(c.value)
         end
       end
       hash

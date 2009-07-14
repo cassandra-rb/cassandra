@@ -137,7 +137,7 @@ class CassandraClient
         result = OrderedHash[*flatten_once(result.to_a[offset, limit])] if offset > -1
         result
       else
-        columns_to_hash(@client.get_slice(@keyspace, key, "#{column_family}:", offset, limit))
+        columns_to_hash(@client.get_slice(@keyspace, key, ColumnParent.new(:column_family => column_family.to_s), '', '', -1, offset, limit))
       end 
     end
   rescue NotFoundException
