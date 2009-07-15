@@ -116,8 +116,11 @@ class CassandraClientTest < Test::Unit::TestCase
   
   def test_remove_key
     @twitter.insert(:Statuses, key, {'body' => 'v'})
+    assert_equal({'body' => 'v'}, @twitter.get(:Statuses, key))
+
     @twitter.remove(:Statuses, key)
     assert_equal({}, @twitter.get(:Statuses, key))
+    assert_equal 0, @twitter.count(:Statuses)  
   end
 
   def test_remove_value
@@ -143,6 +146,14 @@ class CassandraClientTest < Test::Unit::TestCase
     @twitter.remove(:StatusRelationships, key, 'user_timelines', '1')
     assert_nil @twitter.get(:StatusRelationships, key, 'user_timelines', '1')    
   end
+  
+  def test_clear_column_family
+    @twitter.insert(:Statuses, key + "1", {'body' => '1'})
+    @twitter.insert(:Statuses, key + "2", {'body' => '2'})
+    @twitter.insert(:Statuses, key + "3", {'body' => '3'})
+    @twitter.clear_column_family!(:Statuses)
+    assert_equal 0, @twitter.count(:Statuses)  
+  end  
 
   def test_insert_key
     @twitter.insert(:Statuses, key, {'body' => 'v', 'user' => 'v'})
@@ -156,7 +167,7 @@ class CassandraClientTest < Test::Unit::TestCase
   
   def test_get_column_values
     @twitter.insert(:Statuses, key, {'body' => 'v1', 'user' => 'v2'})
-    assert_equal(['v1' , 'v2'], @twitter.get_columns(:Statuses, key,['body', 'user']))
+    assert_equal(['v1' , 'v2'], @twitter.get_columns(:Statuses, key, ['body', 'user']))
   end  
 
   def test_get_column_values_super

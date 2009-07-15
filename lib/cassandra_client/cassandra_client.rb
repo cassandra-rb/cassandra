@@ -39,25 +39,17 @@ class CassandraClient
   # Insert a row for a key. Pass a flat hash for a regular column family, and 
   # a nested hash for a super column family.
   def insert(column_family, key, hash, timestamp = now)
-    column_family = column_family.to_s    
-    insert = is_super(column_family) ? :insert_super : :insert_standard
-    send(insert, column_family, key, hash, timestamp)
-  end
-  
-  private
-
-  def insert_standard(column_family, key, hash, timestamp = now)
-    mutation = BatchMutation.new(
-      :key => key, 
-      :cfmap => {column_family => hash_to_columns(hash, timestamp)})
-    @client.batch_insert(@keyspace, mutation, @quorum)
-  end 
-
-  def insert_super(column_family, key, hash, timestamp = now)
-    mutation = BatchMutationSuper.new(
-      :key => key, 
-      :cfmap => {column_family => hash_to_super_columns(hash, timestamp)})
-    @client.batch_insert_super_column(@keyspace, mutation, @quorum)
+    if is_super(column_family) 
+      mutation = BatchMutationSuper.new(
+        :key => key, 
+        :cfmap => {column_family.to_s => hash_to_super_columns(hash, timestamp)})
+      @client.batch_insert_super_column(@keyspace, mutation, @quorum)    
+    else
+      mutation = BatchMutation.new(
+        :key => key, 
+        :cfmap => {column_family.to_s => hash_to_columns(hash, timestamp)})
+      @client.batch_insert(@keyspace, mutation, @quorum)
+    end
   end 
   
   public
@@ -93,7 +85,6 @@ class CassandraClient
   # request.
   def count_columns(column_family, key, super_column = nil)
     @client.get_column_count(@keyspace, key, 
-      # FIXME bug
       ColumnParent.new(:column_family => column_family.to_s, :super_column => super_column)
     )
   end
@@ -103,7 +94,6 @@ class CassandraClient
   def get_columns(column_family, key, super_columns, columns = nil)
     super_columns, columns = columns, super_columns unless columns
     result = if is_super(column_family) && !super_columns 
-      # FIXME bug
       columns_to_hash(@client.get_slice_super_by_names(@keyspace, key, column_family.to_s, columns))
     else
       columns_to_hash(@client.get_slice_by_names(@keyspace, key, 
@@ -140,7 +130,7 @@ class CassandraClient
       end 
     end
   rescue NotFoundException
-    is_super(column_family) && !column ? {} : nil
+    is_super(column_family) && !column ? OrderedHash.new : nil
   end
   
   # FIXME
@@ -154,7 +144,6 @@ class CassandraClient
   # Return a list of keys in the column_family you request. Requires the
   # table to be partitioned with OrderPreservingHash.
   def get_key_range(column_family, key_range = ''..'', limit = 100)      
-    # FIXME bug
     @client.get_key_range(@keyspace, column_family.to_s, key_range.begin, key_range.end, limit)
   end
   
