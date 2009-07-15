@@ -58,7 +58,7 @@ class CassandraClientTest < Test::Unit::TestCase
   def test_get_key_time_sorted_with_limit
     @twitter.insert(:Statuses, key, {'first' => 'v'})
     @twitter.insert(:Statuses, key, {'second' => 'v'})
-    assert_equal({'second' => 'v'}, @twitter.get(:Statuses, key, nil, nil, 0, 1))
+    assert_equal({'second' => 'v'}, @twitter.get(:Statuses, key, nil, nil, 1))
   end    
 
   def test_get_value

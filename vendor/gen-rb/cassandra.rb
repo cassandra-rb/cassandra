@@ -28,13 +28,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_by_names failed: unknown result')
     end
 
-    def get_slice(table, key, column_parent, start, finish, is_ascending, offset, count)
-      send_get_slice(table, key, column_parent, start, finish, is_ascending, offset, count)
+    def get_slice(table, key, column_parent, start, finish, is_ascending, count)
+      send_get_slice(table, key, column_parent, start, finish, is_ascending, count)
       return recv_get_slice()
     end
 
-    def send_get_slice(table, key, column_parent, start, finish, is_ascending, offset, count)
-      send_message('get_slice', Get_slice_args, :table => table, :key => key, :column_parent => column_parent, :start => start, :finish => finish, :is_ascending => is_ascending, :offset => offset, :count => count)
+    def send_get_slice(table, key, column_parent, start, finish, is_ascending, count)
+      send_message('get_slice', Get_slice_args, :table => table, :key => key, :column_parent => column_parent, :start => start, :finish => finish, :is_ascending => is_ascending, :count => count)
     end
 
     def recv_get_slice()
@@ -143,13 +143,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_columns_since failed: unknown result')
     end
 
-    def get_slice_super(table, key, column_family, start, finish, is_ascending, offset, count)
-      send_get_slice_super(table, key, column_family, start, finish, is_ascending, offset, count)
+    def get_slice_super(table, key, column_family, start, finish, is_ascending, count)
+      send_get_slice_super(table, key, column_family, start, finish, is_ascending, count)
       return recv_get_slice_super()
     end
 
-    def send_get_slice_super(table, key, column_family, start, finish, is_ascending, offset, count)
-      send_message('get_slice_super', Get_slice_super_args, :table => table, :key => key, :column_family => column_family, :start => start, :finish => finish, :is_ascending => is_ascending, :offset => offset, :count => count)
+    def send_get_slice_super(table, key, column_family, start, finish, is_ascending, count)
+      send_message('get_slice_super', Get_slice_super_args, :table => table, :key => key, :column_family => column_family, :start => start, :finish => finish, :is_ascending => is_ascending, :count => count)
     end
 
     def recv_get_slice_super()
@@ -307,7 +307,7 @@ module Cassandra
       args = read_args(iprot, Get_slice_args)
       result = Get_slice_result.new()
       begin
-        result.success = @handler.get_slice(args.table, args.key, args.column_parent, args.start, args.finish, args.is_ascending, args.offset, args.count)
+        result.success = @handler.get_slice(args.table, args.key, args.column_parent, args.start, args.finish, args.is_ascending, args.count)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue NotFoundException => nfe
@@ -396,7 +396,7 @@ module Cassandra
       args = read_args(iprot, Get_slice_super_args)
       result = Get_slice_super_result.new()
       begin
-        result.success = @handler.get_slice_super(args.table, args.key, args.column_family, args.start, args.finish, args.is_ascending, args.offset, args.count)
+        result.success = @handler.get_slice_super(args.table, args.key, args.column_family, args.start, args.finish, args.is_ascending, args.count)
       rescue InvalidRequestException => ire
         result.ire = ire
       end
@@ -537,10 +537,9 @@ module Cassandra
     START = 4
     FINISH = 5
     IS_ASCENDING = 6
-    OFFSET = 7
-    COUNT = 8
+    COUNT = 7
 
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :start, :finish, :is_ascending, :offset, :count
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :start, :finish, :is_ascending, :count
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
@@ -548,7 +547,6 @@ module Cassandra
       START => {:type => ::Thrift::Types::STRING, :name => 'start'},
       FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
       IS_ASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'is_ascending'},
-      OFFSET => {:type => ::Thrift::Types::I32, :name => 'offset'},
       COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
     }
 
@@ -831,10 +829,9 @@ module Cassandra
     START = 4
     FINISH = 5
     IS_ASCENDING = 6
-    OFFSET = 7
-    COUNT = 8
+    COUNT = 7
 
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_family, :start, :finish, :is_ascending, :offset, :count
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_family, :start, :finish, :is_ascending, :count
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
@@ -842,7 +839,6 @@ module Cassandra
       START => {:type => ::Thrift::Types::STRING, :name => 'start'},
       FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
       IS_ASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'is_ascending'},
-      OFFSET => {:type => ::Thrift::Types::I32, :name => 'offset'},
       COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
     }
 

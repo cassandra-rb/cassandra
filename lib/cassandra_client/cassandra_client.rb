@@ -105,7 +105,7 @@ class CassandraClient
   # Return a hash (actually, a CassandraClient::OrderedHash) or a single value 
   # representing the element at the column_family:key:super_column:column 
   # path you request.
-  def get(column_family, key, super_column = nil, column = nil, offset = -1, limit = 100)
+  def get(column_family, key, super_column = nil, column = nil, limit = 100)
     # You have got to be kidding
     if is_super(column_family)
       if column
@@ -114,7 +114,7 @@ class CassandraClient
         columns_to_hash(@client.get_super_column(@keyspace, key,  SuperColumnPath.new(:column_family => column_family.to_s, :super_column => super_column)).columns)
       else
         # FIXME bug
-        columns_to_hash(@client.get_slice_super(@keyspace, key, column_family.to_s, '', '', -1, offset, limit))
+        columns_to_hash(@client.get_slice_super(@keyspace, key, column_family.to_s, '', '', -1, limit))
       end
     else
       if super_column
@@ -123,10 +123,10 @@ class CassandraClient
         result = columns_to_hash(@client.get_columns_since(@keyspace, key, ColumnParent.new(:column_family => column_family.to_s), 0))
 
         # FIXME Hack until get_slice on a time-sorted column family works again
-        result = OrderedHash[*flatten_once(result.to_a[offset, limit])] if offset > -1
+        result = OrderedHash[*flatten_once(result.to_a[0, limit])]
         result
       else
-        columns_to_hash(@client.get_slice(@keyspace, key, ColumnParent.new(:column_family => column_family.to_s), '', '', -1, offset, limit))
+        columns_to_hash(@client.get_slice(@keyspace, key, ColumnParent.new(:column_family => column_family.to_s), '', '', -1, limit))
       end 
     end
   rescue NotFoundException
