@@ -4,11 +4,11 @@ class CassandraClient
     private
     
     def is_super(column_family)
-      column_family_property(column_family, 'type') == 'Super'
+      column_family_property(column_family.to_s, 'type') == 'Super'
     end
 
     def is_sorted_by_time(column_family)
-      column_family_property(column_family, 'sort') == 'Time'
+      column_family_property(column_family.to_s, 'sort') == 'Time'
     end
     
     def column_family_property(column_family_or_path, key)

@@ -67,11 +67,10 @@ class CassandraClient
   # Remove the element at the column_family:key:super_column:column 
   # path you request.
   def remove(column_family, key, super_column = nil, column = nil, timestamp = now)
-    predicate = ColumnPathOrParent.new(
-      :column_family => column_family.to_s,
-      :super_column => super_column, 
-      :column => column)
-    @client.remove(@keyspace, key, predicate, timestamp, @quorum)
+    super_column, column = column, super_column unless is_super(column_family)
+    @client.remove(@keyspace, key,
+      ColumnPathOrParent.new(:column_family => column_family.to_s, :super_column => super_column, :column => column), 
+      timestamp, @quorum)
   end
   
   # Remove all rows in the column family you request.
@@ -94,6 +93,7 @@ class CassandraClient
   # request.
   def count_columns(column_family, key, super_column = nil)
     @client.get_column_count(@keyspace, key, 
+      # FIXME bug
       ColumnParent.new(:column_family => column_family.to_s, :super_column => super_column)
     )
   end
@@ -101,17 +101,15 @@ class CassandraClient
   # Return a list of single values for the elements at the
   # column_family:key:super_column:column path you request.
   def get_columns(column_family, key, super_columns, columns = nil)
-    column_family = column_family.to_s
-    get_slice_by_names = (is_super(column_family) && !columns) ? :get_slice_super_by_names : :get_slice_by_names
-    if super_columns and columns
-      column_family += ":#{super_columns}" 
-      columns = Array(columns)
+    super_columns, columns = columns, super_columns unless columns
+    result = if is_super(column_family) && !super_columns 
+      # FIXME bug
+      columns_to_hash(@client.get_slice_super_by_names(@keyspace, key, column_family.to_s, columns))
     else
-      columns = Array(super_columns)
-    end
-        
-    hash = columns_to_hash(@client.send(get_slice_by_names, @keyspace, key, column_family, columns))
-    columns.map { |column| hash[column] }
+      columns_to_hash(@client.get_slice_by_names(@keyspace, key, 
+        ColumnParent.new(:column_family => column_family.to_s, :super_column => super_columns), columns))
+    end    
+    columns.map { |name| result[name] }
   end
         
   # Return a hash (actually, a CassandraClient::OrderedHash) or a single value 
@@ -125,7 +123,8 @@ class CassandraClient
       elsif super_column
         columns_to_hash(@client.get_super_column(@keyspace, key,  SuperColumnPath.new(:column_family => column_family.to_s, :super_column => super_column)).columns)
       else
-        columns_to_hash(@client.get_slice_super(@keyspace, key, ColumnPath.new(:column_family => column_family.to_s), '', '', -1, offset, limit))
+        # FIXME bug
+        columns_to_hash(@client.get_slice_super(@keyspace, key, column_family.to_s, '', '', -1, offset, limit))
       end
     else
       if super_column
@@ -155,8 +154,8 @@ class CassandraClient
   # Return a list of keys in the column_family you request. Requires the
   # table to be partitioned with OrderPreservingHash.
   def get_key_range(column_family, key_range = ''..'', limit = 100)      
-    column_family = column_family.to_s
-    @client.get_key_range(@keyspace, column_family, key_range.begin, key_range.end, limit)
+    # FIXME bug
+    @client.get_key_range(@keyspace, column_family.to_s, key_range.begin, key_range.end, limit)
   end
   
   # Count all rows in the column_family you request. Requires the table 
