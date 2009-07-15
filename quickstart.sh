@@ -1,8 +1,11 @@
 
 if [ ! -e cassandra ]; then
+  rm -rf data
   cd vendor
-  tar xjvf cassandra-r789419.tar.bz2
-  mv cassandra-r789419 ../cassandra
+  tar xjf cassandra.tar.bz2
+  mv cassandra ..
+  cd ../cassandra
+  ant
   cd ..
 fi
 
