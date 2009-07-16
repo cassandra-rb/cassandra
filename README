@@ -19,7 +19,7 @@ The public certificate for this gem is here[http://rubyforge.org/frs/download.ph
 
 This is an alpha release and does not yet support the full Thrift API. 
 
-Cassandra is a rapidly moving target; this library is currently tested against {Cassandra trunk revision 789419}[http://blog.evanweaver.com/files/cassandra/cassandra-r789419.tar.bz2]. 
+Cassandra is a rapidly moving target, but this library should always run against the bundle available {here}[http://github.com/fauna/cassandra_client/raw/6546d1155b77ca7bc5ebf58bdcce79ddda36f611/vendor/cassandra.tar.bz2]. Don't expect it to work against any other version right now.
 
 The Github source repository is {here}[http://github.com/fauna/cassandra_client/]; patches and contributions are very welcome.
 
