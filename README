@@ -57,6 +57,10 @@ The returned result will always be a CassandraClient::OrderedHash.
 
 See CassandraClient for more methods.
 
+== Further reading
+
+* {Up and Running With Cassandra}[http://blog.evanweaver.com/articles/2009/07/06/up-and-running-with-cassandra]
+
 == Reporting problems
 
 The Github issue tracker is {here}[http://github.com/fauna/cassandra_client/issues]. If you have problems with Cassandra itself, please use the {cassandra-user mailing list}[http://mail-archives.apache.org/mod_mbox/incubator-cassandra-user/].
