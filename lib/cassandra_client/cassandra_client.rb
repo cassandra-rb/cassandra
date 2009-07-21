@@ -89,6 +89,11 @@ class CassandraClient
     )
   end
   
+  # Multi-key version of CassandraClient#count_columns.
+  def multi_count_columns(column_family, keys, super_column = nil)
+    keys.map { |key| count_columns(column_family, key, super_column) }
+  end  
+  
   # Return a list of single values for the elements at the
   # column_family:key:super_column:column path you request.
   def get_columns(column_family, key, super_columns, columns = nil)
@@ -100,6 +105,11 @@ class CassandraClient
         ColumnParent.new(:column_family => column_family.to_s, :super_column => super_columns), columns))
     end    
     columns.map { |name| result[name] }
+  end
+
+  # Multi-key version of CassandraClient#get_columns.
+  def multi_get_columns(column_family, keys, super_columns, columns = nil)
+    keys.map { |key| get_columns(column_family, key, super_columns, columns) }
   end
         
   # Return a hash (actually, a CassandraClient::OrderedHash) or a single value 
@@ -134,8 +144,8 @@ class CassandraClient
   end
   
   # Multi-key version of CassandraClient#get.
-  def multi_get(column_family, keys, *args)
-    keys.map { |key| get(column_family, key, *args) }
+  def multi_get(column_family, keys, super_column = nil, column = nil, limit = 100)
+    keys.map { |key| get(column_family, key, super_column, column, limit) }
   end
   
   # FIXME
