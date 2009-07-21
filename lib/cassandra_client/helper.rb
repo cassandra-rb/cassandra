@@ -47,11 +47,6 @@ class CassandraClient
       time.to_i * 1_000_000 + time.usec
     end
     alias :now :time_in_microseconds
-    
-    def flatten_once(array)
-      result = []
-      array.each { |el| result.concat(el) }
-      result
-    end    
+        
   end
 end

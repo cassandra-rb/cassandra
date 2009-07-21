@@ -91,7 +91,9 @@ class CassandraClient
   
   # Multi-key version of CassandraClient#count_columns.
   def multi_count_columns(column_family, keys, super_column = nil)
-    keys.map { |key| count_columns(column_family, key, super_column) }
+    OrderedHash[*keys.map do |key|   
+      [key, count_columns(column_family, key, super_column)]
+    end._flatten_once]
   end  
   
   # Return a list of single values for the elements at the
@@ -109,7 +111,9 @@ class CassandraClient
 
   # Multi-key version of CassandraClient#get_columns.
   def multi_get_columns(column_family, keys, super_columns, columns = nil)
-    keys.map { |key| get_columns(column_family, key, super_columns, columns) }
+    OrderedHash[*keys.map do |key| 
+      [key, get_columns(column_family, key, super_columns, columns)]
+    end._flatten_once]
   end
         
   # Return a hash (actually, a CassandraClient::OrderedHash) or a single value 
@@ -133,7 +137,7 @@ class CassandraClient
         result = columns_to_hash(@client.get_columns_since(@keyspace, key, ColumnParent.new(:column_family => column_family.to_s), 0))
 
         # FIXME Hack until get_slice on a time-sorted column family works again
-        result = OrderedHash[*flatten_once(result.to_a[0, limit])]
+        result = OrderedHash[*result.to_a[0, limit]._flatten_once]
         result
       else
         columns_to_hash(@client.get_slice(@keyspace, key, ColumnParent.new(:column_family => column_family.to_s), '', '', -1, limit))
@@ -145,7 +149,9 @@ class CassandraClient
   
   # Multi-key version of CassandraClient#get.
   def multi_get(column_family, keys, super_column = nil, column = nil, limit = 100)
-    keys.map { |key| get(column_family, key, super_column, column, limit) }
+    OrderedHash[*keys.map do |key| 
+      [key, get(column_family, key, super_column, column, limit)]
+    end._flatten_once]
   end
   
   # FIXME

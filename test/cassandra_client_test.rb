@@ -108,10 +108,10 @@ class CassandraClientTest < Test::Unit::TestCase
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
     @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
     assert_equal(
-      [{'body' => 'v1', 'user' => 'v1'}, {'body' => 'v2', 'user' => 'v2'}, {}],
+      CassandraClient::OrderedHash[key + '1', {'body' => 'v1', 'user' => 'v1'}, key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}],
       @twitter.multi_get(:Users, [key + '1', key + '2', 'bogus']))
     assert_equal(
-      [{'body' => 'v2', 'user' => 'v2'}, {}, {'body' => 'v1', 'user' => 'v1'}],
+      CassandraClient::OrderedHash[key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}, key + '1', {'body' => 'v1', 'user' => 'v1'}],
       @twitter.multi_get(:Users, [key + '2', 'bogus', key + '1']))
   end
 
@@ -192,9 +192,11 @@ class CassandraClientTest < Test::Unit::TestCase
   def test_multi_get_columns
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
     @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
-    assert_equal([['v1', 'v1'], ['v2', 'v2'], [nil, nil]],
+    assert_equal(
+      CassandraClient::OrderedHash[key + '1', ['v1', 'v1'], key + '2', ['v2', 'v2'], 'bogus', [nil, nil]],
       @twitter.multi_get_columns(:Users, [key + '1', key + '2', 'bogus'], ['body', 'user']))
-    assert_equal([['v2', 'v2'], [nil, nil], ['v1', 'v1']],
+    assert_equal(
+      CassandraClient::OrderedHash[key + '2', ['v2', 'v2'], 'bogus', [nil, nil], key + '1', ['v1', 'v1']],
       @twitter.multi_get_columns(:Users, [key + '2', 'bogus', key + '1'], ['body', 'user']))
   end
 
@@ -234,9 +236,11 @@ class CassandraClientTest < Test::Unit::TestCase
   def test_multi_count_columns
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
     @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
-    assert_equal([2, 2, 0],
+    assert_equal(
+      CassandraClient::OrderedHash[key + '1', 2, key + '2', 2, 'bogus', 0],
       @twitter.multi_count_columns(:Users, [key + '1', key + '2', 'bogus']))
-    assert_equal([2, 0, 2],
+    assert_equal(
+      CassandraClient::OrderedHash[key + '2', 2, 'bogus', 0, key + '1', 2],
       @twitter.multi_count_columns(:Users, [key + '2', 'bogus', key + '1']))
   end
 
