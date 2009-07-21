@@ -133,6 +133,11 @@ class CassandraClient
     is_super(column_family) && !column ? OrderedHash.new : nil
   end
   
+  # Multi-key version of CassandraClient#get.
+  def multi_get(column_family, keys, *args)
+    keys.map { |key| get(column_family, key, *args) }
+  end
+  
   # FIXME
   # def exists?
   # end

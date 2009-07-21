@@ -73,7 +73,7 @@ class CassandraClientTest < Test::Unit::TestCase
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus'))
   end
 
-  def test_get_super_key_multi
+  def test_get_several_super_keys
     @twitter.insert(:StatusRelationships, key, {
       'user_timelines' => {'1' => 'v1'}, 
       'mentions_timelines' => {'2' => 'v2'}})
@@ -103,6 +103,17 @@ class CassandraClientTest < Test::Unit::TestCase
     @twitter.insert(:Statuses, '6', {'body' => '1'})
     assert_equal(['3', '4', '5'], @twitter.get_key_range(:Statuses, '3'..'5'))
   end
+  
+  def test_multi_get_keys
+    @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
+    @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
+    assert_equal(
+      [{'body' => 'v1', 'user' => 'v1'}, {'body' => 'v2', 'user' => 'v2'}, {}], 
+      @twitter.multi_get(:Users, [key + '1', key + '2', 'bogus']))
+    assert_equal(
+      [{'body' => 'v2', 'user' => 'v2'}, {}, {'body' => 'v1', 'user' => 'v1'}], 
+      @twitter.multi_get(:Users, [key + '2', 'bogus', key + '1']))
+  end  
 
   # Not supported
   #  def test_get_key_range_super
