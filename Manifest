@@ -2,6 +2,7 @@ CHANGELOG
 conf/cassandra.in.sh
 conf/log4j.properties
 conf/storage-conf.xml
+lib/cassandra_client/array.rb
 lib/cassandra_client/cassandra_client.rb
 lib/cassandra_client/helper.rb
 lib/cassandra_client/ordered_hash.rb
