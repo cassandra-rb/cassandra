@@ -249,10 +249,13 @@ class CassandraClientTest < Test::Unit::TestCase
 
     @twitter.batch do
       @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
-      @twitter.insert(:Users, key + '3', {'body' => 'v3', 'user' => 'v3'})
+      @twitter.insert(:Users, key + '3', {'body' => 'bogus', 'user' => 'v3'})
+      @twitter.insert(:Users, key + '3', {'body' => 'v3', 'location' => 'v3'})
+      @twitter.insert(:Statuses, key + '3', {'body' => 'v'})
 
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, key + '1')) # Written
       assert_equal({}, @twitter.get(:Users, key + '2')) # Not yet written
+      assert_equal({}, @twitter.get(:Statuses, key + '3')) # Not yet written
 
       @twitter.remove(:Users, key + '1')
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, key + '1')) # Not yet removed
@@ -263,7 +266,9 @@ class CassandraClientTest < Test::Unit::TestCase
     end
 
     assert_equal({'body' => 'v2', 'user' => 'v2'}, @twitter.get(:Users, key + '2')) # Written
+    assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}, @twitter.get(:Users, key + '3')) # Written and compacted
     assert_equal({'body' => 'v4', 'user' => 'v4'}, @twitter.get(:Users, key + '4')) # Written
+    assert_equal({'body' => 'v'}, @twitter.get(:Statuses, key + '3')) # Written
     assert_equal({}, @twitter.get(:Users, key + '1')) # Removed
   end
 

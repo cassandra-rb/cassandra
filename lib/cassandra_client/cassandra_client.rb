@@ -39,31 +39,44 @@ class CassandraClient
   # Insert a row for a key. Pass a flat hash for a regular column family, and 
   # a nested hash for a super column family.
   def insert(column_family, key, hash, timestamp = now)
-    defer {
-    if is_super(column_family) 
-      mutation = BatchMutationSuper.new(
-        :key => key, 
-        :cfmap => {column_family.to_s => hash_to_super_columns(hash, timestamp)})
-      @client.batch_insert_super_column(@keyspace, mutation, @quorum)    
+    mutation = if is_super(column_family) 
+      BatchMutationSuper.new(:key => key, :cfmap => {column_family.to_s => hash_to_super_columns(hash, timestamp)})
     else
-      mutation = BatchMutation.new(
-        :key => key, 
-        :cfmap => {column_family.to_s => hash_to_columns(hash, timestamp)})
-      @client.batch_insert(@keyspace, mutation, @quorum)
-    end }
+      BatchMutation.new(:key => key, :cfmap => {column_family.to_s => hash_to_columns(hash, timestamp)})      
+    end
+    @batch ? @batch << mutation : _insert(mutation)
   end
+  
+  private
+  
+  def _insert(mutation)
+    case mutation
+    when BatchMutationSuper then @client.batch_insert_super_column(@keyspace, mutation, @quorum)    
+    when BatchMutation then @client.batch_insert(@keyspace, mutation, @quorum)
+    end
+  end  
+  
+  public
   
   ## Delete
   
   # Remove the element at the column_family:key:super_column:column 
   # path you request.
   def remove(column_family, key, super_column = nil, column = nil, timestamp = now)
-    defer {
-    super_column, column = column, super_column unless is_super(column_family)
+    args = [column_family, key, super_column, column, timestamp]
+    @batch ? @batch << args : _remove(*args)
+  end
+  
+  private 
+  
+  def _remove(column_family, key, super_column, column, timestamp)
+     super_column, column = column, super_column unless is_super(column_family)
     @client.remove(@keyspace, key,
       ColumnPathOrParent.new(:column_family => column_family.to_s, :super_column => super_column, :column => column), 
-      timestamp, @quorum) }
+      timestamp, @quorum)
   end
+   
+  public
   
   # Remove all rows in the column family you request.
   def clear_column_family!(column_family)
@@ -176,21 +189,59 @@ class CassandraClient
   
   def batch
     @batch = []
-    yield
-    @batch.each { |op| op.call }
+    yield    
+    compact_mutations!
+    dispatch_mutations!    
     @batch = nil
   end
   
   private
-  
-  def defer(&block)
-    if @batch
-      @batch << block
-    else
-      block.call
+
+  def compact_mutations!
+    compact_batch = []
+    mutations = {}   
+
+    @batch << nil # Close it
+    @batch.each do |m|
+      case m
+      when Array, nil
+        # Flush compacted mutations
+        compact_batch.concat(mutations.values.map {|x| x.values}.flatten)
+        mutations = {}
+        # Insert delete operation
+        compact_batch << m 
+      else # BatchMutation, BatchMutationSuper
+        # Do a nested hash merge
+        if mutation_class = mutations[m.class]
+          if mutation = mutation_class[m.key]
+            if columns = mutation.cfmap[m.cfmap.keys.first]
+              columns.concat(m.cfmap.values.first)
+            else
+              mutation.cfmap.merge!(m.cfmap)
+            end
+          else
+            mutation_class[m.key] = m
+          end
+        else
+          mutations[m.class] = {m.key => m}
+        end
+      end
     end
+            
+    @batch = compact_batch
   end
-    
+  
+  def dispatch_mutations!
+    @batch.each do |args| 
+      case args
+      when Array 
+        _remove(*args)
+      when BatchMutationSuper, BatchMutation 
+        _insert(*args)
+      end
+    end
+  end  
+  
   def dump(object)
     # Special-case nil as the empty byte array
     return "" if object == nil
