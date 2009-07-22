@@ -39,6 +39,7 @@ class CassandraClient
   # Insert a row for a key. Pass a flat hash for a regular column family, and 
   # a nested hash for a super column family.
   def insert(column_family, key, hash, timestamp = now)
+    defer {
     if is_super(column_family) 
       mutation = BatchMutationSuper.new(
         :key => key, 
@@ -49,20 +50,19 @@ class CassandraClient
         :key => key, 
         :cfmap => {column_family.to_s => hash_to_columns(hash, timestamp)})
       @client.batch_insert(@keyspace, mutation, @quorum)
-    end
-  end 
-  
-  public
+    end }
+  end
   
   ## Delete
   
   # Remove the element at the column_family:key:super_column:column 
   # path you request.
   def remove(column_family, key, super_column = nil, column = nil, timestamp = now)
+    defer {
     super_column, column = column, super_column unless is_super(column_family)
     @client.remove(@keyspace, key,
       ColumnPathOrParent.new(:column_family => column_family.to_s, :super_column => super_column, :column => column), 
-      timestamp, @quorum)
+      timestamp, @quorum) }
   end
   
   # Remove all rows in the column family you request.
@@ -172,9 +172,24 @@ class CassandraClient
   # to be partitioned with OrderPreservingHash.
   def count(column_family, key_range = ''..'', limit = MAX_INT)
     get_key_range(column_family, key_range, limit).size
-  end      
+  end
+  
+  def batch
+    @batch = []
+    yield
+    @batch.each { |op| op.call }
+    @batch = nil
+  end
   
   private
+  
+  def defer(&block)
+    if @batch
+      @batch << block
+    else
+      block.call
+    end
+  end
     
   def dump(object)
     # Special-case nil as the empty byte array

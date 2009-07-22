@@ -243,6 +243,28 @@ class CassandraClientTest < Test::Unit::TestCase
       CassandraClient::OrderedHash[key + '2', 2, 'bogus', 0, key + '1', 2],
       @twitter.multi_count_columns(:Users, [key + '2', 'bogus', key + '1']))
   end
+  
+  def test_batch_insert
+    @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
+    @twitter.batch do
+      @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})  
+      @twitter.insert(:Users, key + '3', {'body' => 'v3', 'user' => 'v3'})  
+      
+      # Written
+      assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, key + '1')) 
+      # Not yet written
+      assert_equal({}, @twitter.get(:Users, key + '2'))
+      
+      @twitter.remove(:Users, key + '1')
+      # Not yet removed
+      assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, key + '1')) 
+    end
+    
+    # Written
+    assert_equal({'body' => 'v2', 'user' => 'v2'}, @twitter.get(:Users, key + '2'))
+    # Removed
+    assert_equal({}, @twitter.get(:Users, key + '1'))     
+  end
 
   private
 
