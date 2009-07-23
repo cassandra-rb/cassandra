@@ -4,14 +4,21 @@ class CassandraClient
   
   MAX_INT = 2**31 - 1
   
-  attr_reader :keyspace, :host, :port, :quorum, :serializer, :transport, :client, :schema
+  module Consistency
+    # FIXME Assumes you have 3 replicas
+    NONE = ZERO = 0
+    WEAK = ONE = 1
+    STRONG = QUORUM = 2
+    PERFECT = ALL = 3
+  end
+  
+  attr_reader :keyspace, :host, :port, :serializer, :transport, :client, :schema
 
   # Instantiate a new CassandraClient and open the connection.
-  def initialize(keyspace, host = '127.0.0.1', port = 9160, quorum = 1, serializer = CassandraClient::Serialization::JSON)
+  def initialize(keyspace, host = '127.0.0.1', port = 9160, serializer = CassandraClient::Serialization::JSON)
     @keyspace = keyspace
     @host = host
     @port = port
-    @quorum = quorum
     @serializer = serializer
 
     @transport = Thrift::BufferedTransport.new(Thrift::Socket.new(@host, @port))
@@ -31,28 +38,29 @@ class CassandraClient
   def inspect
     "#<CassandraClient:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       schema.map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
-    }}, @host=#{host.inspect}, @port=#{port}, @quorum=#{quorum}, @serializer=#{serializer.name}>"
+    }}, @host=#{host.inspect}, @port=#{port}, @serializer=#{serializer.name}>"
   end
 
   ## Write
   
   # Insert a row for a key. Pass a flat hash for a regular column family, and 
   # a nested hash for a super column family.
-  def insert(column_family, key, hash, timestamp = now)
+  def insert(column_family, key, hash, consistency = Consistency::WEAK, timestamp = now)
     mutation = if is_super(column_family) 
       BatchMutationSuper.new(:key => key, :cfmap => {column_family.to_s => hash_to_super_columns(hash, timestamp)})
     else
       BatchMutation.new(:key => key, :cfmap => {column_family.to_s => hash_to_columns(hash, timestamp)})      
     end
-    @batch ? @batch << mutation : _insert(mutation)
+    # FIXME Batched operations discard the consistency argument
+    @batch ? @batch << mutation : _insert(mutation, consistency)
   end
   
   private
   
-  def _insert(mutation)
+  def _insert(mutation, consistency = Consistency::WEAK)
     case mutation
-    when BatchMutationSuper then @client.batch_insert_super_column(@keyspace, mutation, @quorum)    
-    when BatchMutation then @client.batch_insert(@keyspace, mutation, @quorum)
+    when BatchMutationSuper then @client.batch_insert_super_column(@keyspace, mutation, consistency)    
+    when BatchMutation then @client.batch_insert(@keyspace, mutation, consistency)
     end
   end  
   
@@ -62,24 +70,25 @@ class CassandraClient
   
   # Remove the element at the column_family:key:super_column:column 
   # path you request.
-  def remove(column_family, key, super_column = nil, column = nil, timestamp = now)
-    args = [column_family, key, super_column, column, timestamp]
+  def remove(column_family, key, super_column = nil, column = nil, consistency = Consistency::WEAK, timestamp = now)
+    args = [column_family, key, super_column, column, consistency, timestamp]
     @batch ? @batch << args : _remove(*args)
   end
   
   private 
   
-  def _remove(column_family, key, super_column, column, timestamp)
+  def _remove(column_family, key, super_column, column, consistency, timestamp)
      super_column, column = column, super_column unless is_super(column_family)
     @client.remove(@keyspace, key,
       ColumnPathOrParent.new(:column_family => column_family.to_s, :super_column => super_column, :column => column), 
-      timestamp, @quorum)
+      timestamp, consistency)
   end
    
   public
   
   # Remove all rows in the column family you request.
   def clear_column_family!(column_family)
+    # Does not support consistency argument
     get_key_range(column_family).each do |key| 
       remove(column_family, key)
     end
@@ -87,6 +96,7 @@ class CassandraClient
 
   # Remove all rows in the keyspace
   def clear_keyspace!
+    # Does not support consistency argument
     @schema.keys.each do |column_family|
       clear_column_family!(column_family)
     end
@@ -96,14 +106,14 @@ class CassandraClient
 
   # Count the elements at the column_family:key:super_column path you 
   # request.
-  def count_columns(column_family, key, super_column = nil)
+  def count_columns(column_family, key, super_column = nil, consistency = Consistency::WEAK)
     @client.get_column_count(@keyspace, key, 
       ColumnParent.new(:column_family => column_family.to_s, :super_column => super_column)
     )
   end
   
   # Multi-key version of CassandraClient#count_columns.
-  def multi_count_columns(column_family, keys, super_column = nil)
+  def multi_count_columns(column_family, keys, super_column = nil, consistency = Consistency::WEAK)
     OrderedHash[*keys.map do |key|   
       [key, count_columns(column_family, key, super_column)]
     end._flatten_once]
@@ -111,7 +121,7 @@ class CassandraClient
   
   # Return a list of single values for the elements at the
   # column_family:key:super_column:column path you request.
-  def get_columns(column_family, key, super_columns, columns = nil)
+  def get_columns(column_family, key, super_columns, columns = nil, consistency = Consistency::WEAK)
     super_columns, columns = columns, super_columns unless columns
     result = if is_super(column_family) && !super_columns 
       columns_to_hash(@client.get_slice_super_by_names(@keyspace, key, column_family.to_s, columns))
@@ -123,16 +133,16 @@ class CassandraClient
   end
 
   # Multi-key version of CassandraClient#get_columns.
-  def multi_get_columns(column_family, keys, super_columns, columns = nil)
+  def multi_get_columns(column_family, keys, super_columns, columns = nil, consistency = Consistency::WEAK)
     OrderedHash[*keys.map do |key| 
-      [key, get_columns(column_family, key, super_columns, columns)]
+      [key, get_columns(column_family, key, super_columns, columns, consistency)]
     end._flatten_once]
   end
         
   # Return a hash (actually, a CassandraClient::OrderedHash) or a single value 
   # representing the element at the column_family:key:super_column:column 
   # path you request.
-  def get(column_family, key, super_column = nil, column = nil, limit = 100)
+  def get(column_family, key, super_column = nil, column = nil, limit = 100, consistency = Consistency::WEAK)
     # You have got to be kidding
     if is_super(column_family)
       if column
@@ -161,9 +171,9 @@ class CassandraClient
   end
   
   # Multi-key version of CassandraClient#get.
-  def multi_get(column_family, keys, super_column = nil, column = nil, limit = 100)
+  def multi_get(column_family, keys, super_column = nil, column = nil, limit = 100, consistency = Consistency::WEAK)
     OrderedHash[*keys.map do |key| 
-      [key, get(column_family, key, super_column, column, limit)]
+      [key, get(column_family, key, super_column, column, limit, consistency)]
     end._flatten_once]
   end
   
@@ -177,14 +187,14 @@ class CassandraClient
 
   # Return a list of keys in the column_family you request. Requires the
   # table to be partitioned with OrderPreservingHash.
-  def get_key_range(column_family, key_range = ''..'', limit = 100)      
+  def get_key_range(column_family, key_range = ''..'', limit = 100, consistency = Consistency::WEAK)      
     @client.get_key_range(@keyspace, column_family.to_s, key_range.begin, key_range.end, limit)
   end
   
   # Count all rows in the column_family you request. Requires the table 
   # to be partitioned with OrderPreservingHash.
-  def count(column_family, key_range = ''..'', limit = MAX_INT)
-    get_key_range(column_family, key_range, limit).size
+  def count(column_family, key_range = ''..'', limit = MAX_INT, consistency = Consistency::WEAK)
+    get_key_range(column_family, key_range, limit, consistency).size
   end
   
   def batch
