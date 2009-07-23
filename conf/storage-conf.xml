@@ -31,19 +31,19 @@
     <Tables>
       <Table Name="Twitter">
           <KeysCachedFraction>0.01</KeysCachedFraction>
-          <ColumnFamily ColumnSort="Name" Name="Users" />
-          <ColumnFamily ColumnSort="Name" Name="UserAudits" />
-          <ColumnFamily ColumnType="Super" Name="UserRelationships" />
-          <ColumnFamily ColumnSort="Time" Name="Usernames" />
-          <ColumnFamily ColumnSort="Time" Name="Statuses" />
-          <ColumnFamily ColumnSort="Name" Name="StatusAudits" />
-          <ColumnFamily ColumnType="Super" Name="StatusRelationships" />  
+          <ColumnFamily CompareWith="UTF8Type" Name="Users" />
+          <ColumnFamily CompareWith="UTF8Type" Name="UserAudits" />
+          <ColumnFamily ColumnType="Super" CompareWith="UUIDType" Name="UserRelationships" />
+          <ColumnFamily CompareWith="UUIDType" Name="Usernames" />
+          <ColumnFamily CompareWith="UUIDType" Name="Statuses" />
+          <ColumnFamily CompareWith="UTF8Type" Name="StatusAudits" />
+          <ColumnFamily ColumnType="Super" CompareWith="UUIDType" Name="StatusRelationships" />  
       </Table>
 
       <Table Name="Multiblog">      
         <KeysCachedFraction>0.01</KeysCachedFraction>
-        <ColumnFamily ColumnSort="Time" Name="Blogs"/>
-        <ColumnFamily ColumnSort="Time" Name="Comments"/>
+        <ColumnFamily CompareWith="UUIDType" Name="Blogs"/>
+        <ColumnFamily CompareWith="UUIDType" Name="Comments"/>
       </Table>
     </Tables>
 

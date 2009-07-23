@@ -126,23 +126,6 @@ module Cassandra
       return
     end
 
-    def get_columns_since(table, key, column_parent, timeStamp)
-      send_get_columns_since(table, key, column_parent, timeStamp)
-      return recv_get_columns_since()
-    end
-
-    def send_get_columns_since(table, key, column_parent, timeStamp)
-      send_message('get_columns_since', Get_columns_since_args, :table => table, :key => key, :column_parent => column_parent, :timeStamp => timeStamp)
-    end
-
-    def recv_get_columns_since()
-      result = receive_message(Get_columns_since_result)
-      return result.success unless result.success.nil?
-      raise result.ire unless result.ire.nil?
-      raise result.nfe unless result.nfe.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_columns_since failed: unknown result')
-    end
-
     def get_slice_super(table, key, column_family, start, finish, is_ascending, count)
       send_get_slice_super(table, key, column_family, start, finish, is_ascending, count)
       return recv_get_slice_super()
@@ -377,19 +360,6 @@ module Cassandra
         result.ue = ue
       end
       write_result(result, oprot, 'remove', seqid)
-    end
-
-    def process_get_columns_since(seqid, iprot, oprot)
-      args = read_args(iprot, Get_columns_since_args)
-      result = Get_columns_since_result.new()
-      begin
-        result.success = @handler.get_columns_since(args.table, args.key, args.column_parent, args.timeStamp)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      rescue NotFoundException => nfe
-        result.nfe = nfe
-      end
-      write_result(result, oprot, 'get_columns_since', seqid)
     end
 
     def process_get_slice_super(seqid, iprot, oprot)
@@ -770,48 +740,6 @@ module Cassandra
     FIELDS = {
       IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
       UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => UnavailableException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_columns_since_args
-    include ::Thrift::Struct
-    TABLE = 1
-    KEY = 2
-    COLUMN_PARENT = 3
-    TIMESTAMP = 4
-
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :timeStamp
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
-      KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => ColumnParent},
-      TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timeStamp'}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_columns_since_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-    IRE = 1
-    NFE = 2
-
-    ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => Column}},
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
-      NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => NotFoundException}
     }
 
     def struct_fields; FIELDS; end
