@@ -45,7 +45,7 @@ class CassandraClient
   
   # Insert a row for a key. Pass a flat hash for a regular column family, and 
   # a nested hash for a super column family.
-  def insert(column_family, key, hash, consistency = Consistency::WEAK, timestamp = now)
+  def insert(column_family, key, hash, consistency = Consistency::WEAK, timestamp = Time.timestamp)
     mutation = if is_super(column_family) 
       BatchMutationSuper.new(:key => key, :cfmap => {column_family.to_s => hash_to_super_columns(hash, timestamp)})
     else
@@ -70,7 +70,7 @@ class CassandraClient
   
   # Remove the element at the column_family:key:super_column:column 
   # path you request.
-  def remove(column_family, key, super_column = nil, column = nil, consistency = Consistency::WEAK, timestamp = now)
+  def remove(column_family, key, super_column = nil, column = nil, consistency = Consistency::WEAK, timestamp = Time.timestamp)
     args = [column_family, key, super_column, column, consistency, timestamp]
     @batch ? @batch << args : _remove(*args)
   end

@@ -37,13 +37,6 @@ class CassandraClient
       hash.map do |super_column, columns|
         SuperColumn.new(:name => super_column, :columns => hash_to_columns(columns, timestamp))
       end
-    end
-    
-    def time_in_microseconds
-      time = Time.now
-      time.to_i * 1_000_000 + time.usec
-    end
-    alias :now :time_in_microseconds
-        
+    end    
   end
 end
