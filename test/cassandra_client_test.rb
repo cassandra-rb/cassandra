@@ -80,11 +80,13 @@ class CassandraClientTest < Test::Unit::TestCase
     assert_equal({
       'user_timelines' => {'1' => 'v1'},
       'mentions_timelines' => {'2' => 'v2'}}, @twitter.get(:StatusRelationships, key))
-    assert_equal({}, @twitter.get(:StatusRelationships, 'bogus'))
-    
+    assert_equal({}, @twitter.get(:StatusRelationships, 'bogus'))    
+  end
+  
+  def test_get_super_sub_keys_with_limit
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {'1' => 'v1'}})
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => {'2' => 'v2'}})
-    assert_equal({"2"=>"v2"}, @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1))
-      
+    assert_equal({"2"=>"v2"}, @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1))        
   end
   
   def test_get_super_sub_key

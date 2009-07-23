@@ -146,19 +146,21 @@ class CassandraClient
     # You have got to be kidding
     if is_super(column_family)
       if column
+        # FIXME raise if limit applied
         load(@client.get_column(@keyspace, key,  ColumnPath.new(:column_family => column_family.to_s, :super_column => super_column, :column => column)).value)
       elsif super_column
-        columns_to_hash(@client.get_super_column(@keyspace, key,  SuperColumnPath.new(:column_family => column_family.to_s, :super_column => super_column)).columns)
+        # FIXME fake limit
+        columns_to_hash(@client.get_super_column(@keyspace, key,  SuperColumnPath.new(:column_family => column_family.to_s, :super_column => super_column)).columns[0, limit])
       else
-        # FIXME bug
+        # FIXME add token support
         columns_to_hash(@client.get_slice_super(@keyspace, key, column_family.to_s, '', '', -1, limit))
       end
     else
       if super_column
+        # FIXME raise if limit applied
         load(@client.get_column(@keyspace, key, ColumnPath.new(:column_family => column_family.to_s, :column => super_column)).value)
       elsif is_sorted_by_time(column_family)
         result = columns_to_hash(@client.get_columns_since(@keyspace, key, ColumnParent.new(:column_family => column_family.to_s), 0))
-
         # FIXME Hack until get_slice on a time-sorted column family works again
         result = OrderedHash[*result.to_a[0, limit]._flatten_once]
         result
