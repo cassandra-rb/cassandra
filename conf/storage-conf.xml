@@ -33,17 +33,17 @@
           <KeysCachedFraction>0.01</KeysCachedFraction>
           <ColumnFamily CompareWith="UTF8Type" Name="Users" />
           <ColumnFamily CompareWith="UTF8Type" Name="UserAudits" />
-          <ColumnFamily ColumnType="Super" CompareWith="UUIDType" Name="UserRelationships" />
-          <ColumnFamily CompareWith="UUIDType" Name="Usernames" />
-          <ColumnFamily CompareWith="UUIDType" Name="Statuses" />
+          <ColumnFamily CompareWith="LongType" ColumnType="Super" Name="UserRelationships" />
+          <ColumnFamily CompareWith="UTF8Type" Name="Usernames" />
+          <ColumnFamily CompareWith="UTF8Type" Name="Statuses" />
           <ColumnFamily CompareWith="UTF8Type" Name="StatusAudits" />
-          <ColumnFamily ColumnType="Super" CompareWith="UUIDType" Name="StatusRelationships" />  
+          <ColumnFamily CompareWith="LongType" ColumnType="Super" Name="StatusRelationships" />  
       </Table>
 
       <Table Name="Multiblog">      
         <KeysCachedFraction>0.01</KeysCachedFraction>
-        <ColumnFamily CompareWith="UUIDType" Name="Blogs"/>
-        <ColumnFamily CompareWith="UUIDType" Name="Comments"/>
+        <ColumnFamily CompareWith="UTF8Type" Name="Blogs"/>
+        <ColumnFamily CompareWith="UTF8Type" Name="Comments"/>
       </Table>
     </Tables>
 
