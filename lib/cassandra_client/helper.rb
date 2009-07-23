@@ -1,19 +1,16 @@
 class CassandraClient
   module Helper
+  
+    SUPER_COLUMN_REGEX = /SUPER_COLUMN_MAP/
 
     private
     
     def is_super(column_family)
-      column_family_property(column_family.to_s, 'type') == 'Super'
+      column_family_property(column_family.to_s, 'desc') =~ SUPER_COLUMN_REGEX
     end
 
-    def is_sorted_by_time(column_family)
-      column_family_property(column_family.to_s, 'sort') == 'Time'
-    end
-    
-    def column_family_property(column_family_or_path, key)
-      column_family = column_family_or_path.to_s.split(':').first    
-      @schema[column_family][key]
+    def column_family_property(column_family, key)
+      @schema[column_family.to_s][key]
     rescue NoMethodError
       raise AccessError, "Invalid column family \":#{column_family}\""    
     end

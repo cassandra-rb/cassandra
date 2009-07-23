@@ -159,11 +159,6 @@ class CassandraClient
       if super_column
         # FIXME raise if limit applied
         load(@client.get_column(@keyspace, key, ColumnPath.new(:column_family => column_family.to_s, :column => super_column)).value)
-      elsif is_sorted_by_time(column_family)
-        result = columns_to_hash(@client.get_columns_since(@keyspace, key, ColumnParent.new(:column_family => column_family.to_s), 0))
-        # FIXME Hack until get_slice on a time-sorted column family works again
-        result = OrderedHash[*result.to_a[0, limit]._flatten_once]
-        result
       else
         columns_to_hash(@client.get_slice(@keyspace, key, ColumnParent.new(:column_family => column_family.to_s), '', '', -1, limit))
       end 
