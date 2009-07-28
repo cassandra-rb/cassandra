@@ -11,13 +11,13 @@ module Cassandra
   class Client
     include ::Thrift::Client
 
-    def get_slice_by_names(table, key, column_parent, column_names)
-      send_get_slice_by_names(table, key, column_parent, column_names)
+    def get_slice_by_names(table, key, column_parent, column_names, consistency_level)
+      send_get_slice_by_names(table, key, column_parent, column_names, consistency_level)
       return recv_get_slice_by_names()
     end
 
-    def send_get_slice_by_names(table, key, column_parent, column_names)
-      send_message('get_slice_by_names', Get_slice_by_names_args, :table => table, :key => key, :column_parent => column_parent, :column_names => column_names)
+    def send_get_slice_by_names(table, key, column_parent, column_names, consistency_level)
+      send_message('get_slice_by_names', Get_slice_by_names_args, :table => table, :key => key, :column_parent => column_parent, :column_names => column_names, :consistency_level => consistency_level)
     end
 
     def recv_get_slice_by_names()
@@ -28,13 +28,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_by_names failed: unknown result')
     end
 
-    def get_slice(table, key, column_parent, start, finish, is_ascending, count)
-      send_get_slice(table, key, column_parent, start, finish, is_ascending, count)
+    def get_slice(table, key, column_parent, start, finish, is_ascending, count, consistency_level)
+      send_get_slice(table, key, column_parent, start, finish, is_ascending, count, consistency_level)
       return recv_get_slice()
     end
 
-    def send_get_slice(table, key, column_parent, start, finish, is_ascending, count)
-      send_message('get_slice', Get_slice_args, :table => table, :key => key, :column_parent => column_parent, :start => start, :finish => finish, :is_ascending => is_ascending, :count => count)
+    def send_get_slice(table, key, column_parent, start, finish, is_ascending, count, consistency_level)
+      send_message('get_slice', Get_slice_args, :table => table, :key => key, :column_parent => column_parent, :start => start, :finish => finish, :is_ascending => is_ascending, :count => count, :consistency_level => consistency_level)
     end
 
     def recv_get_slice()
@@ -45,13 +45,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice failed: unknown result')
     end
 
-    def get_column(table, key, column_path)
-      send_get_column(table, key, column_path)
+    def get_column(table, key, column_path, consistency_level)
+      send_get_column(table, key, column_path, consistency_level)
       return recv_get_column()
     end
 
-    def send_get_column(table, key, column_path)
-      send_message('get_column', Get_column_args, :table => table, :key => key, :column_path => column_path)
+    def send_get_column(table, key, column_path, consistency_level)
+      send_message('get_column', Get_column_args, :table => table, :key => key, :column_path => column_path, :consistency_level => consistency_level)
     end
 
     def recv_get_column()
@@ -62,13 +62,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_column failed: unknown result')
     end
 
-    def get_column_count(table, key, column_parent)
-      send_get_column_count(table, key, column_parent)
+    def get_column_count(table, key, column_parent, consistency_level)
+      send_get_column_count(table, key, column_parent, consistency_level)
       return recv_get_column_count()
     end
 
-    def send_get_column_count(table, key, column_parent)
-      send_message('get_column_count', Get_column_count_args, :table => table, :key => key, :column_parent => column_parent)
+    def send_get_column_count(table, key, column_parent, consistency_level)
+      send_message('get_column_count', Get_column_count_args, :table => table, :key => key, :column_parent => column_parent, :consistency_level => consistency_level)
     end
 
     def recv_get_column_count()
@@ -78,13 +78,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_column_count failed: unknown result')
     end
 
-    def insert(table, key, column_path, value, timestamp, block_for)
-      send_insert(table, key, column_path, value, timestamp, block_for)
+    def insert(table, key, column_path, value, timestamp, consistency_level)
+      send_insert(table, key, column_path, value, timestamp, consistency_level)
       recv_insert()
     end
 
-    def send_insert(table, key, column_path, value, timestamp, block_for)
-      send_message('insert', Insert_args, :table => table, :key => key, :column_path => column_path, :value => value, :timestamp => timestamp, :block_for => block_for)
+    def send_insert(table, key, column_path, value, timestamp, consistency_level)
+      send_message('insert', Insert_args, :table => table, :key => key, :column_path => column_path, :value => value, :timestamp => timestamp, :consistency_level => consistency_level)
     end
 
     def recv_insert()
@@ -94,13 +94,13 @@ module Cassandra
       return
     end
 
-    def batch_insert(table, batch_mutation, block_for)
-      send_batch_insert(table, batch_mutation, block_for)
+    def batch_insert(table, batch_mutation, consistency_level)
+      send_batch_insert(table, batch_mutation, consistency_level)
       recv_batch_insert()
     end
 
-    def send_batch_insert(table, batch_mutation, block_for)
-      send_message('batch_insert', Batch_insert_args, :table => table, :batch_mutation => batch_mutation, :block_for => block_for)
+    def send_batch_insert(table, batch_mutation, consistency_level)
+      send_message('batch_insert', Batch_insert_args, :table => table, :batch_mutation => batch_mutation, :consistency_level => consistency_level)
     end
 
     def recv_batch_insert()
@@ -110,13 +110,13 @@ module Cassandra
       return
     end
 
-    def remove(table, key, column_path_or_parent, timestamp, block_for)
-      send_remove(table, key, column_path_or_parent, timestamp, block_for)
+    def remove(table, key, column_path_or_parent, timestamp, consistency_level)
+      send_remove(table, key, column_path_or_parent, timestamp, consistency_level)
       recv_remove()
     end
 
-    def send_remove(table, key, column_path_or_parent, timestamp, block_for)
-      send_message('remove', Remove_args, :table => table, :key => key, :column_path_or_parent => column_path_or_parent, :timestamp => timestamp, :block_for => block_for)
+    def send_remove(table, key, column_path_or_parent, timestamp, consistency_level)
+      send_message('remove', Remove_args, :table => table, :key => key, :column_path_or_parent => column_path_or_parent, :timestamp => timestamp, :consistency_level => consistency_level)
     end
 
     def recv_remove()
@@ -126,13 +126,13 @@ module Cassandra
       return
     end
 
-    def get_slice_super(table, key, column_family, start, finish, is_ascending, count)
-      send_get_slice_super(table, key, column_family, start, finish, is_ascending, count)
+    def get_slice_super(table, key, column_family, start, finish, is_ascending, count, consistency_level)
+      send_get_slice_super(table, key, column_family, start, finish, is_ascending, count, consistency_level)
       return recv_get_slice_super()
     end
 
-    def send_get_slice_super(table, key, column_family, start, finish, is_ascending, count)
-      send_message('get_slice_super', Get_slice_super_args, :table => table, :key => key, :column_family => column_family, :start => start, :finish => finish, :is_ascending => is_ascending, :count => count)
+    def send_get_slice_super(table, key, column_family, start, finish, is_ascending, count, consistency_level)
+      send_message('get_slice_super', Get_slice_super_args, :table => table, :key => key, :column_family => column_family, :start => start, :finish => finish, :is_ascending => is_ascending, :count => count, :consistency_level => consistency_level)
     end
 
     def recv_get_slice_super()
@@ -142,13 +142,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_super failed: unknown result')
     end
 
-    def get_slice_super_by_names(table, key, column_family, super_column_names)
-      send_get_slice_super_by_names(table, key, column_family, super_column_names)
+    def get_slice_super_by_names(table, key, column_family, super_column_names, consistency_level)
+      send_get_slice_super_by_names(table, key, column_family, super_column_names, consistency_level)
       return recv_get_slice_super_by_names()
     end
 
-    def send_get_slice_super_by_names(table, key, column_family, super_column_names)
-      send_message('get_slice_super_by_names', Get_slice_super_by_names_args, :table => table, :key => key, :column_family => column_family, :super_column_names => super_column_names)
+    def send_get_slice_super_by_names(table, key, column_family, super_column_names, consistency_level)
+      send_message('get_slice_super_by_names', Get_slice_super_by_names_args, :table => table, :key => key, :column_family => column_family, :super_column_names => super_column_names, :consistency_level => consistency_level)
     end
 
     def recv_get_slice_super_by_names()
@@ -158,13 +158,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_super_by_names failed: unknown result')
     end
 
-    def get_super_column(table, key, super_column_path)
-      send_get_super_column(table, key, super_column_path)
+    def get_super_column(table, key, super_column_path, consistency_level)
+      send_get_super_column(table, key, super_column_path, consistency_level)
       return recv_get_super_column()
     end
 
-    def send_get_super_column(table, key, super_column_path)
-      send_message('get_super_column', Get_super_column_args, :table => table, :key => key, :super_column_path => super_column_path)
+    def send_get_super_column(table, key, super_column_path, consistency_level)
+      send_message('get_super_column', Get_super_column_args, :table => table, :key => key, :super_column_path => super_column_path, :consistency_level => consistency_level)
     end
 
     def recv_get_super_column()
@@ -175,13 +175,13 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_super_column failed: unknown result')
     end
 
-    def batch_insert_super_column(table, batch_mutation_super, block_for)
-      send_batch_insert_super_column(table, batch_mutation_super, block_for)
+    def batch_insert_super_column(table, batch_mutation_super, consistency_level)
+      send_batch_insert_super_column(table, batch_mutation_super, consistency_level)
       recv_batch_insert_super_column()
     end
 
-    def send_batch_insert_super_column(table, batch_mutation_super, block_for)
-      send_message('batch_insert_super_column', Batch_insert_super_column_args, :table => table, :batch_mutation_super => batch_mutation_super, :block_for => block_for)
+    def send_batch_insert_super_column(table, batch_mutation_super, consistency_level)
+      send_message('batch_insert_super_column', Batch_insert_super_column_args, :table => table, :batch_mutation_super => batch_mutation_super, :consistency_level => consistency_level)
     end
 
     def recv_batch_insert_super_column()
@@ -191,13 +191,13 @@ module Cassandra
       return
     end
 
-    def get_key_range(table, column_family, startWith, stopAt, maxResults)
-      send_get_key_range(table, column_family, startWith, stopAt, maxResults)
+    def get_key_range(table, column_family, start, finish, count)
+      send_get_key_range(table, column_family, start, finish, count)
       return recv_get_key_range()
     end
 
-    def send_get_key_range(table, column_family, startWith, stopAt, maxResults)
-      send_message('get_key_range', Get_key_range_args, :table => table, :column_family => column_family, :startWith => startWith, :stopAt => stopAt, :maxResults => maxResults)
+    def send_get_key_range(table, column_family, start, finish, count)
+      send_message('get_key_range', Get_key_range_args, :table => table, :column_family => column_family, :start => start, :finish => finish, :count => count)
     end
 
     def recv_get_key_range()
@@ -207,65 +207,65 @@ module Cassandra
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_key_range failed: unknown result')
     end
 
-    def getStringProperty(propertyName)
-      send_getStringProperty(propertyName)
-      return recv_getStringProperty()
+    def get_string_property(property)
+      send_get_string_property(property)
+      return recv_get_string_property()
     end
 
-    def send_getStringProperty(propertyName)
-      send_message('getStringProperty', GetStringProperty_args, :propertyName => propertyName)
+    def send_get_string_property(property)
+      send_message('get_string_property', Get_string_property_args, :property => property)
     end
 
-    def recv_getStringProperty()
-      result = receive_message(GetStringProperty_result)
+    def recv_get_string_property()
+      result = receive_message(Get_string_property_result)
       return result.success unless result.success.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getStringProperty failed: unknown result')
+      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_string_property failed: unknown result')
     end
 
-    def getStringListProperty(propertyName)
-      send_getStringListProperty(propertyName)
-      return recv_getStringListProperty()
+    def get_string_list_property(property)
+      send_get_string_list_property(property)
+      return recv_get_string_list_property()
     end
 
-    def send_getStringListProperty(propertyName)
-      send_message('getStringListProperty', GetStringListProperty_args, :propertyName => propertyName)
+    def send_get_string_list_property(property)
+      send_message('get_string_list_property', Get_string_list_property_args, :property => property)
     end
 
-    def recv_getStringListProperty()
-      result = receive_message(GetStringListProperty_result)
+    def recv_get_string_list_property()
+      result = receive_message(Get_string_list_property_result)
       return result.success unless result.success.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'getStringListProperty failed: unknown result')
+      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_string_list_property failed: unknown result')
     end
 
-    def describeTable(tableName)
-      send_describeTable(tableName)
-      return recv_describeTable()
+    def describe_table(table)
+      send_describe_table(table)
+      return recv_describe_table()
     end
 
-    def send_describeTable(tableName)
-      send_message('describeTable', DescribeTable_args, :tableName => tableName)
+    def send_describe_table(table)
+      send_message('describe_table', Describe_table_args, :table => table)
     end
 
-    def recv_describeTable()
-      result = receive_message(DescribeTable_result)
+    def recv_describe_table()
+      result = receive_message(Describe_table_result)
       return result.success unless result.success.nil?
       raise result.nfe unless result.nfe.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describeTable failed: unknown result')
+      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_table failed: unknown result')
     end
 
-    def executeQuery(query)
-      send_executeQuery(query)
-      return recv_executeQuery()
+    def execute_query(query)
+      send_execute_query(query)
+      return recv_execute_query()
     end
 
-    def send_executeQuery(query)
-      send_message('executeQuery', ExecuteQuery_args, :query => query)
+    def send_execute_query(query)
+      send_message('execute_query', Execute_query_args, :query => query)
     end
 
-    def recv_executeQuery()
-      result = receive_message(ExecuteQuery_result)
+    def recv_execute_query()
+      result = receive_message(Execute_query_result)
       return result.success unless result.success.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'executeQuery failed: unknown result')
+      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'execute_query failed: unknown result')
     end
 
   end
@@ -277,7 +277,7 @@ module Cassandra
       args = read_args(iprot, Get_slice_by_names_args)
       result = Get_slice_by_names_result.new()
       begin
-        result.success = @handler.get_slice_by_names(args.table, args.key, args.column_parent, args.column_names)
+        result.success = @handler.get_slice_by_names(args.table, args.key, args.column_parent, args.column_names, args.consistency_level)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue NotFoundException => nfe
@@ -290,7 +290,7 @@ module Cassandra
       args = read_args(iprot, Get_slice_args)
       result = Get_slice_result.new()
       begin
-        result.success = @handler.get_slice(args.table, args.key, args.column_parent, args.start, args.finish, args.is_ascending, args.count)
+        result.success = @handler.get_slice(args.table, args.key, args.column_parent, args.start, args.finish, args.is_ascending, args.count, args.consistency_level)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue NotFoundException => nfe
@@ -303,7 +303,7 @@ module Cassandra
       args = read_args(iprot, Get_column_args)
       result = Get_column_result.new()
       begin
-        result.success = @handler.get_column(args.table, args.key, args.column_path)
+        result.success = @handler.get_column(args.table, args.key, args.column_path, args.consistency_level)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue NotFoundException => nfe
@@ -316,7 +316,7 @@ module Cassandra
       args = read_args(iprot, Get_column_count_args)
       result = Get_column_count_result.new()
       begin
-        result.success = @handler.get_column_count(args.table, args.key, args.column_parent)
+        result.success = @handler.get_column_count(args.table, args.key, args.column_parent, args.consistency_level)
       rescue InvalidRequestException => ire
         result.ire = ire
       end
@@ -327,7 +327,7 @@ module Cassandra
       args = read_args(iprot, Insert_args)
       result = Insert_result.new()
       begin
-        @handler.insert(args.table, args.key, args.column_path, args.value, args.timestamp, args.block_for)
+        @handler.insert(args.table, args.key, args.column_path, args.value, args.timestamp, args.consistency_level)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue UnavailableException => ue
@@ -340,7 +340,7 @@ module Cassandra
       args = read_args(iprot, Batch_insert_args)
       result = Batch_insert_result.new()
       begin
-        @handler.batch_insert(args.table, args.batch_mutation, args.block_for)
+        @handler.batch_insert(args.table, args.batch_mutation, args.consistency_level)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue UnavailableException => ue
@@ -353,7 +353,7 @@ module Cassandra
       args = read_args(iprot, Remove_args)
       result = Remove_result.new()
       begin
-        @handler.remove(args.table, args.key, args.column_path_or_parent, args.timestamp, args.block_for)
+        @handler.remove(args.table, args.key, args.column_path_or_parent, args.timestamp, args.consistency_level)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue UnavailableException => ue
@@ -366,7 +366,7 @@ module Cassandra
       args = read_args(iprot, Get_slice_super_args)
       result = Get_slice_super_result.new()
       begin
-        result.success = @handler.get_slice_super(args.table, args.key, args.column_family, args.start, args.finish, args.is_ascending, args.count)
+        result.success = @handler.get_slice_super(args.table, args.key, args.column_family, args.start, args.finish, args.is_ascending, args.count, args.consistency_level)
       rescue InvalidRequestException => ire
         result.ire = ire
       end
@@ -377,7 +377,7 @@ module Cassandra
       args = read_args(iprot, Get_slice_super_by_names_args)
       result = Get_slice_super_by_names_result.new()
       begin
-        result.success = @handler.get_slice_super_by_names(args.table, args.key, args.column_family, args.super_column_names)
+        result.success = @handler.get_slice_super_by_names(args.table, args.key, args.column_family, args.super_column_names, args.consistency_level)
       rescue InvalidRequestException => ire
         result.ire = ire
       end
@@ -388,7 +388,7 @@ module Cassandra
       args = read_args(iprot, Get_super_column_args)
       result = Get_super_column_result.new()
       begin
-        result.success = @handler.get_super_column(args.table, args.key, args.super_column_path)
+        result.success = @handler.get_super_column(args.table, args.key, args.super_column_path, args.consistency_level)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue NotFoundException => nfe
@@ -401,7 +401,7 @@ module Cassandra
       args = read_args(iprot, Batch_insert_super_column_args)
       result = Batch_insert_super_column_result.new()
       begin
-        @handler.batch_insert_super_column(args.table, args.batch_mutation_super, args.block_for)
+        @handler.batch_insert_super_column(args.table, args.batch_mutation_super, args.consistency_level)
       rescue InvalidRequestException => ire
         result.ire = ire
       rescue UnavailableException => ue
@@ -414,43 +414,43 @@ module Cassandra
       args = read_args(iprot, Get_key_range_args)
       result = Get_key_range_result.new()
       begin
-        result.success = @handler.get_key_range(args.table, args.column_family, args.startWith, args.stopAt, args.maxResults)
+        result.success = @handler.get_key_range(args.table, args.column_family, args.start, args.finish, args.count)
       rescue InvalidRequestException => ire
         result.ire = ire
       end
       write_result(result, oprot, 'get_key_range', seqid)
     end
 
-    def process_getStringProperty(seqid, iprot, oprot)
-      args = read_args(iprot, GetStringProperty_args)
-      result = GetStringProperty_result.new()
-      result.success = @handler.getStringProperty(args.propertyName)
-      write_result(result, oprot, 'getStringProperty', seqid)
+    def process_get_string_property(seqid, iprot, oprot)
+      args = read_args(iprot, Get_string_property_args)
+      result = Get_string_property_result.new()
+      result.success = @handler.get_string_property(args.property)
+      write_result(result, oprot, 'get_string_property', seqid)
     end
 
-    def process_getStringListProperty(seqid, iprot, oprot)
-      args = read_args(iprot, GetStringListProperty_args)
-      result = GetStringListProperty_result.new()
-      result.success = @handler.getStringListProperty(args.propertyName)
-      write_result(result, oprot, 'getStringListProperty', seqid)
+    def process_get_string_list_property(seqid, iprot, oprot)
+      args = read_args(iprot, Get_string_list_property_args)
+      result = Get_string_list_property_result.new()
+      result.success = @handler.get_string_list_property(args.property)
+      write_result(result, oprot, 'get_string_list_property', seqid)
     end
 
-    def process_describeTable(seqid, iprot, oprot)
-      args = read_args(iprot, DescribeTable_args)
-      result = DescribeTable_result.new()
+    def process_describe_table(seqid, iprot, oprot)
+      args = read_args(iprot, Describe_table_args)
+      result = Describe_table_result.new()
       begin
-        result.success = @handler.describeTable(args.tableName)
+        result.success = @handler.describe_table(args.table)
       rescue NotFoundException => nfe
         result.nfe = nfe
       end
-      write_result(result, oprot, 'describeTable', seqid)
+      write_result(result, oprot, 'describe_table', seqid)
     end
 
-    def process_executeQuery(seqid, iprot, oprot)
-      args = read_args(iprot, ExecuteQuery_args)
-      result = ExecuteQuery_result.new()
-      result.success = @handler.executeQuery(args.query)
-      write_result(result, oprot, 'executeQuery', seqid)
+    def process_execute_query(seqid, iprot, oprot)
+      args = read_args(iprot, Execute_query_args)
+      result = Execute_query_result.new()
+      result.success = @handler.execute_query(args.query)
+      write_result(result, oprot, 'execute_query', seqid)
     end
 
   end
@@ -463,18 +463,23 @@ module Cassandra
     KEY = 2
     COLUMN_PARENT = 3
     COLUMN_NAMES = 4
+    CONSISTENCY_LEVEL = 5
 
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :column_names
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :column_names, :consistency_level
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
       COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => ColumnParent},
-      COLUMN_NAMES => {:type => ::Thrift::Types::LIST, :name => 'column_names', :element => {:type => ::Thrift::Types::STRING}}
+      COLUMN_NAMES => {:type => ::Thrift::Types::LIST, :name => 'column_names', :element => {:type => ::Thrift::Types::STRING}},
+      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
     }
 
     def struct_fields; FIELDS; end
 
     def validate
+      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+      end
     end
 
   end
@@ -508,8 +513,9 @@ module Cassandra
     FINISH = 5
     IS_ASCENDING = 6
     COUNT = 7
+    CONSISTENCY_LEVEL = 8
 
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :start, :finish, :is_ascending, :count
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :start, :finish, :is_ascending, :count, :consistency_level
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
@@ -517,12 +523,16 @@ module Cassandra
       START => {:type => ::Thrift::Types::STRING, :name => 'start'},
       FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
       IS_ASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'is_ascending'},
-      COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
+      COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100},
+      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
     }
 
     def struct_fields; FIELDS; end
 
     def validate
+      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+      end
     end
 
   end
@@ -552,17 +562,22 @@ module Cassandra
     TABLE = 1
     KEY = 2
     COLUMN_PATH = 3
+    CONSISTENCY_LEVEL = 4
 
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_path
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_path, :consistency_level
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => ColumnPath}
+      COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => ColumnPath},
+      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
     }
 
     def struct_fields; FIELDS; end
 
     def validate
+      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+      end
     end
 
   end
@@ -592,17 +607,22 @@ module Cassandra
     TABLE = 1
     KEY = 2
     COLUMN_PARENT = 3
+    CONSISTENCY_LEVEL = 5
 
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :consistency_level
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => ColumnParent}
+      COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => ColumnParent},
+      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
     }
 
     def struct_fields; FIELDS; end
 
     def validate
+      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+      end
     end
 
   end
@@ -632,21 +652,24 @@ module Cassandra
     COLUMN_PATH = 3
     VALUE = 4
     TIMESTAMP = 5
-    BLOCK_FOR = 6
+    CONSISTENCY_LEVEL = 6
 
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_path, :value, :timestamp, :block_for
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_path, :value, :timestamp, :consistency_level
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
       COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => ColumnPath},
       VALUE => {:type => ::Thrift::Types::STRING, :name => 'value'},
       TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
-      BLOCK_FOR => {:type => ::Thrift::Types::I32, :name => 'block_for', :default => 0}
+      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       0, :enum_class => ConsistencyLevel}
     }
 
     def struct_fields; FIELDS; end
 
     def validate
+      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+      end
     end
 
   end
@@ -673,18 +696,21 @@ module Cassandra
     include ::Thrift::Struct
     TABLE = 1
     BATCH_MUTATION = 2
-    BLOCK_FOR = 3
+    CONSISTENCY_LEVEL = 3
 
-    ::Thrift::Struct.field_accessor self, :table, :batch_mutation, :block_for
+    ::Thrift::Struct.field_accessor self, :table, :batch_mutation, :consistency_level
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       BATCH_MUTATION => {:type => ::Thrift::Types::STRUCT, :name => 'batch_mutation', :class => BatchMutation},
-      BLOCK_FOR => {:type => ::Thrift::Types::I32, :name => 'block_for', :default => 0}
+      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       0, :enum_class => ConsistencyLevel}
     }
 
     def struct_fields; FIELDS; end
 
     def validate
+      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+      end
     end
 
   end
@@ -713,20 +739,23 @@ module Cassandra
     KEY = 2
     COLUMN_PATH_OR_PARENT = 3
     TIMESTAMP = 4
-    BLOCK_FOR = 5
+    CONSISTENCY_LEVEL = 5
 
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_path_or_parent, :timestamp, :block_for
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_path_or_parent, :timestamp, :consistency_level
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
       COLUMN_PATH_OR_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_path_or_parent', :class => ColumnPathOrParent},
       TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
-      BLOCK_FOR => {:type => ::Thrift::Types::I32, :name => 'block_for', :default => 0}
+      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       0, :enum_class => ConsistencyLevel}
     }
 
     def struct_fields; FIELDS; end
 
     def validate
+      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+      end
     end
 
   end
@@ -758,8 +787,9 @@ module Cassandra
     FINISH = 5
     IS_ASCENDING = 6
     COUNT = 7
+    CONSISTENCY_LEVEL = 8
 
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_family, :start, :finish, :is_ascending, :count
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_family, :start, :finish, :is_ascending, :count, :consistency_level
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
@@ -767,12 +797,16 @@ module Cassandra
       START => {:type => ::Thrift::Types::STRING, :name => 'start'},
       FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
       IS_ASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'is_ascending'},
-      COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
+      COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100},
+      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
     }
 
     def struct_fields; FIELDS; end
 
     def validate
+      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+      end
     end
 
   end
@@ -801,18 +835,23 @@ module Cassandra
     KEY = 2
     COLUMN_FAMILY = 3
     SUPER_COLUMN_NAMES = 4
+    CONSISTENCY_LEVEL = 5
 
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_family, :super_column_names
+    ::Thrift::Struct.field_accessor self, :table, :key, :column_family, :super_column_names, :consistency_level
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
       COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
-      SUPER_COLUMN_NAMES => {:type => ::Thrift::Types::LIST, :name => 'super_column_names', :element => {:type => ::Thrift::Types::STRING}}
+      SUPER_COLUMN_NAMES => {:type => ::Thrift::Types::LIST, :name => 'super_column_names', :element => {:type => ::Thrift::Types::STRING}},
+      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
     }
 
     def struct_fields; FIELDS; end
 
     def validate
+      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+      end
     end
 
   end
@@ -840,17 +879,22 @@ module Cassandra
     TABLE = 1
     KEY = 2
     SUPER_COLUMN_PATH = 3
+    CONSISTENCY_LEVEL = 4
 
-    ::Thrift::Struct.field_accessor self, :table, :key, :super_column_path
+    ::Thrift::Struct.field_accessor self, :table, :key, :super_column_path, :consistency_level
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      SUPER_COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'super_column_path', :class => SuperColumnPath}
+      SUPER_COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'super_column_path', :class => SuperColumnPath},
+      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
     }
 
     def struct_fields; FIELDS; end
 
     def validate
+      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+      end
     end
 
   end
@@ -879,18 +923,21 @@ module Cassandra
     include ::Thrift::Struct
     TABLE = 1
     BATCH_MUTATION_SUPER = 2
-    BLOCK_FOR = 3
+    CONSISTENCY_LEVEL = 3
 
-    ::Thrift::Struct.field_accessor self, :table, :batch_mutation_super, :block_for
+    ::Thrift::Struct.field_accessor self, :table, :batch_mutation_super, :consistency_level
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       BATCH_MUTATION_SUPER => {:type => ::Thrift::Types::STRUCT, :name => 'batch_mutation_super', :class => BatchMutationSuper},
-      BLOCK_FOR => {:type => ::Thrift::Types::I32, :name => 'block_for', :default => 0}
+      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       0, :enum_class => ConsistencyLevel}
     }
 
     def struct_fields; FIELDS; end
 
     def validate
+      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+      end
     end
 
   end
@@ -917,17 +964,17 @@ module Cassandra
     include ::Thrift::Struct
     TABLE = 1
     COLUMN_FAMILY = 2
-    STARTWITH = 3
-    STOPAT = 4
-    MAXRESULTS = 5
+    START = 3
+    FINISH = 4
+    COUNT = 5
 
-    ::Thrift::Struct.field_accessor self, :table, :column_family, :startWith, :stopAt, :maxResults
+    ::Thrift::Struct.field_accessor self, :table, :column_family, :start, :finish, :count
     FIELDS = {
       TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
       COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
-      STARTWITH => {:type => ::Thrift::Types::STRING, :name => 'startWith', :default => %q""},
-      STOPAT => {:type => ::Thrift::Types::STRING, :name => 'stopAt', :default => %q""},
-      MAXRESULTS => {:type => ::Thrift::Types::I32, :name => 'maxResults', :default => 100}
+      START => {:type => ::Thrift::Types::STRING, :name => 'start', :default => %q""},
+      FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish', :default => %q""},
+      COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
     }
 
     def struct_fields; FIELDS; end
@@ -955,13 +1002,13 @@ module Cassandra
 
   end
 
-  class GetStringProperty_args
+  class Get_string_property_args
     include ::Thrift::Struct
-    PROPERTYNAME = 1
+    PROPERTY = 1
 
-    ::Thrift::Struct.field_accessor self, :propertyName
+    ::Thrift::Struct.field_accessor self, :property
     FIELDS = {
-      PROPERTYNAME => {:type => ::Thrift::Types::STRING, :name => 'propertyName'}
+      PROPERTY => {:type => ::Thrift::Types::STRING, :name => 'property'}
     }
 
     def struct_fields; FIELDS; end
@@ -971,7 +1018,7 @@ module Cassandra
 
   end
 
-  class GetStringProperty_result
+  class Get_string_property_result
     include ::Thrift::Struct
     SUCCESS = 0
 
@@ -987,13 +1034,13 @@ module Cassandra
 
   end
 
-  class GetStringListProperty_args
+  class Get_string_list_property_args
     include ::Thrift::Struct
-    PROPERTYNAME = 1
+    PROPERTY = 1
 
-    ::Thrift::Struct.field_accessor self, :propertyName
+    ::Thrift::Struct.field_accessor self, :property
     FIELDS = {
-      PROPERTYNAME => {:type => ::Thrift::Types::STRING, :name => 'propertyName'}
+      PROPERTY => {:type => ::Thrift::Types::STRING, :name => 'property'}
     }
 
     def struct_fields; FIELDS; end
@@ -1003,7 +1050,7 @@ module Cassandra
 
   end
 
-  class GetStringListProperty_result
+  class Get_string_list_property_result
     include ::Thrift::Struct
     SUCCESS = 0
 
@@ -1019,13 +1066,13 @@ module Cassandra
 
   end
 
-  class DescribeTable_args
+  class Describe_table_args
     include ::Thrift::Struct
-    TABLENAME = 1
+    TABLE = 1
 
-    ::Thrift::Struct.field_accessor self, :tableName
+    ::Thrift::Struct.field_accessor self, :table
     FIELDS = {
-      TABLENAME => {:type => ::Thrift::Types::STRING, :name => 'tableName'}
+      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'}
     }
 
     def struct_fields; FIELDS; end
@@ -1035,7 +1082,7 @@ module Cassandra
 
   end
 
-  class DescribeTable_result
+  class Describe_table_result
     include ::Thrift::Struct
     SUCCESS = 0
     NFE = 1
@@ -1053,7 +1100,7 @@ module Cassandra
 
   end
 
-  class ExecuteQuery_args
+  class Execute_query_args
     include ::Thrift::Struct
     QUERY = 1
 
@@ -1069,7 +1116,7 @@ module Cassandra
 
   end
 
-  class ExecuteQuery_result
+  class Execute_query_result
     include ::Thrift::Struct
     SUCCESS = 0
 

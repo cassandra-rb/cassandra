@@ -4,6 +4,6 @@ class << Time
     time = Time.now
     time.to_i * 1_000_000 + time.usec
   end  
-  alias :timestamp :now_in_useconds
+  alias :stamp :now_in_useconds
 end
         

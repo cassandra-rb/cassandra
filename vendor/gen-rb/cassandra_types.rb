@@ -5,6 +5,15 @@
 #
 
 
+module ConsistencyLevel
+  ZERO = 0
+  ONE = 1
+  QUORUM = 2
+  ALL = 3
+  VALUE_MAP = {0 => "ZERO", 1 => "ONE", 2 => "QUORUM", 3 => "ALL"}
+  VALID_VALUES = Set.new([ZERO, ONE, QUORUM, ALL]).freeze
+end
+
 class Column
   include ::Thrift::Struct
   NAME = 1

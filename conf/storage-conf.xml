@@ -33,11 +33,11 @@
           <KeysCachedFraction>0.01</KeysCachedFraction>
           <ColumnFamily CompareWith="UTF8Type" Name="Users" />
           <ColumnFamily CompareWith="UTF8Type" Name="UserAudits" />
-          <ColumnFamily CompareWith="LongType" ColumnType="Super" Name="UserRelationships" />
+          <ColumnFamily CompareWith="UUIDType" ColumnType="Super" Name="UserRelationships" />
           <ColumnFamily CompareWith="UTF8Type" Name="Usernames" />
           <ColumnFamily CompareWith="UTF8Type" Name="Statuses" />
           <ColumnFamily CompareWith="UTF8Type" Name="StatusAudits" />
-          <ColumnFamily CompareWith="LongType" ColumnType="Super" Name="StatusRelationships" />  
+          <ColumnFamily CompareWith="UUIDType" ColumnType="Super" Name="StatusRelationships" />  
       </Table>
 
       <Table Name="Multiblog">      
@@ -99,22 +99,47 @@
     </Seeds>
 
     <!-- Miscellaneous -->
+
+    <!-- time to wait for a reply from other nodes before failing the command -->
     <RpcTimeoutInMillis>5000</RpcTimeoutInMillis>
+    <!-- size to allow commitlog to grow to before creating a new segment -->
     <CommitLogRotationThresholdInMB>128</CommitLogRotationThresholdInMB>
 
-    <!-- Hosts and Ports -->
+
+    <!-- Local hosts and ports -->
+
+    <!-- Address to bind to and tell other nodes to connect to.  
+         You _must_ change this if you want multiple nodes to be able
+         to communicate!  
+
+         Leaving it blank leaves it up to InetAddress.getLocalHost(). 
+         This will always do the Right Thing *if* the node is properly
+         configured (hostname, name resolution, etc), and the Right
+         Thing is to use the address associated with the hostname (it
+         might not be). -->
     <ListenAddress>localhost</ListenAddress>
+    <!-- TCP port, for commands and data -->
     <StoragePort>7000</StoragePort>
+    <!-- UDP port, for membership communications (gossip) -->
     <ControlPort>7001</ControlPort>
+
+    <!-- The address to bind the Thrift RPC service to. Unlike 
+         ListenAddress above, you *can* specify 0.0.0.0 here if you want
+         Thrift to listen on all interfaces.
+         
+         Leaving this blank has the same effect it does for ListenAddress,
+         (i.e. it will be based on the configured hostname of the node).
+    -->
+    <ThriftAddress>localhost</ThriftAddress>
+    <!-- Thrift RPC port (the port clients connect to). -->
     <ThriftPort>9160</ThriftPort>
-    <HttpPort>7002</HttpPort>
 
 
     <!--======================================================================-->
     <!-- Memory, Disk, and Performance                                        -->
     <!--======================================================================-->
 
-    <!-- Threshold for adding a column index in a row -->
+    <!-- Add column indexes to a row after its contents reach this size -->
     <ColumnIndexSizeInKB>256</ColumnIndexSizeInKB>
 
     <!--
@@ -130,7 +155,36 @@
       before flushing to disk.  This is also a per-memtable setting.
       Use with MemtableSizeInMB to tune memory usage.
     -->
-    <MemtableObjectCountInMillions>0.02</MemtableObjectCountInMillions>
+    <MemtableObjectCountInMillions>0.01</MemtableObjectCountInMillions>
+
+    <!-- Unlike most systems, in Cassandra writes are faster than
+         reads, so you can afford more of those in parallel.
+	 A good rule of thumb is 2 concurrent reads per processor core.
+         You especially want more concurrentwrites if you are using
+         CommitLogSync + CommitLogSyncDelay. -->
+    <ConcurrentReads>8</ConcurrentReads>
+    <ConcurrentWrites>32</ConcurrentWrites>
+
+    <!-- Turn on CommitLogSync to improve durability.
+         When enabled, Cassandra won't ack writes until the commit log
+         has been synced to disk.  This is less necessary in Cassandra
+         than in traditional databases since replication reduces the
+         odds of losing data from a failure after writing the log
+         entry but before it actually reaches the disk.
+    -->
+    <CommitLogSync>false</CommitLogSync>
+    <!-- Delay (in microseconds) during which additional commit log
+         entries may be written before fsync.  This will increase
+         latency slightly, but can vastly improve throughput where
+         there are many writers.  Set to zero to disable
+         (each entry will be synced individually).
+	 Reasonable values range from a minimal 100 to even 10000
+         if throughput matters more than latency.  (10000us = 10ms
+         write latency isn't even that bad by traditional db
+         standards.)
+    -->
+    <CommitLogSyncDelay>1000</CommitLogSyncDelay>
+         
 
     <!-- Time to wait before garbage-collection deletion markers.
          Set this to a large enough value that you are confident
@@ -140,17 +194,4 @@
     -->
     <GCGraceSeconds>864000</GCGraceSeconds>
 
-
-    <!--======================================================================-->
-    <!-- OPTIONAL                                                             -->
-    <!--======================================================================-->
-    <!-- This final section contains configuration information for optional
-         and experimental features in Cassandra that are not yet fully functional.
-         Basic features in Cassandra should work fine without configuring this section.
-    -->
-    <ZookeeperAddress>127.0.0.1</ZookeeperAddress>
-    <MulticastChannel>230.0.0.1</MulticastChannel>
-    <GangliaServers>
-        <GangliaServer>127.0.0.1:12000</GangliaServer>
-    </GangliaServers>
 </Storage>
