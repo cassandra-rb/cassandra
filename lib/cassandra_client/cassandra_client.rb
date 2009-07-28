@@ -5,11 +5,11 @@ class CassandraClient
   MAX_INT = 2**31 - 1
   
   module Consistency
-    # FIXME Assumes you have 3 replicas
-    NONE = ZERO = 0
-    WEAK = ONE = 1
-    STRONG = QUORUM = 2
-    PERFECT = ALL = 3
+    include ::ConsistencyLevel
+    NONE = ZERO
+    WEAK = ONE
+    STRONG = QUORUM
+    PERFECT = ALL
   end
   
   attr_reader :keyspace, :host, :port, :serializer, :transport, :client, :schema
@@ -108,7 +108,8 @@ class CassandraClient
   # request.
   def count_columns(column_family, key, super_column = nil, consistency = Consistency::WEAK)
     @client.get_column_count(@keyspace, key, 
-      ColumnParent.new(:column_family => column_family.to_s, :super_column => super_column)
+      ColumnParent.new(:column_family => column_family.to_s, :super_column => super_column),
+      consistency
     )
   end
   
@@ -124,10 +125,11 @@ class CassandraClient
   def get_columns(column_family, key, super_columns, columns = nil, consistency = Consistency::WEAK)
     super_columns, columns = columns, super_columns unless columns
     result = if is_super(column_family) && !super_columns 
-      columns_to_hash(@client.get_slice_super_by_names(@keyspace, key, column_family.to_s, columns))
+      columns_to_hash(@client.get_slice_super_by_names(@keyspace, key, column_family.to_s, columns, consistency))
     else
       columns_to_hash(@client.get_slice_by_names(@keyspace, key, 
-        ColumnParent.new(:column_family => column_family.to_s, :super_column => super_columns), columns))
+        ColumnParent.new(:column_family => column_family.to_s, :super_column => super_columns), 
+        columns, consistency))
     end    
     columns.map { |name| result[name] }
   end
@@ -147,20 +149,28 @@ class CassandraClient
     if is_super(column_family)
       if column
         # FIXME raise if limit applied
-        load(@client.get_column(@keyspace, key,  ColumnPath.new(:column_family => column_family.to_s, :super_column => super_column, :column => column)).value)
+        load(@client.get_column(@keyspace, key,  
+            ColumnPath.new(:column_family => column_family.to_s, :super_column => super_column, :column => column),
+            consistency).value)
       elsif super_column
         # FIXME fake limit
-        columns_to_hash(@client.get_super_column(@keyspace, key,  SuperColumnPath.new(:column_family => column_family.to_s, :super_column => super_column)).columns[0, limit])
+        columns_to_hash(@client.get_super_column(@keyspace, key, 
+          SuperColumnPath.new(:column_family => column_family.to_s, :super_column => super_column), 
+          consistency).columns[0, limit])
       else
         # FIXME add token support
-        columns_to_hash(@client.get_slice_super(@keyspace, key, column_family.to_s, '', '', -1, limit))
+        columns_to_hash(@client.get_slice_super(@keyspace, key, column_family.to_s, '', '', -1, limit, consistency))
       end
     else
       if super_column
         # FIXME raise if limit applied
-        load(@client.get_column(@keyspace, key, ColumnPath.new(:column_family => column_family.to_s, :column => super_column)).value)
+        load(@client.get_column(@keyspace, key, 
+          ColumnPath.new(:column_family => column_family.to_s, :column => super_column),
+          consistency).value)
       else
-        columns_to_hash(@client.get_slice(@keyspace, key, ColumnParent.new(:column_family => column_family.to_s), '', '', -1, limit))
+        columns_to_hash(@client.get_slice(@keyspace, key, 
+          ColumnParent.new(:column_family => column_family.to_s),
+          '', '', -1, limit, consistency))
       end 
     end
   rescue NotFoundException
@@ -178,10 +188,6 @@ class CassandraClient
   # def exists?
   # end
   
-  # FIXME
-  # def get_recent(column_family, key, super_column = nil, column = nil, timestamp = 0)
-  # end
-
   # Return a list of keys in the column_family you request. Requires the
   # table to be partitioned with OrderPreservingHash.
   def get_key_range(column_family, key_range = ''..'', limit = 100, consistency = Consistency::WEAK)      
