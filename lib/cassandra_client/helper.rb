@@ -1,12 +1,10 @@
 class CassandraClient
   module Helper
   
-    SUPER_COLUMN_REGEX = /SUPER_COLUMN_MAP/
-
     private
     
     def is_super(column_family)
-      column_family_property(column_family.to_s, 'desc') =~ SUPER_COLUMN_REGEX
+      column_family_property(column_family.to_s, 'Type') == "Super"
     end
 
     def column_family_property(column_family, key)
@@ -29,13 +27,13 @@ class CassandraClient
     
     def hash_to_columns(hash, timestamp)
       hash.map do |column, value|
-        Column.new(:name => column, :value => dump(value), :timestamp => timestamp)
+        Column.new(:name => column.to_s, :value => dump(value), :timestamp => timestamp)
       end    
     end
     
     def hash_to_super_columns(hash, timestamp)
       hash.map do |super_column, columns|
-        SuperColumn.new(:name => super_column, :columns => hash_to_columns(columns, timestamp))
+        SuperColumn.new(:name => super_column.to_s, :columns => hash_to_columns(columns, timestamp))
       end
     end    
   end

@@ -11,6 +11,7 @@ require 'cassandra'
 require "#{HERE}/cassandra_client/helper"
 require "#{HERE}/cassandra_client/array"
 require "#{HERE}/cassandra_client/time"
+require "#{HERE}/cassandra_client/uuid"
 require "#{HERE}/cassandra_client/safe_client"
 require "#{HERE}/cassandra_client/serialization"
 require "#{HERE}/cassandra_client/ordered_hash"

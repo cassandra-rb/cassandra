@@ -68,7 +68,7 @@ class CassandraClientTest < Test::Unit::TestCase
   end
 
   def test_get_super_key
-    columns = {'user_timelines' => {Time.stamp.to_s => '4', Time.stamp.to_s => '5'}}
+    columns = {'user_timelines' => {UUID.new => '4', UUID.new => '5'}}
     @twitter.insert(:StatusRelationships, key, columns)
     assert_equal(columns, @twitter.get(:StatusRelationships, key))
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus'))
@@ -76,8 +76,8 @@ class CassandraClientTest < Test::Unit::TestCase
 
   def test_get_several_super_keys
     columns = {
-      'user_timelines' => {Time.stamp => 'v1'},
-      'mentions_timelines' => {Time.stamp => 'v2'}}
+      'user_timelines' => {UUID.new => 'v1'},
+      'mentions_timelines' => {UUID.new => 'v2'}}
     @twitter.insert(:StatusRelationships, key, columns)
     
     assert_equal(columns, @twitter.get(:StatusRelationships, key))
