@@ -33,6 +33,15 @@ class CassandraClient
       raise AccessError, "Invalid column family \"#{column_family}\""    
     end
     
+    def assert_column_name_class(column_family, column, sub_column = nil)      
+      if sub_column and !sub_column.is_a?(klass = sub_column_name_class(column_family))
+        raise Comparable::TypeError, "Expected #{sub_column.inspect} to be a #{klass}"
+      end 
+      if !column.is_a?(klass = column_name_class(column_family))
+        raise Comparable::TypeError, "Expected #{column.inspect} to be a #{klass}"
+      end
+    end
+    
     def columns_to_hash(column_family, columns)
       columns_to_hash_for_classes(columns, column_name_class(column_family), sub_column_name_class(column_family))
     end

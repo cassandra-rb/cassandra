@@ -76,19 +76,21 @@ class CassandraClient
   
   # Remove the element at the column_family:key:super_column:column 
   # path you request.
-  def remove(column_family, key, super_column = nil, column = nil, consistency = Consistency::WEAK, timestamp = Time.stamp)
+  def remove(column_family, key, column = nil, sub_column = nil, consistency = Consistency::WEAK, timestamp = Time.stamp)
     column_family = column_family.to_s
-    args = [column_family, key, super_column, column, consistency, timestamp]
+    args = [column_family, key, column, sub_column, consistency, timestamp]
     @batch ? @batch << args : _remove(*args)
   end
   
   private 
   
-  def _remove(column_family, key, super_column, column, consistency, timestamp)
-     super_column, column = column, super_column unless is_super(column_family)
-    @client.remove(@keyspace, key,
-      ColumnPathOrParent.new(:column_family => column_family, :super_column => super_column, :column => column), 
-      timestamp, consistency)
+  def _remove(column_family, key, column, sub_column, consistency, timestamp)
+    column_path_or_parent = if is_super(column_family)
+      ColumnPathOrParent.new(:column_family => column_family, :super_column => column, :column => sub_column)
+    else
+      ColumnPathOrParent.new(:column_family => column_family, :column => column)
+    end
+    @client.remove(@keyspace, key, column_path_or_parent, timestamp, consistency)
   end
    
   public
@@ -111,7 +113,7 @@ class CassandraClient
   
   ## Read
 
-  # Count the elements at the column_family:key:super_column path you 
+  # Count the elements at the column_family:key:[super_column] path you 
   # request.
   def count_columns(column_family, key, super_column = nil, consistency = Consistency::WEAK)
     column_family = column_family.to_s
@@ -130,73 +132,76 @@ class CassandraClient
   end  
   
   # Return a list of single values for the elements at the
-  # column_family:key:super_column:column path you request.
-  def get_columns(column_family, key, super_columns, columns = nil, consistency = Consistency::WEAK)
+  # column_family:key:column:[sub_column] path you request.
+  def get_columns(column_family, key, columns, sub_columns = nil, consistency = Consistency::WEAK)
     column_family = column_family.to_s
-    super_columns, columns = columns, super_columns unless columns
-    result = if is_super(column_family) && !super_columns 
-      columns_to_hash(column_family, @client.get_slice_super_by_names(@keyspace, key, column_family, columns, consistency))
+    result = if is_super(column_family) 
+      if sub_columns 
+        columns_to_hash(column_family, @client.get_slice_by_names(@keyspace, key, 
+          ColumnParent.new(:column_family => column_family, :super_column => columns), 
+          sub_columns, consistency))
+      else
+        columns_to_hash(column_family, @client.get_slice_super_by_names(@keyspace, key, column_family, columns, consistency))      
+      end
     else
       columns_to_hash(column_family, @client.get_slice_by_names(@keyspace, key, 
-        ColumnParent.new(:column_family => column_family, :super_column => super_columns), 
-        columns, consistency))
+        ColumnParent.new(:column_family => column_family), columns, consistency))
     end    
-    columns.map { |name| result[name] }
+    sub_columns || columns.map { |name| result[name] }
   end
 
   # Multi-key version of CassandraClient#get_columns.
-  def multi_get_columns(column_family, keys, super_columns, columns = nil, consistency = Consistency::WEAK)
+  def multi_get_columns(column_family, keys, columns, sub_columns = nil, consistency = Consistency::WEAK)
     OrderedHash[*keys.map do |key| 
-      [key, get_columns(column_family, key, super_columns, columns, consistency)]
+      [key, get_columns(column_family, key, columns, sub_columns, consistency)]
     end._flatten_once]
   end
         
   # Return a hash (actually, a CassandraClient::OrderedHash) or a single value 
   # representing the element at the column_family:key:super_column:column 
   # path you request.
-  def get(column_family, key, super_column = nil, column = nil, limit = 100, consistency = Consistency::WEAK)
+  def get(column_family, key, column = nil, sub_column = nil, limit = 100, consistency = Consistency::WEAK)
     column_family = column_family.to_s
-    super_column = super_column.to_s if super_column
     column = column.to_s if column
+    sub_column = sub_column.to_s if sub_column
 
     # You have got to be kidding
     if is_super(column_family)
-      if column
+      if sub_column
         # FIXME raise if limit applied
         load(@client.get_column(@keyspace, key,  
-            ColumnPath.new(:column_family => column_family, :super_column => super_column, :column => column),
+            ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column),
             consistency).value)
-      elsif super_column
+      elsif column
         # FIXME fake limit
         sub_columns_to_hash(column_family, 
           @client.get_super_column(@keyspace, key, 
-            SuperColumnPath.new(:column_family => column_family, :super_column => super_column), 
+            SuperColumnPath.new(:column_family => column_family, :super_column => column), 
             consistency).columns[0, limit])
       else
         # FIXME add token support
-        columns_to_hash(column_family, @client.get_slice_super(@keyspace, key, column_family, '', '', -1, limit, consistency))
+        columns_to_hash(column_family, 
+          @client.get_slice_super(@keyspace, key, column_family, '', '', -1, limit, consistency))
       end
     else
-      if super_column
+      if column
         # FIXME raise if limit applied
         load(@client.get_column(@keyspace, key, 
-          ColumnPath.new(:column_family => column_family, :column => super_column),
+          ColumnPath.new(:column_family => column_family, :column => column),
           consistency).value)
       else
         columns_to_hash(column_family, 
-          @client.get_slice(@keyspace, key, 
-            ColumnParent.new(:column_family => column_family),
-            '', '', -1, limit, consistency))
+          @client.get_slice(@keyspace, key, ColumnParent.new(:column_family => column_family), '', '', -1, limit, consistency))
       end 
     end
   rescue NotFoundException
-    is_super(column_family) && !column ? OrderedHash.new : nil
+    is_super(column_family) && !sub_column ? OrderedHash.new : nil
   end
   
   # Multi-key version of CassandraClient#get.
-  def multi_get(column_family, keys, super_column = nil, column = nil, limit = 100, consistency = Consistency::WEAK)
+  def multi_get(column_family, keys, column = nil, sub_column = nil, limit = 100, consistency = Consistency::WEAK)
     OrderedHash[*keys.map do |key| 
-      [key, get(column_family, key, super_column, column, limit, consistency)]
+      [key, get(column_family, key, column, sub_column, limit, consistency)]
     end._flatten_once]
   end
   
