@@ -168,7 +168,7 @@ class CassandraClient
   # Return a hash (actually, a CassandraClient::OrderedHash) or a single value 
   # representing the element at the column_family:key:super_column:column 
   # path you request.
-  def get(column_family, key, column = nil, sub_column = nil, limit = 100, consistency = Consistency::WEAK)
+  def get(column_family, key, column = nil, sub_column = nil, limit = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
     column_family = column_family.to_s
     assert_column_name_classes(column_family, column, sub_column)
 
@@ -178,30 +178,30 @@ class CassandraClient
     # You have got to be kidding
     if is_super(column_family)
       if sub_column
-        # FIXME raise if limit applied
+        # Limit and column_range parameters have no effect
         load(@client.get_column(@keyspace, key,  
             ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column),
             consistency).value)
       elsif column
-        # FIXME fake limit
         sub_columns_to_hash(column_family, 
-          @client.get_super_column(@keyspace, key, 
-            SuperColumnPath.new(:column_family => column_family, :super_column => column), 
-            consistency).columns[0, limit])
+          @client.get_slice(@keyspace, key, 
+            ColumnParent.new(:column_family => column_family, :super_column => column), 
+            column_range.begin, column_range.end, !reversed, limit, consistency))
       else
-        # FIXME add token support
         columns_to_hash(column_family, 
-          @client.get_slice_super(@keyspace, key, column_family, '', '', -1, limit, consistency))
+          @client.get_slice_super(@keyspace, key, column_family, column_range.begin, column_range.end, !reversed, limit, consistency))
       end
     else
       if column
-        # FIXME raise if limit applied
+        # Limit and column_range parameters have no effect
         load(@client.get_column(@keyspace, key, 
           ColumnPath.new(:column_family => column_family, :column => column),
           consistency).value)
       else
         columns_to_hash(column_family, 
-          @client.get_slice(@keyspace, key, ColumnParent.new(:column_family => column_family), '', '', -1, limit, consistency))
+          @client.get_slice(@keyspace, key, 
+            ColumnParent.new(:column_family => column_family), 
+            column_range.begin, column_range.end, !reversed, limit, consistency))
       end 
     end
   rescue NotFoundException
@@ -209,9 +209,9 @@ class CassandraClient
   end
   
   # Multi-key version of CassandraClient#get.
-  def multi_get(column_family, keys, column = nil, sub_column = nil, limit = 100, consistency = Consistency::WEAK)
+  def multi_get(column_family, keys, column = nil, sub_column = nil, limit = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
     OrderedHash[*keys.map do |key| 
-      [key, get(column_family, key, column, sub_column, limit, consistency)]
+      [key, get(column_family, key, column, sub_column, limit, column_range, reversed, consistency)]
     end._flatten_once]
   end
   
