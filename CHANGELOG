@@ -1,4 +1,6 @@
 
+v0.4. Use new comparator API. Make tokens and limits actually work.
+
 v0.3. Use new Thrift API.
 
 v0.2.2. Use nil for empty byte array, not empty string. Improves API.

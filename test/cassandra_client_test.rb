@@ -6,7 +6,7 @@ begin; require 'ruby-debug'; rescue LoadError; end
 
 class CassandraClientTest < Test::Unit::TestCase
   include CassandraClient::Constants
-  
+
   def setup
     @twitter = CassandraClient.new('Twitter', '127.0.0.1')
     @twitter.clear_keyspace!
@@ -57,12 +57,6 @@ class CassandraClientTest < Test::Unit::TestCase
     assert_equal({}, @twitter.get(:Statuses, 'bogus'))
   end
 
-  def test_get_key_time_sorted_with_limit
-    @twitter.insert(:Statuses, key, {'first' => 'v'})
-    @twitter.insert(:Statuses, key, {'second' => 'v'})
-    assert_equal({'second' => 'v'}, @twitter.get(:Statuses, key, nil, nil, 1))
-  end
-
   def test_get_value
     @twitter.insert(:Statuses, key, {'body' => 'v'})
     assert_equal 'v', @twitter.get(:Statuses, key, 'body')
@@ -81,17 +75,18 @@ class CassandraClientTest < Test::Unit::TestCase
       'user_timelines' => {Long.new => 'v1'},
       'mentions_timelines' => {Long.new => 'v2'}}
     @twitter.insert(:StatusRelationships, key, columns)
-    
+
     assert_equal(columns, @twitter.get(:StatusRelationships, key))
-    assert_equal({}, @twitter.get(:StatusRelationships, 'bogus'))    
+    assert_equal({}, @twitter.get(:StatusRelationships, 'bogus'))
   end
-  
-  def test_get_super_sub_keys_with_limit
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {Long.new => 'v1'}})
+
+  def test_get_super_sub_keys_with_limit_ascending
+    columns = {Long.new => 'v1'}
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => {Long.new => 'v2'}})
-    assert_equal({"2"=>"v2"}, @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1))        
+    assert_equal(columns, @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1))
   end
-  
+
   def test_get_super_sub_key
     columns = {Long.new => 'v', Long.new => 'v'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
@@ -195,7 +190,7 @@ class CassandraClientTest < Test::Unit::TestCase
 
   def test_get_column_values_super
     user_columns, mentions_columns = {Long.new => 'v1'}, {Long.new => 'v2'}
-    @twitter.insert(:StatusRelationships, key, 
+    @twitter.insert(:StatusRelationships, key,
       {'user_timelines' => user_columns, 'mentions_timelines' => mentions_columns})
     assert_equal [user_columns, mentions_columns],
       @twitter.get_columns(:StatusRelationships, key, ['user_timelines', 'mentions_timelines'])
