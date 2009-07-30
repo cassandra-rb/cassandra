@@ -9,10 +9,17 @@ class CassandraClient
       self.to_i <=> other.to_i
     end
     
+    def hash
+      @bytes.hash
+    end
+    
     def eql?(other)
-      @bytes == other.to_s
+      other.is_a?(Comparable) and @bytes == other.to_s
     end    
-    alias :"==" :"eql?"
+    
+    def ==(other)
+      self.to_i == other.to_i
+    end
     
     def to_s
       @bytes

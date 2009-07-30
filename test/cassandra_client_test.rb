@@ -194,10 +194,10 @@ class CassandraClientTest < Test::Unit::TestCase
   end
 
   def test_get_column_values_super
-    @twitter.insert(:StatusRelationships, key, {
-      'user_timelines' => {Long.new => 'v1'},
-      'mentions_timelines' => {Long.new => 'v2'}})
-    assert_equal [{Long.new => 'v1'}, {Long.new => 'v2'}],
+    user_columns, mentions_columns = {Long.new => 'v1'}, {Long.new => 'v2'}
+    @twitter.insert(:StatusRelationships, key, 
+      {'user_timelines' => user_columns, 'mentions_timelines' => mentions_columns})
+    assert_equal [user_columns, mentions_columns],
       @twitter.get_columns(:StatusRelationships, key, ['user_timelines', 'mentions_timelines'])
   end
 
