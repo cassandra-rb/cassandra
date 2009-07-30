@@ -15,6 +15,7 @@ class ComparableTypesTest < Test::Unit::TestCase
   def test_long_equality
     long = Long.new
     assert_equal long, Long.new(long.to_s)  
+    assert_equal long, Long.new(long.to_i)  
   end
   
   def test_long_error
@@ -32,6 +33,7 @@ class ComparableTypesTest < Test::Unit::TestCase
   def test_uuid_equality
     uuid = UUID.new
     assert_equal uuid, UUID.new(uuid.to_s)  
+    assert_equal uuid, UUID.new(uuid.to_i)  
   end
   
   def test_uuid_error

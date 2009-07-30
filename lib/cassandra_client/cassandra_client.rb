@@ -173,7 +173,9 @@ class CassandraClient
     assert_column_name_classes(column_family, column, sub_column)
 
     column = column.to_s if column
-    sub_column = sub_column.to_s if sub_column
+    sub_column = sub_column.to_s if sub_column    
+    # FIXME Comparable types are not checked
+    column_range = (column_range.begin.to_s)..(column_range.end.to_s)
 
     # You have got to be kidding
     if is_super(column_family)

@@ -2,14 +2,22 @@
 class CassandraClient
   # A temporally-ordered UUID class for use in Cassandra column names
   class UUID < Comparable
-    MAX_UINT = 2**32
+    UINT = 2**32
+    LONG = 2**64
+    MAX = 2**128
     
     def initialize(bytes = nil)      
-      if bytes
+      case bytes
+      when String
         raise TypeError, "16 bytes required" if bytes.size != 16
         @bytes = bytes
+      when Integer
+        raise TypeError, "Integer must be between 0 and 2**128" if bytes < 0 or bytes > MAX
+        @bytes = [bytes / LONG, bytes % LONG].pack("QQ")
+      when NilClass
+        @bytes = [Time.stamp, Process.pid, rand(UINT)].pack("QII")
       else
-        @bytes = [Time.stamp, Process.pid, rand(MAX_UINT)].pack("QII")
+        raise TypeError, "Can't convert from #{bytes.class}"
       end
     end
     
