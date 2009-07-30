@@ -1,5 +1,5 @@
 
-class CassandraClient
+class Cassandra
   # A temporally-ordered UUID class for use in Cassandra column names
   class UUID < Comparable
     UINT = 2**32
@@ -30,7 +30,7 @@ class CassandraClient
     
     def inspect
       ints = @bytes.unpack("QII")
-      "<CassandraClient::UUID##{object_id} time: #{
+      "<Cassandra::UUID##{object_id} time: #{
           Time.at(ints[0] / 1_000_000).inspect
         }, usecs: #{
           ints[0] % 1_000_000

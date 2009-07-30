@@ -1,10 +1,10 @@
 require 'test/unit'
-require "#{File.expand_path(File.dirname(__FILE__))}/../lib/cassandra_client"
+require "#{File.expand_path(File.dirname(__FILE__))}/../lib/cassandra"
 
 begin; require 'ruby-debug'; rescue LoadError; end
 
 class ComparableTypesTest < Test::Unit::TestCase
-  include CassandraClient::Constants
+  include Cassandra::Constants
 
   def test_long_sort
     ary = []
@@ -19,7 +19,7 @@ class ComparableTypesTest < Test::Unit::TestCase
   end
   
   def test_long_error
-    assert_raises(CassandraClient::Comparable::TypeError) do
+    assert_raises(Cassandra::Comparable::TypeError) do
       Long.new("bogus")
     end
   end
@@ -37,7 +37,7 @@ class ComparableTypesTest < Test::Unit::TestCase
   end
   
   def test_uuid_error
-    assert_raises(CassandraClient::Comparable::TypeError) do
+    assert_raises(Cassandra::Comparable::TypeError) do
       UUID.new("bogus")
     end
   end

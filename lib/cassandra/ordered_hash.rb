@@ -1,5 +1,5 @@
 
-class CassandraClient
+class Cassandra
   # Hash is ordered in Ruby 1.9!
   if RUBY_VERSION >= '1.9'
     OrderedHash = ::Hash

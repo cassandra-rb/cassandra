@@ -1,16 +1,16 @@
 
 require 'test/unit'
-require "#{File.expand_path(File.dirname(__FILE__))}/../lib/cassandra_client"
+require "#{File.expand_path(File.dirname(__FILE__))}/../lib/cassandra"
 
 begin; require 'ruby-debug'; rescue LoadError; end
 
-class CassandraClientTest < Test::Unit::TestCase
-  include CassandraClient::Constants
+class CassandraTest < Test::Unit::TestCase
+  include Cassandra::Constants
 
   def setup
-    @twitter = CassandraClient.new('Twitter', '127.0.0.1')
+    @twitter = Cassandra.new('Twitter', '127.0.0.1')
     @twitter.clear_keyspace!
-    @blogs = CassandraClient.new('Multiblog', '127.0.0.1')
+    @blogs = Cassandra.new('Multiblog', '127.0.0.1')
     @blogs.clear_keyspace!
   end
 

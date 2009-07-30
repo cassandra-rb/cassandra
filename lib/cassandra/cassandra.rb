@@ -1,5 +1,5 @@
 
-class CassandraClient
+class Cassandra
   include Helper  
   class AccessError < StandardError; end
   
@@ -15,8 +15,8 @@ class CassandraClient
   
   attr_reader :keyspace, :host, :port, :serializer, :transport, :client, :schema
 
-  # Instantiate a new CassandraClient and open the connection.
-  def initialize(keyspace, host = '127.0.0.1', port = 9160, serializer = CassandraClient::Serialization::JSON)
+  # Instantiate a new Cassandra and open the connection.
+  def initialize(keyspace, host = '127.0.0.1', port = 9160, serializer = Cassandra::Serialization::JSON)
     @is_super = {}
     @column_name_class = {}
     @sub_column_name_class = {}
@@ -41,7 +41,7 @@ class CassandraClient
   end
     
   def inspect
-    "#<CassandraClient:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
+    "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       schema.map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
     }}, @host=#{host.inspect}, @port=#{port}, @serializer=#{serializer.name}>"
   end
@@ -130,7 +130,7 @@ class CassandraClient
     )
   end
   
-  # Multi-key version of CassandraClient#count_columns.
+  # Multi-key version of Cassandra#count_columns.
   def multi_count_columns(column_family, keys, super_column = nil, consistency = Consistency::WEAK)
     OrderedHash[*keys.map do |key|   
       [key, count_columns(column_family, key, super_column)]
@@ -158,14 +158,14 @@ class CassandraClient
     sub_columns || columns.map { |name| result[name] }
   end
 
-  # Multi-key version of CassandraClient#get_columns.
+  # Multi-key version of Cassandra#get_columns.
   def multi_get_columns(column_family, keys, columns, sub_columns = nil, consistency = Consistency::WEAK)
     OrderedHash[*keys.map do |key| 
       [key, get_columns(column_family, key, columns, sub_columns, consistency)]
     end._flatten_once]
   end
         
-  # Return a hash (actually, a CassandraClient::OrderedHash) or a single value 
+  # Return a hash (actually, a Cassandra::OrderedHash) or a single value 
   # representing the element at the column_family:key:[column]:[sub_column]
   # path you request.
   def get(column_family, key, column = nil, sub_column = nil, limit = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
@@ -176,7 +176,7 @@ class CassandraClient
     is_super(column_family) && !sub_column ? OrderedHash.new : nil
   end
 
-  # Multi-key version of CassandraClient#get.
+  # Multi-key version of Cassandra#get.
   def multi_get(column_family, keys, column = nil, sub_column = nil, limit = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
     OrderedHash[*keys.map do |key| 
       [key, get(column_family, key, column, sub_column, limit, column_range, reversed, consistency)]

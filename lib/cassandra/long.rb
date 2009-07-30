@@ -1,5 +1,5 @@
 
-class CassandraClient
+class Cassandra
   # A temporally-ordered Long class for use in Cassandra column names
   class Long < Comparable
     ENTROPY = 2**12
@@ -27,7 +27,7 @@ class CassandraClient
     
     def inspect
       ints = @bytes.unpack("Q")
-      "<CassandraClient::Long##{object_id} time: #{
+      "<Cassandra::Long##{object_id} time: #{
           Time.at((ints[0] / ENTROPY) / 1_000_000).inspect
         }, usecs: #{
           (ints[0] / ENTROPY) % 1_000_000

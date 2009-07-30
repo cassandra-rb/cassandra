@@ -1,5 +1,5 @@
 
-class CassandraClient
+class Cassandra
   module Serialization
     module String
       def self.dump(object);
