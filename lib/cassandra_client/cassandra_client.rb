@@ -116,7 +116,7 @@ class CassandraClient
   def count_columns(column_family, key, super_column = nil, consistency = Consistency::WEAK)
     column_family = column_family.to_s
     @client.get_column_count(@keyspace, key, 
-      ColumnParent.new(:column_family => column_family, :super_column => super_column),
+      ColumnParent.new(:column_family => column_family, :super_column => super_column.to_s),
       consistency
     )
   end
@@ -161,13 +161,13 @@ class CassandraClient
       if column
         # FIXME raise if limit applied
         load(@client.get_column(@keyspace, key,  
-            ColumnPath.new(:column_family => column_family, :super_column => super_column, :column => column),
+            ColumnPath.new(:column_family => column_family, :super_column => super_column.to_s, :column => column.to_s),
             consistency).value)
       elsif super_column
         # FIXME fake limit
-        columns_to_hash(column_family, 
+        sub_columns_to_hash(column_family, 
           @client.get_super_column(@keyspace, key, 
-            SuperColumnPath.new(:column_family => column_family, :super_column => super_column), 
+            SuperColumnPath.new(:column_family => column_family, :super_column => super_column.to_s), 
             consistency).columns[0, limit])
       else
         # FIXME add token support
@@ -177,7 +177,7 @@ class CassandraClient
       if super_column
         # FIXME raise if limit applied
         load(@client.get_column(@keyspace, key, 
-          ColumnPath.new(:column_family => column_family, :column => super_column),
+          ColumnPath.new(:column_family => column_family, :column => super_column.to_s),
           consistency).value)
       else
         columns_to_hash(column_family, 

@@ -20,8 +20,6 @@ class CassandraClient
     def column_name_class_for_key(column_family, comparator_key)
       property = column_family_property(column_family, comparator_key)
       property =~ /.*\.(.*?)Type/
-      p @schema[column_family]
-      p [$1, column_family, comparator_key]
       self.class.const_get($1) # Long, UUID
     rescue NameError      
       String # UTF8, Ascii, Bytes, anything else
@@ -37,6 +35,10 @@ class CassandraClient
     
     def columns_to_hash(column_family, columns)
       columns_to_hash_for_classes(columns, column_name_class(column_family), sub_column_name_class(column_family))
+    end
+    
+    def sub_columns_to_hash(column_family, columns)
+      columns_to_hash_for_classes(columns, sub_column_name_class(column_family))
     end
     
     def columns_to_hash_for_classes(columns, column_name_class, sub_column_name_class = nil)

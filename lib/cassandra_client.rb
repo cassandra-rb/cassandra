@@ -10,6 +10,7 @@ require 'cassandra'
 
 require "#{HERE}/cassandra_client/array"
 require "#{HERE}/cassandra_client/time"
+require "#{HERE}/cassandra_client/comparable"
 require "#{HERE}/cassandra_client/uuid"
 require "#{HERE}/cassandra_client/long"
 require "#{HERE}/cassandra_client/safe_client"

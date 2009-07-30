@@ -1,11 +1,12 @@
 
 class CassandraClient
   # A temporally-ordered UUID for use in Cassandra super columns.
-  class UUID
+  class UUID < Comparable
     MAX_UINT = 2**32
     
     def initialize(bytes = nil)      
       if bytes
+        raise TypeError, "16 bytes required" if bytes.size != 16
         @bytes = bytes
       else
         @bytes = [Time.stamp, Process.pid, rand(MAX_UINT)].pack("QII")
@@ -18,19 +19,6 @@ class CassandraClient
         value += int * (MAX_UINT ** position)
       end
       value
-    end
-    
-    def <=>(other)
-      self.to_i <=> other.to_i
-    end
-    
-    def eql?(other)
-      @bytes == other.to_s
-    end    
-    alias :"==" :"eql?"
-    
-    def to_s
-      @bytes
     end
     
     def inspect

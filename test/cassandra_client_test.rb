@@ -183,7 +183,7 @@ class CassandraClientTest < Test::Unit::TestCase
   end
 
   def test_insert_super_key
-    columns = {UUID.new => 'v', key => 'v'}
+    columns = {Long.new => 'v', Long.new => 'v'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
     assert_equal(columns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
   end
