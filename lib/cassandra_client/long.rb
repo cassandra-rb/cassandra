@@ -15,7 +15,7 @@ class CassandraClient
     end
 
     def to_i
-      @to_i ||= @bytes.unpack("Q")
+      @to_i ||= @bytes.unpack("Q")[0]
     end    
     
     def inspect
