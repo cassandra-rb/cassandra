@@ -121,16 +121,6 @@ class CassandraClientTest < Test::Unit::TestCase
       @twitter.multi_get(:Users, [key + '2', 'bogus', key + '1']))
   end
 
-  # Not supported
-  #  def test_get_key_range_super
-  #    @twitter.insert(:StatusRelationships, '2', {'user_timelines' => {Long.new => 'v'}})
-  #    @twitter.insert(:StatusRelationships, '3', {'user_timelines' => {Long.new => 'v'}})
-  #    @twitter.insert(:StatusRelationships, '4', {'user_timelines' => {Long.new => 'v'}})
-  #    @twitter.insert(:StatusRelationships, '5', {'user_timelines' => {Long.new => 'v'}})
-  #    @twitter.insert(:StatusRelationships, '6', {'user_timelines' => {Long.new => 'v'}})
-  #    assert_equal(['3', '4', '5'], @twitter.get_key_range(:StatusRelationships, '3'..'5', 'user_timelines'))
-  #  end
-
   def test_remove_key
     @twitter.insert(:Statuses, key, {'body' => 'v'})
     assert_equal({'body' => 'v'}, @twitter.get(:Statuses, key))
