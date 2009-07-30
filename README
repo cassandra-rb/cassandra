@@ -1,7 +1,5 @@
 
-
-
-cassandra_client
+cassandra
 
 A client for the Cassandra distributed database.
 
@@ -19,9 +17,9 @@ The public certificate for this gem is here[http://rubyforge.org/frs/download.ph
 
 This is an alpha release and does not yet support the full Thrift API. 
 
-Cassandra is a rapidly moving target, but this library should always run against the bundle available {here}[http://github.com/fauna/cassandra_client/raw/6546d1155b77ca7bc5ebf58bdcce79ddda36f611/vendor/cassandra.tar.bz2]. Don't expect it to work against any other version right now.
+Cassandra is a rapidly moving target, but this library should always run against the bundle available {here}[http://github.com/fauna/cassandra/raw/6546d1155b77ca7bc5ebf58bdcce79ddda36f611/vendor/cassandra.tar.bz2]. Don't expect it to work against any other version right now.
 
-The Github source repository is {here}[http://github.com/fauna/cassandra_client/]; patches and contributions are very welcome.
+The Github source repository is {here}[http://github.com/fauna/cassandra/]; patches and contributions are very welcome.
 
 == Installation
 
@@ -29,19 +27,19 @@ You need Ruby 1.8 or 1.9, and Thrift.
 
 If you don't want to install Thrift from {source}[http://incubator.apache.org/thrift/download/], you can use {this pre-packaged gem}[http://blog.evanweaver.com/files/cassandra/thrift-0.1.0.gem]. Once you have Thrift, just run:
 
-  sudo gem install cassandra_client
+  sudo gem install cassandra
   
 == Usage
 
 Require the library:
   
-  require 'cassandra_client'
+  require 'cassandra'
   
 Connect to a server and keyspace:
   
-  client = CassandraClient.new('Twitter', "127.0.0.1")
+  client = Cassandra.new('Twitter', "127.0.0.1")
   
-Insert into a column family. You can insert a CassandraClient::OrderedHash, or a regular Hash, if order doesn't matter:
+Insert into a column family. You can insert a Cassandra::OrderedHash, or a regular Hash, if order doesn't matter:
 
   client.insert(:Users, "5", {'screen_name' => "buttonscat"})  
 
@@ -53,9 +51,9 @@ Query a super column:
 
   timeline = client.get(:UserRelationships, "5", "user_timeline")
   
-The returned result will always be a CassandraClient::OrderedHash.
+The returned result will always be a Cassandra::OrderedHash.
 
-See CassandraClient for more methods.
+See Cassandra for more methods.
 
 == Further reading
 
@@ -63,5 +61,5 @@ See CassandraClient for more methods.
 
 == Reporting problems
 
-The Github issue tracker is {here}[http://github.com/fauna/cassandra_client/issues]. If you have problems with Cassandra itself, please use the {cassandra-user mailing list}[http://mail-archives.apache.org/mod_mbox/incubator-cassandra-user/].
+The Github issue tracker is {here}[http://github.com/fauna/cassandra/issues]. If you have problems with Cassandra itself, please use the {cassandra-user mailing list}[http://mail-archives.apache.org/mod_mbox/incubator-cassandra-user/].
 
