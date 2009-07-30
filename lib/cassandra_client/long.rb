@@ -1,6 +1,6 @@
 
 class CassandraClient
-  # A temporally-ordered Long class for use in Cassandra super columns.
+  # A temporally-ordered Long class for use in Cassandra column names
   class Long < Comparable
     ENTROPY = 2**12
     

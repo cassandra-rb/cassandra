@@ -1,6 +1,6 @@
 
 class CassandraClient
-  # A temporally-ordered UUID for use in Cassandra super columns.
+  # A temporally-ordered UUID class for use in Cassandra column names
   class UUID < Comparable
     MAX_UINT = 2**32
     
@@ -16,7 +16,6 @@ class CassandraClient
     def to_i
       @to_i ||= begin
         ints = @bytes.unpack("QQ")
-        # FIXME I doubt this is right
         ints[0] * 2**64 + ints[1]        
       end
     end

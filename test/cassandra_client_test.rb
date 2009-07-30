@@ -70,7 +70,7 @@ class CassandraClientTest < Test::Unit::TestCase
   end
 
   def test_get_super_key
-    columns = {'user_timelines' => {UUID.new => '4', UUID.new => '5'}}
+    columns = {'user_timelines' => {Long.new => '4', Long.new => '5'}}
     @twitter.insert(:StatusRelationships, key, columns)
     assert_equal(columns, @twitter.get(:StatusRelationships, key))
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus'))
@@ -78,8 +78,8 @@ class CassandraClientTest < Test::Unit::TestCase
 
   def test_get_several_super_keys
     columns = {
-      'user_timelines' => {UUID.new => 'v1'},
-      'mentions_timelines' => {UUID.new => 'v2'}}
+      'user_timelines' => {Long.new => 'v1'},
+      'mentions_timelines' => {Long.new => 'v2'}}
     @twitter.insert(:StatusRelationships, key, columns)
     
     assert_equal(columns, @twitter.get(:StatusRelationships, key))
@@ -87,20 +87,20 @@ class CassandraClientTest < Test::Unit::TestCase
   end
   
   def test_get_super_sub_keys_with_limit
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v1'}})
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v2'}})
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {Long.new => 'v1'}})
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {Long.new => 'v2'}})
     assert_equal({"2"=>"v2"}, @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1))        
   end
   
   def test_get_super_sub_key
-    columns = {UUID.new => 'v', UUID.new => 'v'}
+    columns = {Long.new => 'v', Long.new => 'v'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
     assert_equal(columns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus', 'user_timelines'))
   end
 
   def test_get_super_value
-    columns = {UUID.new => 'v'}
+    columns = {Long.new => 'v'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
     assert_equal('v', @twitter.get(:StatusRelationships, key, 'user_timelines', columns.keys.first))
     assert_nil @twitter.get(:StatusRelationships, 'bogus', 'user_timelines', columns.keys.first)
@@ -128,11 +128,11 @@ class CassandraClientTest < Test::Unit::TestCase
 
   # Not supported
   #  def test_get_key_range_super
-  #    @twitter.insert(:StatusRelationships, '2', {'user_timelines' => {UUID.new => 'v'}})
-  #    @twitter.insert(:StatusRelationships, '3', {'user_timelines' => {UUID.new => 'v'}})
-  #    @twitter.insert(:StatusRelationships, '4', {'user_timelines' => {UUID.new => 'v'}})
-  #    @twitter.insert(:StatusRelationships, '5', {'user_timelines' => {UUID.new => 'v'}})
-  #    @twitter.insert(:StatusRelationships, '6', {'user_timelines' => {UUID.new => 'v'}})
+  #    @twitter.insert(:StatusRelationships, '2', {'user_timelines' => {Long.new => 'v'}})
+  #    @twitter.insert(:StatusRelationships, '3', {'user_timelines' => {Long.new => 'v'}})
+  #    @twitter.insert(:StatusRelationships, '4', {'user_timelines' => {Long.new => 'v'}})
+  #    @twitter.insert(:StatusRelationships, '5', {'user_timelines' => {Long.new => 'v'}})
+  #    @twitter.insert(:StatusRelationships, '6', {'user_timelines' => {Long.new => 'v'}})
   #    assert_equal(['3', '4', '5'], @twitter.get_key_range(:StatusRelationships, '3'..'5', 'user_timelines'))
   #  end
 
@@ -152,19 +152,19 @@ class CassandraClientTest < Test::Unit::TestCase
   end
 
   def test_remove_super_key
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v'}})
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {Long.new => 'v'}})
     @twitter.remove(:StatusRelationships, key)
     assert_equal({}, @twitter.get(:StatusRelationships, key))
   end
 
   def test_remove_super_sub_key
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v'}})
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {Long.new => 'v'}})
     @twitter.remove(:StatusRelationships, key, 'user_timelines')
     assert_equal({}, @twitter.get(:StatusRelationships, key, 'user_timelines'))
   end
 
   def test_remove_super_value
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v'}})
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {Long.new => 'v'}})
     @twitter.remove(:StatusRelationships, key, 'user_timelines', '1')
     assert_nil @twitter.get(:StatusRelationships, key, 'user_timelines', '1')
   end
@@ -195,9 +195,9 @@ class CassandraClientTest < Test::Unit::TestCase
 
   def test_get_column_values_super
     @twitter.insert(:StatusRelationships, key, {
-      'user_timelines' => {UUID.new => 'v1'},
-      'mentions_timelines' => {UUID.new => 'v2'}})
-    assert_equal [{UUID.new => 'v1'}, {UUID.new => 'v2'}],
+      'user_timelines' => {Long.new => 'v1'},
+      'mentions_timelines' => {Long.new => 'v2'}})
+    assert_equal [{Long.new => 'v1'}, {Long.new => 'v2'}],
       @twitter.get_columns(:StatusRelationships, key, ['user_timelines', 'mentions_timelines'])
   end
 
@@ -215,8 +215,8 @@ class CassandraClientTest < Test::Unit::TestCase
   # Not supported
   #  def test_get_columns_super_sub
   #    @twitter.insert(:StatusRelationships, key, {
-  #      'user_timelines' => {UUID.new => 'v1'},
-  #      'mentions_timelines' => {UUID.new => 'v2'}})
+  #      'user_timelines' => {Long.new => 'v1'},
+  #      'mentions_timelines' => {Long.new => 'v2'}})
   #    assert_equal ['v1', 'v2'],
   #      @twitter.get_columns(:StatusRelationships, key, 'user_timelines', ['1', key])
   #  end
@@ -235,13 +235,13 @@ class CassandraClientTest < Test::Unit::TestCase
 
   def test_count_super_columns
     @twitter.insert(:StatusRelationships, key, {
-      'user_timelines' => {UUID.new => 'v1'},
-      'mentions_timelines' => {UUID.new => 'v2'}})
+      'user_timelines' => {Long.new => 'v1'},
+      'mentions_timelines' => {Long.new => 'v2'}})
     assert_equal 2, @twitter.count_columns(:StatusRelationships, key)
   end
 
   def test_count_super_sub_columns
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v1', key => 'v2'}})
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {Long.new => 'v1', key => 'v2'}})
     assert_equal 2, @twitter.count_columns(:StatusRelationships, key, 'user_timelines')
   end
 
