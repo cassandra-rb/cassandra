@@ -6,3 +6,5 @@
 
 require 'cassandra_types'
 
+  module CassandraThrift
+end

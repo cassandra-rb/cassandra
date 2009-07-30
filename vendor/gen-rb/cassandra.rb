@@ -7,1130 +7,1132 @@
 require 'thrift'
 require 'cassandra_types'
 
-module Cassandra
-  class Client
-    include ::Thrift::Client
+    module CassandraThrift
+      module Cassandra
+        class Client
+          include ::Thrift::Client
 
-    def get_slice_by_names(table, key, column_parent, column_names, consistency_level)
-      send_get_slice_by_names(table, key, column_parent, column_names, consistency_level)
-      return recv_get_slice_by_names()
-    end
+          def get_slice_by_names(table, key, column_parent, column_names, consistency_level)
+            send_get_slice_by_names(table, key, column_parent, column_names, consistency_level)
+            return recv_get_slice_by_names()
+          end
 
-    def send_get_slice_by_names(table, key, column_parent, column_names, consistency_level)
-      send_message('get_slice_by_names', Get_slice_by_names_args, :table => table, :key => key, :column_parent => column_parent, :column_names => column_names, :consistency_level => consistency_level)
-    end
+          def send_get_slice_by_names(table, key, column_parent, column_names, consistency_level)
+            send_message('get_slice_by_names', Get_slice_by_names_args, :table => table, :key => key, :column_parent => column_parent, :column_names => column_names, :consistency_level => consistency_level)
+          end
 
-    def recv_get_slice_by_names()
-      result = receive_message(Get_slice_by_names_result)
-      return result.success unless result.success.nil?
-      raise result.ire unless result.ire.nil?
-      raise result.nfe unless result.nfe.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_by_names failed: unknown result')
-    end
+          def recv_get_slice_by_names()
+            result = receive_message(Get_slice_by_names_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise result.nfe unless result.nfe.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_by_names failed: unknown result')
+          end
 
-    def get_slice(table, key, column_parent, start, finish, is_ascending, count, consistency_level)
-      send_get_slice(table, key, column_parent, start, finish, is_ascending, count, consistency_level)
-      return recv_get_slice()
-    end
+          def get_slice(table, key, column_parent, start, finish, is_ascending, count, consistency_level)
+            send_get_slice(table, key, column_parent, start, finish, is_ascending, count, consistency_level)
+            return recv_get_slice()
+          end
 
-    def send_get_slice(table, key, column_parent, start, finish, is_ascending, count, consistency_level)
-      send_message('get_slice', Get_slice_args, :table => table, :key => key, :column_parent => column_parent, :start => start, :finish => finish, :is_ascending => is_ascending, :count => count, :consistency_level => consistency_level)
-    end
+          def send_get_slice(table, key, column_parent, start, finish, is_ascending, count, consistency_level)
+            send_message('get_slice', Get_slice_args, :table => table, :key => key, :column_parent => column_parent, :start => start, :finish => finish, :is_ascending => is_ascending, :count => count, :consistency_level => consistency_level)
+          end
 
-    def recv_get_slice()
-      result = receive_message(Get_slice_result)
-      return result.success unless result.success.nil?
-      raise result.ire unless result.ire.nil?
-      raise result.nfe unless result.nfe.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice failed: unknown result')
-    end
+          def recv_get_slice()
+            result = receive_message(Get_slice_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise result.nfe unless result.nfe.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice failed: unknown result')
+          end
 
-    def get_column(table, key, column_path, consistency_level)
-      send_get_column(table, key, column_path, consistency_level)
-      return recv_get_column()
-    end
+          def get_column(table, key, column_path, consistency_level)
+            send_get_column(table, key, column_path, consistency_level)
+            return recv_get_column()
+          end
 
-    def send_get_column(table, key, column_path, consistency_level)
-      send_message('get_column', Get_column_args, :table => table, :key => key, :column_path => column_path, :consistency_level => consistency_level)
-    end
+          def send_get_column(table, key, column_path, consistency_level)
+            send_message('get_column', Get_column_args, :table => table, :key => key, :column_path => column_path, :consistency_level => consistency_level)
+          end
 
-    def recv_get_column()
-      result = receive_message(Get_column_result)
-      return result.success unless result.success.nil?
-      raise result.ire unless result.ire.nil?
-      raise result.nfe unless result.nfe.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_column failed: unknown result')
-    end
+          def recv_get_column()
+            result = receive_message(Get_column_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise result.nfe unless result.nfe.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_column failed: unknown result')
+          end
 
-    def get_column_count(table, key, column_parent, consistency_level)
-      send_get_column_count(table, key, column_parent, consistency_level)
-      return recv_get_column_count()
-    end
+          def get_column_count(table, key, column_parent, consistency_level)
+            send_get_column_count(table, key, column_parent, consistency_level)
+            return recv_get_column_count()
+          end
 
-    def send_get_column_count(table, key, column_parent, consistency_level)
-      send_message('get_column_count', Get_column_count_args, :table => table, :key => key, :column_parent => column_parent, :consistency_level => consistency_level)
-    end
+          def send_get_column_count(table, key, column_parent, consistency_level)
+            send_message('get_column_count', Get_column_count_args, :table => table, :key => key, :column_parent => column_parent, :consistency_level => consistency_level)
+          end
 
-    def recv_get_column_count()
-      result = receive_message(Get_column_count_result)
-      return result.success unless result.success.nil?
-      raise result.ire unless result.ire.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_column_count failed: unknown result')
-    end
+          def recv_get_column_count()
+            result = receive_message(Get_column_count_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_column_count failed: unknown result')
+          end
 
-    def insert(table, key, column_path, value, timestamp, consistency_level)
-      send_insert(table, key, column_path, value, timestamp, consistency_level)
-      recv_insert()
-    end
+          def insert(table, key, column_path, value, timestamp, consistency_level)
+            send_insert(table, key, column_path, value, timestamp, consistency_level)
+            recv_insert()
+          end
 
-    def send_insert(table, key, column_path, value, timestamp, consistency_level)
-      send_message('insert', Insert_args, :table => table, :key => key, :column_path => column_path, :value => value, :timestamp => timestamp, :consistency_level => consistency_level)
-    end
+          def send_insert(table, key, column_path, value, timestamp, consistency_level)
+            send_message('insert', Insert_args, :table => table, :key => key, :column_path => column_path, :value => value, :timestamp => timestamp, :consistency_level => consistency_level)
+          end
 
-    def recv_insert()
-      result = receive_message(Insert_result)
-      raise result.ire unless result.ire.nil?
-      raise result.ue unless result.ue.nil?
-      return
-    end
+          def recv_insert()
+            result = receive_message(Insert_result)
+            raise result.ire unless result.ire.nil?
+            raise result.ue unless result.ue.nil?
+            return
+          end
 
-    def batch_insert(table, batch_mutation, consistency_level)
-      send_batch_insert(table, batch_mutation, consistency_level)
-      recv_batch_insert()
-    end
+          def batch_insert(table, batch_mutation, consistency_level)
+            send_batch_insert(table, batch_mutation, consistency_level)
+            recv_batch_insert()
+          end
 
-    def send_batch_insert(table, batch_mutation, consistency_level)
-      send_message('batch_insert', Batch_insert_args, :table => table, :batch_mutation => batch_mutation, :consistency_level => consistency_level)
-    end
+          def send_batch_insert(table, batch_mutation, consistency_level)
+            send_message('batch_insert', Batch_insert_args, :table => table, :batch_mutation => batch_mutation, :consistency_level => consistency_level)
+          end
 
-    def recv_batch_insert()
-      result = receive_message(Batch_insert_result)
-      raise result.ire unless result.ire.nil?
-      raise result.ue unless result.ue.nil?
-      return
-    end
+          def recv_batch_insert()
+            result = receive_message(Batch_insert_result)
+            raise result.ire unless result.ire.nil?
+            raise result.ue unless result.ue.nil?
+            return
+          end
 
-    def remove(table, key, column_path_or_parent, timestamp, consistency_level)
-      send_remove(table, key, column_path_or_parent, timestamp, consistency_level)
-      recv_remove()
-    end
+          def remove(table, key, column_path_or_parent, timestamp, consistency_level)
+            send_remove(table, key, column_path_or_parent, timestamp, consistency_level)
+            recv_remove()
+          end
 
-    def send_remove(table, key, column_path_or_parent, timestamp, consistency_level)
-      send_message('remove', Remove_args, :table => table, :key => key, :column_path_or_parent => column_path_or_parent, :timestamp => timestamp, :consistency_level => consistency_level)
-    end
+          def send_remove(table, key, column_path_or_parent, timestamp, consistency_level)
+            send_message('remove', Remove_args, :table => table, :key => key, :column_path_or_parent => column_path_or_parent, :timestamp => timestamp, :consistency_level => consistency_level)
+          end
 
-    def recv_remove()
-      result = receive_message(Remove_result)
-      raise result.ire unless result.ire.nil?
-      raise result.ue unless result.ue.nil?
-      return
-    end
+          def recv_remove()
+            result = receive_message(Remove_result)
+            raise result.ire unless result.ire.nil?
+            raise result.ue unless result.ue.nil?
+            return
+          end
 
-    def get_slice_super(table, key, column_family, start, finish, is_ascending, count, consistency_level)
-      send_get_slice_super(table, key, column_family, start, finish, is_ascending, count, consistency_level)
-      return recv_get_slice_super()
-    end
+          def get_slice_super(table, key, column_family, start, finish, is_ascending, count, consistency_level)
+            send_get_slice_super(table, key, column_family, start, finish, is_ascending, count, consistency_level)
+            return recv_get_slice_super()
+          end
 
-    def send_get_slice_super(table, key, column_family, start, finish, is_ascending, count, consistency_level)
-      send_message('get_slice_super', Get_slice_super_args, :table => table, :key => key, :column_family => column_family, :start => start, :finish => finish, :is_ascending => is_ascending, :count => count, :consistency_level => consistency_level)
-    end
+          def send_get_slice_super(table, key, column_family, start, finish, is_ascending, count, consistency_level)
+            send_message('get_slice_super', Get_slice_super_args, :table => table, :key => key, :column_family => column_family, :start => start, :finish => finish, :is_ascending => is_ascending, :count => count, :consistency_level => consistency_level)
+          end
 
-    def recv_get_slice_super()
-      result = receive_message(Get_slice_super_result)
-      return result.success unless result.success.nil?
-      raise result.ire unless result.ire.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_super failed: unknown result')
-    end
+          def recv_get_slice_super()
+            result = receive_message(Get_slice_super_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_super failed: unknown result')
+          end
 
-    def get_slice_super_by_names(table, key, column_family, super_column_names, consistency_level)
-      send_get_slice_super_by_names(table, key, column_family, super_column_names, consistency_level)
-      return recv_get_slice_super_by_names()
-    end
+          def get_slice_super_by_names(table, key, column_family, super_column_names, consistency_level)
+            send_get_slice_super_by_names(table, key, column_family, super_column_names, consistency_level)
+            return recv_get_slice_super_by_names()
+          end
 
-    def send_get_slice_super_by_names(table, key, column_family, super_column_names, consistency_level)
-      send_message('get_slice_super_by_names', Get_slice_super_by_names_args, :table => table, :key => key, :column_family => column_family, :super_column_names => super_column_names, :consistency_level => consistency_level)
-    end
+          def send_get_slice_super_by_names(table, key, column_family, super_column_names, consistency_level)
+            send_message('get_slice_super_by_names', Get_slice_super_by_names_args, :table => table, :key => key, :column_family => column_family, :super_column_names => super_column_names, :consistency_level => consistency_level)
+          end
 
-    def recv_get_slice_super_by_names()
-      result = receive_message(Get_slice_super_by_names_result)
-      return result.success unless result.success.nil?
-      raise result.ire unless result.ire.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_super_by_names failed: unknown result')
-    end
+          def recv_get_slice_super_by_names()
+            result = receive_message(Get_slice_super_by_names_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice_super_by_names failed: unknown result')
+          end
 
-    def get_super_column(table, key, super_column_path, consistency_level)
-      send_get_super_column(table, key, super_column_path, consistency_level)
-      return recv_get_super_column()
-    end
+          def get_super_column(table, key, super_column_path, consistency_level)
+            send_get_super_column(table, key, super_column_path, consistency_level)
+            return recv_get_super_column()
+          end
 
-    def send_get_super_column(table, key, super_column_path, consistency_level)
-      send_message('get_super_column', Get_super_column_args, :table => table, :key => key, :super_column_path => super_column_path, :consistency_level => consistency_level)
-    end
+          def send_get_super_column(table, key, super_column_path, consistency_level)
+            send_message('get_super_column', Get_super_column_args, :table => table, :key => key, :super_column_path => super_column_path, :consistency_level => consistency_level)
+          end
 
-    def recv_get_super_column()
-      result = receive_message(Get_super_column_result)
-      return result.success unless result.success.nil?
-      raise result.ire unless result.ire.nil?
-      raise result.nfe unless result.nfe.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_super_column failed: unknown result')
-    end
+          def recv_get_super_column()
+            result = receive_message(Get_super_column_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise result.nfe unless result.nfe.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_super_column failed: unknown result')
+          end
 
-    def batch_insert_super_column(table, batch_mutation_super, consistency_level)
-      send_batch_insert_super_column(table, batch_mutation_super, consistency_level)
-      recv_batch_insert_super_column()
-    end
+          def batch_insert_super_column(table, batch_mutation_super, consistency_level)
+            send_batch_insert_super_column(table, batch_mutation_super, consistency_level)
+            recv_batch_insert_super_column()
+          end
 
-    def send_batch_insert_super_column(table, batch_mutation_super, consistency_level)
-      send_message('batch_insert_super_column', Batch_insert_super_column_args, :table => table, :batch_mutation_super => batch_mutation_super, :consistency_level => consistency_level)
-    end
+          def send_batch_insert_super_column(table, batch_mutation_super, consistency_level)
+            send_message('batch_insert_super_column', Batch_insert_super_column_args, :table => table, :batch_mutation_super => batch_mutation_super, :consistency_level => consistency_level)
+          end
 
-    def recv_batch_insert_super_column()
-      result = receive_message(Batch_insert_super_column_result)
-      raise result.ire unless result.ire.nil?
-      raise result.ue unless result.ue.nil?
-      return
-    end
+          def recv_batch_insert_super_column()
+            result = receive_message(Batch_insert_super_column_result)
+            raise result.ire unless result.ire.nil?
+            raise result.ue unless result.ue.nil?
+            return
+          end
 
-    def get_key_range(table, column_family, start, finish, count)
-      send_get_key_range(table, column_family, start, finish, count)
-      return recv_get_key_range()
-    end
+          def get_key_range(table, column_family, start, finish, count)
+            send_get_key_range(table, column_family, start, finish, count)
+            return recv_get_key_range()
+          end
 
-    def send_get_key_range(table, column_family, start, finish, count)
-      send_message('get_key_range', Get_key_range_args, :table => table, :column_family => column_family, :start => start, :finish => finish, :count => count)
-    end
+          def send_get_key_range(table, column_family, start, finish, count)
+            send_message('get_key_range', Get_key_range_args, :table => table, :column_family => column_family, :start => start, :finish => finish, :count => count)
+          end
 
-    def recv_get_key_range()
-      result = receive_message(Get_key_range_result)
-      return result.success unless result.success.nil?
-      raise result.ire unless result.ire.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_key_range failed: unknown result')
-    end
+          def recv_get_key_range()
+            result = receive_message(Get_key_range_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_key_range failed: unknown result')
+          end
 
-    def get_string_property(property)
-      send_get_string_property(property)
-      return recv_get_string_property()
-    end
+          def get_string_property(property)
+            send_get_string_property(property)
+            return recv_get_string_property()
+          end
 
-    def send_get_string_property(property)
-      send_message('get_string_property', Get_string_property_args, :property => property)
-    end
+          def send_get_string_property(property)
+            send_message('get_string_property', Get_string_property_args, :property => property)
+          end
 
-    def recv_get_string_property()
-      result = receive_message(Get_string_property_result)
-      return result.success unless result.success.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_string_property failed: unknown result')
-    end
+          def recv_get_string_property()
+            result = receive_message(Get_string_property_result)
+            return result.success unless result.success.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_string_property failed: unknown result')
+          end
 
-    def get_string_list_property(property)
-      send_get_string_list_property(property)
-      return recv_get_string_list_property()
-    end
+          def get_string_list_property(property)
+            send_get_string_list_property(property)
+            return recv_get_string_list_property()
+          end
 
-    def send_get_string_list_property(property)
-      send_message('get_string_list_property', Get_string_list_property_args, :property => property)
-    end
+          def send_get_string_list_property(property)
+            send_message('get_string_list_property', Get_string_list_property_args, :property => property)
+          end
 
-    def recv_get_string_list_property()
-      result = receive_message(Get_string_list_property_result)
-      return result.success unless result.success.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_string_list_property failed: unknown result')
-    end
+          def recv_get_string_list_property()
+            result = receive_message(Get_string_list_property_result)
+            return result.success unless result.success.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_string_list_property failed: unknown result')
+          end
 
-    def describe_table(table)
-      send_describe_table(table)
-      return recv_describe_table()
-    end
+          def describe_table(table)
+            send_describe_table(table)
+            return recv_describe_table()
+          end
 
-    def send_describe_table(table)
-      send_message('describe_table', Describe_table_args, :table => table)
-    end
+          def send_describe_table(table)
+            send_message('describe_table', Describe_table_args, :table => table)
+          end
 
-    def recv_describe_table()
-      result = receive_message(Describe_table_result)
-      return result.success unless result.success.nil?
-      raise result.nfe unless result.nfe.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_table failed: unknown result')
-    end
+          def recv_describe_table()
+            result = receive_message(Describe_table_result)
+            return result.success unless result.success.nil?
+            raise result.nfe unless result.nfe.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_table failed: unknown result')
+          end
 
-    def execute_query(query)
-      send_execute_query(query)
-      return recv_execute_query()
-    end
+          def execute_query(query)
+            send_execute_query(query)
+            return recv_execute_query()
+          end
 
-    def send_execute_query(query)
-      send_message('execute_query', Execute_query_args, :query => query)
-    end
+          def send_execute_query(query)
+            send_message('execute_query', Execute_query_args, :query => query)
+          end
 
-    def recv_execute_query()
-      result = receive_message(Execute_query_result)
-      return result.success unless result.success.nil?
-      raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'execute_query failed: unknown result')
-    end
+          def recv_execute_query()
+            result = receive_message(Execute_query_result)
+            return result.success unless result.success.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'execute_query failed: unknown result')
+          end
 
-  end
+        end
 
-  class Processor
-    include ::Thrift::Processor
+        class Processor
+          include ::Thrift::Processor
 
-    def process_get_slice_by_names(seqid, iprot, oprot)
-      args = read_args(iprot, Get_slice_by_names_args)
-      result = Get_slice_by_names_result.new()
-      begin
-        result.success = @handler.get_slice_by_names(args.table, args.key, args.column_parent, args.column_names, args.consistency_level)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      rescue NotFoundException => nfe
-        result.nfe = nfe
+          def process_get_slice_by_names(seqid, iprot, oprot)
+            args = read_args(iprot, Get_slice_by_names_args)
+            result = Get_slice_by_names_result.new()
+            begin
+              result.success = @handler.get_slice_by_names(args.table, args.key, args.column_parent, args.column_names, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            rescue CassandraThrift::NotFoundException => nfe
+              result.nfe = nfe
+            end
+            write_result(result, oprot, 'get_slice_by_names', seqid)
+          end
+
+          def process_get_slice(seqid, iprot, oprot)
+            args = read_args(iprot, Get_slice_args)
+            result = Get_slice_result.new()
+            begin
+              result.success = @handler.get_slice(args.table, args.key, args.column_parent, args.start, args.finish, args.is_ascending, args.count, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            rescue CassandraThrift::NotFoundException => nfe
+              result.nfe = nfe
+            end
+            write_result(result, oprot, 'get_slice', seqid)
+          end
+
+          def process_get_column(seqid, iprot, oprot)
+            args = read_args(iprot, Get_column_args)
+            result = Get_column_result.new()
+            begin
+              result.success = @handler.get_column(args.table, args.key, args.column_path, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            rescue CassandraThrift::NotFoundException => nfe
+              result.nfe = nfe
+            end
+            write_result(result, oprot, 'get_column', seqid)
+          end
+
+          def process_get_column_count(seqid, iprot, oprot)
+            args = read_args(iprot, Get_column_count_args)
+            result = Get_column_count_result.new()
+            begin
+              result.success = @handler.get_column_count(args.table, args.key, args.column_parent, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            end
+            write_result(result, oprot, 'get_column_count', seqid)
+          end
+
+          def process_insert(seqid, iprot, oprot)
+            args = read_args(iprot, Insert_args)
+            result = Insert_result.new()
+            begin
+              @handler.insert(args.table, args.key, args.column_path, args.value, args.timestamp, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            rescue CassandraThrift::UnavailableException => ue
+              result.ue = ue
+            end
+            write_result(result, oprot, 'insert', seqid)
+          end
+
+          def process_batch_insert(seqid, iprot, oprot)
+            args = read_args(iprot, Batch_insert_args)
+            result = Batch_insert_result.new()
+            begin
+              @handler.batch_insert(args.table, args.batch_mutation, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            rescue CassandraThrift::UnavailableException => ue
+              result.ue = ue
+            end
+            write_result(result, oprot, 'batch_insert', seqid)
+          end
+
+          def process_remove(seqid, iprot, oprot)
+            args = read_args(iprot, Remove_args)
+            result = Remove_result.new()
+            begin
+              @handler.remove(args.table, args.key, args.column_path_or_parent, args.timestamp, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            rescue CassandraThrift::UnavailableException => ue
+              result.ue = ue
+            end
+            write_result(result, oprot, 'remove', seqid)
+          end
+
+          def process_get_slice_super(seqid, iprot, oprot)
+            args = read_args(iprot, Get_slice_super_args)
+            result = Get_slice_super_result.new()
+            begin
+              result.success = @handler.get_slice_super(args.table, args.key, args.column_family, args.start, args.finish, args.is_ascending, args.count, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            end
+            write_result(result, oprot, 'get_slice_super', seqid)
+          end
+
+          def process_get_slice_super_by_names(seqid, iprot, oprot)
+            args = read_args(iprot, Get_slice_super_by_names_args)
+            result = Get_slice_super_by_names_result.new()
+            begin
+              result.success = @handler.get_slice_super_by_names(args.table, args.key, args.column_family, args.super_column_names, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            end
+            write_result(result, oprot, 'get_slice_super_by_names', seqid)
+          end
+
+          def process_get_super_column(seqid, iprot, oprot)
+            args = read_args(iprot, Get_super_column_args)
+            result = Get_super_column_result.new()
+            begin
+              result.success = @handler.get_super_column(args.table, args.key, args.super_column_path, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            rescue CassandraThrift::NotFoundException => nfe
+              result.nfe = nfe
+            end
+            write_result(result, oprot, 'get_super_column', seqid)
+          end
+
+          def process_batch_insert_super_column(seqid, iprot, oprot)
+            args = read_args(iprot, Batch_insert_super_column_args)
+            result = Batch_insert_super_column_result.new()
+            begin
+              @handler.batch_insert_super_column(args.table, args.batch_mutation_super, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            rescue CassandraThrift::UnavailableException => ue
+              result.ue = ue
+            end
+            write_result(result, oprot, 'batch_insert_super_column', seqid)
+          end
+
+          def process_get_key_range(seqid, iprot, oprot)
+            args = read_args(iprot, Get_key_range_args)
+            result = Get_key_range_result.new()
+            begin
+              result.success = @handler.get_key_range(args.table, args.column_family, args.start, args.finish, args.count)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            end
+            write_result(result, oprot, 'get_key_range', seqid)
+          end
+
+          def process_get_string_property(seqid, iprot, oprot)
+            args = read_args(iprot, Get_string_property_args)
+            result = Get_string_property_result.new()
+            result.success = @handler.get_string_property(args.property)
+            write_result(result, oprot, 'get_string_property', seqid)
+          end
+
+          def process_get_string_list_property(seqid, iprot, oprot)
+            args = read_args(iprot, Get_string_list_property_args)
+            result = Get_string_list_property_result.new()
+            result.success = @handler.get_string_list_property(args.property)
+            write_result(result, oprot, 'get_string_list_property', seqid)
+          end
+
+          def process_describe_table(seqid, iprot, oprot)
+            args = read_args(iprot, Describe_table_args)
+            result = Describe_table_result.new()
+            begin
+              result.success = @handler.describe_table(args.table)
+            rescue CassandraThrift::NotFoundException => nfe
+              result.nfe = nfe
+            end
+            write_result(result, oprot, 'describe_table', seqid)
+          end
+
+          def process_execute_query(seqid, iprot, oprot)
+            args = read_args(iprot, Execute_query_args)
+            result = Execute_query_result.new()
+            result.success = @handler.execute_query(args.query)
+            write_result(result, oprot, 'execute_query', seqid)
+          end
+
+        end
+
+        # HELPER FUNCTIONS AND STRUCTURES
+
+        class Get_slice_by_names_args
+          include ::Thrift::Struct
+          TABLE = 1
+          KEY = 2
+          COLUMN_PARENT = 3
+          COLUMN_NAMES = 4
+          CONSISTENCY_LEVEL = 5
+
+          ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :column_names, :consistency_level
+          FIELDS = {
+            TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
+            COLUMN_NAMES => {:type => ::Thrift::Types::LIST, :name => 'column_names', :element => {:type => ::Thrift::Types::STRING}},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Get_slice_by_names_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+          NFE = 2
+
+          ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::Column}},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
+            NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_slice_args
+          include ::Thrift::Struct
+          TABLE = 1
+          KEY = 2
+          COLUMN_PARENT = 3
+          START = 4
+          FINISH = 5
+          IS_ASCENDING = 6
+          COUNT = 7
+          CONSISTENCY_LEVEL = 8
+
+          ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :start, :finish, :is_ascending, :count, :consistency_level
+          FIELDS = {
+            TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
+            START => {:type => ::Thrift::Types::STRING, :name => 'start'},
+            FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
+            IS_ASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'is_ascending'},
+            COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Get_slice_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+          NFE = 2
+
+          ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::Column}},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
+            NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_column_args
+          include ::Thrift::Struct
+          TABLE = 1
+          KEY = 2
+          COLUMN_PATH = 3
+          CONSISTENCY_LEVEL = 4
+
+          ::Thrift::Struct.field_accessor self, :table, :key, :column_path, :consistency_level
+          FIELDS = {
+            TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => CassandraThrift::ColumnPath},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Get_column_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+          NFE = 2
+
+          ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CassandraThrift::Column},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
+            NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_column_count_args
+          include ::Thrift::Struct
+          TABLE = 1
+          KEY = 2
+          COLUMN_PARENT = 3
+          CONSISTENCY_LEVEL = 5
+
+          ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :consistency_level
+          FIELDS = {
+            TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Get_column_count_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+
+          ::Thrift::Struct.field_accessor self, :success, :ire
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::I32, :name => 'success'},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Insert_args
+          include ::Thrift::Struct
+          TABLE = 1
+          KEY = 2
+          COLUMN_PATH = 3
+          VALUE = 4
+          TIMESTAMP = 5
+          CONSISTENCY_LEVEL = 6
+
+          ::Thrift::Struct.field_accessor self, :table, :key, :column_path, :value, :timestamp, :consistency_level
+          FIELDS = {
+            TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => CassandraThrift::ColumnPath},
+            VALUE => {:type => ::Thrift::Types::STRING, :name => 'value'},
+            TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             0, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Insert_result
+          include ::Thrift::Struct
+          IRE = 1
+          UE = 2
+
+          ::Thrift::Struct.field_accessor self, :ire, :ue
+          FIELDS = {
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Batch_insert_args
+          include ::Thrift::Struct
+          TABLE = 1
+          BATCH_MUTATION = 2
+          CONSISTENCY_LEVEL = 3
+
+          ::Thrift::Struct.field_accessor self, :table, :batch_mutation, :consistency_level
+          FIELDS = {
+            TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+            BATCH_MUTATION => {:type => ::Thrift::Types::STRUCT, :name => 'batch_mutation', :class => CassandraThrift::BatchMutation},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             0, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Batch_insert_result
+          include ::Thrift::Struct
+          IRE = 1
+          UE = 2
+
+          ::Thrift::Struct.field_accessor self, :ire, :ue
+          FIELDS = {
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Remove_args
+          include ::Thrift::Struct
+          TABLE = 1
+          KEY = 2
+          COLUMN_PATH_OR_PARENT = 3
+          TIMESTAMP = 4
+          CONSISTENCY_LEVEL = 5
+
+          ::Thrift::Struct.field_accessor self, :table, :key, :column_path_or_parent, :timestamp, :consistency_level
+          FIELDS = {
+            TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            COLUMN_PATH_OR_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_path_or_parent', :class => CassandraThrift::ColumnPathOrParent},
+            TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             0, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Remove_result
+          include ::Thrift::Struct
+          IRE = 1
+          UE = 2
+
+          ::Thrift::Struct.field_accessor self, :ire, :ue
+          FIELDS = {
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_slice_super_args
+          include ::Thrift::Struct
+          TABLE = 1
+          KEY = 2
+          COLUMN_FAMILY = 3
+          START = 4
+          FINISH = 5
+          IS_ASCENDING = 6
+          COUNT = 7
+          CONSISTENCY_LEVEL = 8
+
+          ::Thrift::Struct.field_accessor self, :table, :key, :column_family, :start, :finish, :is_ascending, :count, :consistency_level
+          FIELDS = {
+            TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
+            START => {:type => ::Thrift::Types::STRING, :name => 'start'},
+            FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
+            IS_ASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'is_ascending'},
+            COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Get_slice_super_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+
+          ::Thrift::Struct.field_accessor self, :success, :ire
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::SuperColumn}},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_slice_super_by_names_args
+          include ::Thrift::Struct
+          TABLE = 1
+          KEY = 2
+          COLUMN_FAMILY = 3
+          SUPER_COLUMN_NAMES = 4
+          CONSISTENCY_LEVEL = 5
+
+          ::Thrift::Struct.field_accessor self, :table, :key, :column_family, :super_column_names, :consistency_level
+          FIELDS = {
+            TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
+            SUPER_COLUMN_NAMES => {:type => ::Thrift::Types::LIST, :name => 'super_column_names', :element => {:type => ::Thrift::Types::STRING}},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Get_slice_super_by_names_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+
+          ::Thrift::Struct.field_accessor self, :success, :ire
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::SuperColumn}},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_super_column_args
+          include ::Thrift::Struct
+          TABLE = 1
+          KEY = 2
+          SUPER_COLUMN_PATH = 3
+          CONSISTENCY_LEVEL = 4
+
+          ::Thrift::Struct.field_accessor self, :table, :key, :super_column_path, :consistency_level
+          FIELDS = {
+            TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            SUPER_COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'super_column_path', :class => CassandraThrift::SuperColumnPath},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Get_super_column_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+          NFE = 2
+
+          ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CassandraThrift::SuperColumn},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
+            NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Batch_insert_super_column_args
+          include ::Thrift::Struct
+          TABLE = 1
+          BATCH_MUTATION_SUPER = 2
+          CONSISTENCY_LEVEL = 3
+
+          ::Thrift::Struct.field_accessor self, :table, :batch_mutation_super, :consistency_level
+          FIELDS = {
+            TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+            BATCH_MUTATION_SUPER => {:type => ::Thrift::Types::STRUCT, :name => 'batch_mutation_super', :class => CassandraThrift::BatchMutationSuper},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             0, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Batch_insert_super_column_result
+          include ::Thrift::Struct
+          IRE = 1
+          UE = 2
+
+          ::Thrift::Struct.field_accessor self, :ire, :ue
+          FIELDS = {
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_key_range_args
+          include ::Thrift::Struct
+          TABLE = 1
+          COLUMN_FAMILY = 2
+          START = 3
+          FINISH = 4
+          COUNT = 5
+
+          ::Thrift::Struct.field_accessor self, :table, :column_family, :start, :finish, :count
+          FIELDS = {
+            TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+            COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
+            START => {:type => ::Thrift::Types::STRING, :name => 'start', :default => %q""},
+            FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish', :default => %q""},
+            COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_key_range_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+
+          ::Thrift::Struct.field_accessor self, :success, :ire
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRING}},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_string_property_args
+          include ::Thrift::Struct
+          PROPERTY = 1
+
+          ::Thrift::Struct.field_accessor self, :property
+          FIELDS = {
+            PROPERTY => {:type => ::Thrift::Types::STRING, :name => 'property'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_string_property_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+
+          ::Thrift::Struct.field_accessor self, :success
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_string_list_property_args
+          include ::Thrift::Struct
+          PROPERTY = 1
+
+          ::Thrift::Struct.field_accessor self, :property
+          FIELDS = {
+            PROPERTY => {:type => ::Thrift::Types::STRING, :name => 'property'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_string_list_property_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+
+          ::Thrift::Struct.field_accessor self, :success
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRING}}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Describe_table_args
+          include ::Thrift::Struct
+          TABLE = 1
+
+          ::Thrift::Struct.field_accessor self, :table
+          FIELDS = {
+            TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Describe_table_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          NFE = 1
+
+          ::Thrift::Struct.field_accessor self, :success, :nfe
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::MAP, :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}}},
+            NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Execute_query_args
+          include ::Thrift::Struct
+          QUERY = 1
+
+          ::Thrift::Struct.field_accessor self, :query
+          FIELDS = {
+            QUERY => {:type => ::Thrift::Types::STRING, :name => 'query'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Execute_query_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+
+          ::Thrift::Struct.field_accessor self, :success
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CassandraThrift::CqlResult}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
       end
-      write_result(result, oprot, 'get_slice_by_names', seqid)
+
     end
-
-    def process_get_slice(seqid, iprot, oprot)
-      args = read_args(iprot, Get_slice_args)
-      result = Get_slice_result.new()
-      begin
-        result.success = @handler.get_slice(args.table, args.key, args.column_parent, args.start, args.finish, args.is_ascending, args.count, args.consistency_level)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      rescue NotFoundException => nfe
-        result.nfe = nfe
-      end
-      write_result(result, oprot, 'get_slice', seqid)
-    end
-
-    def process_get_column(seqid, iprot, oprot)
-      args = read_args(iprot, Get_column_args)
-      result = Get_column_result.new()
-      begin
-        result.success = @handler.get_column(args.table, args.key, args.column_path, args.consistency_level)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      rescue NotFoundException => nfe
-        result.nfe = nfe
-      end
-      write_result(result, oprot, 'get_column', seqid)
-    end
-
-    def process_get_column_count(seqid, iprot, oprot)
-      args = read_args(iprot, Get_column_count_args)
-      result = Get_column_count_result.new()
-      begin
-        result.success = @handler.get_column_count(args.table, args.key, args.column_parent, args.consistency_level)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      end
-      write_result(result, oprot, 'get_column_count', seqid)
-    end
-
-    def process_insert(seqid, iprot, oprot)
-      args = read_args(iprot, Insert_args)
-      result = Insert_result.new()
-      begin
-        @handler.insert(args.table, args.key, args.column_path, args.value, args.timestamp, args.consistency_level)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      rescue UnavailableException => ue
-        result.ue = ue
-      end
-      write_result(result, oprot, 'insert', seqid)
-    end
-
-    def process_batch_insert(seqid, iprot, oprot)
-      args = read_args(iprot, Batch_insert_args)
-      result = Batch_insert_result.new()
-      begin
-        @handler.batch_insert(args.table, args.batch_mutation, args.consistency_level)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      rescue UnavailableException => ue
-        result.ue = ue
-      end
-      write_result(result, oprot, 'batch_insert', seqid)
-    end
-
-    def process_remove(seqid, iprot, oprot)
-      args = read_args(iprot, Remove_args)
-      result = Remove_result.new()
-      begin
-        @handler.remove(args.table, args.key, args.column_path_or_parent, args.timestamp, args.consistency_level)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      rescue UnavailableException => ue
-        result.ue = ue
-      end
-      write_result(result, oprot, 'remove', seqid)
-    end
-
-    def process_get_slice_super(seqid, iprot, oprot)
-      args = read_args(iprot, Get_slice_super_args)
-      result = Get_slice_super_result.new()
-      begin
-        result.success = @handler.get_slice_super(args.table, args.key, args.column_family, args.start, args.finish, args.is_ascending, args.count, args.consistency_level)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      end
-      write_result(result, oprot, 'get_slice_super', seqid)
-    end
-
-    def process_get_slice_super_by_names(seqid, iprot, oprot)
-      args = read_args(iprot, Get_slice_super_by_names_args)
-      result = Get_slice_super_by_names_result.new()
-      begin
-        result.success = @handler.get_slice_super_by_names(args.table, args.key, args.column_family, args.super_column_names, args.consistency_level)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      end
-      write_result(result, oprot, 'get_slice_super_by_names', seqid)
-    end
-
-    def process_get_super_column(seqid, iprot, oprot)
-      args = read_args(iprot, Get_super_column_args)
-      result = Get_super_column_result.new()
-      begin
-        result.success = @handler.get_super_column(args.table, args.key, args.super_column_path, args.consistency_level)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      rescue NotFoundException => nfe
-        result.nfe = nfe
-      end
-      write_result(result, oprot, 'get_super_column', seqid)
-    end
-
-    def process_batch_insert_super_column(seqid, iprot, oprot)
-      args = read_args(iprot, Batch_insert_super_column_args)
-      result = Batch_insert_super_column_result.new()
-      begin
-        @handler.batch_insert_super_column(args.table, args.batch_mutation_super, args.consistency_level)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      rescue UnavailableException => ue
-        result.ue = ue
-      end
-      write_result(result, oprot, 'batch_insert_super_column', seqid)
-    end
-
-    def process_get_key_range(seqid, iprot, oprot)
-      args = read_args(iprot, Get_key_range_args)
-      result = Get_key_range_result.new()
-      begin
-        result.success = @handler.get_key_range(args.table, args.column_family, args.start, args.finish, args.count)
-      rescue InvalidRequestException => ire
-        result.ire = ire
-      end
-      write_result(result, oprot, 'get_key_range', seqid)
-    end
-
-    def process_get_string_property(seqid, iprot, oprot)
-      args = read_args(iprot, Get_string_property_args)
-      result = Get_string_property_result.new()
-      result.success = @handler.get_string_property(args.property)
-      write_result(result, oprot, 'get_string_property', seqid)
-    end
-
-    def process_get_string_list_property(seqid, iprot, oprot)
-      args = read_args(iprot, Get_string_list_property_args)
-      result = Get_string_list_property_result.new()
-      result.success = @handler.get_string_list_property(args.property)
-      write_result(result, oprot, 'get_string_list_property', seqid)
-    end
-
-    def process_describe_table(seqid, iprot, oprot)
-      args = read_args(iprot, Describe_table_args)
-      result = Describe_table_result.new()
-      begin
-        result.success = @handler.describe_table(args.table)
-      rescue NotFoundException => nfe
-        result.nfe = nfe
-      end
-      write_result(result, oprot, 'describe_table', seqid)
-    end
-
-    def process_execute_query(seqid, iprot, oprot)
-      args = read_args(iprot, Execute_query_args)
-      result = Execute_query_result.new()
-      result.success = @handler.execute_query(args.query)
-      write_result(result, oprot, 'execute_query', seqid)
-    end
-
-  end
-
-  # HELPER FUNCTIONS AND STRUCTURES
-
-  class Get_slice_by_names_args
-    include ::Thrift::Struct
-    TABLE = 1
-    KEY = 2
-    COLUMN_PARENT = 3
-    COLUMN_NAMES = 4
-    CONSISTENCY_LEVEL = 5
-
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :column_names, :consistency_level
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
-      KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => ColumnParent},
-      COLUMN_NAMES => {:type => ::Thrift::Types::LIST, :name => 'column_names', :element => {:type => ::Thrift::Types::STRING}},
-      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
-      end
-    end
-
-  end
-
-  class Get_slice_by_names_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-    IRE = 1
-    NFE = 2
-
-    ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => Column}},
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
-      NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => NotFoundException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_slice_args
-    include ::Thrift::Struct
-    TABLE = 1
-    KEY = 2
-    COLUMN_PARENT = 3
-    START = 4
-    FINISH = 5
-    IS_ASCENDING = 6
-    COUNT = 7
-    CONSISTENCY_LEVEL = 8
-
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :start, :finish, :is_ascending, :count, :consistency_level
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
-      KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => ColumnParent},
-      START => {:type => ::Thrift::Types::STRING, :name => 'start'},
-      FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
-      IS_ASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'is_ascending'},
-      COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100},
-      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
-      end
-    end
-
-  end
-
-  class Get_slice_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-    IRE = 1
-    NFE = 2
-
-    ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => Column}},
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
-      NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => NotFoundException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_column_args
-    include ::Thrift::Struct
-    TABLE = 1
-    KEY = 2
-    COLUMN_PATH = 3
-    CONSISTENCY_LEVEL = 4
-
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_path, :consistency_level
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
-      KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => ColumnPath},
-      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
-      end
-    end
-
-  end
-
-  class Get_column_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-    IRE = 1
-    NFE = 2
-
-    ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => Column},
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
-      NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => NotFoundException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_column_count_args
-    include ::Thrift::Struct
-    TABLE = 1
-    KEY = 2
-    COLUMN_PARENT = 3
-    CONSISTENCY_LEVEL = 5
-
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_parent, :consistency_level
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
-      KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => ColumnParent},
-      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
-      end
-    end
-
-  end
-
-  class Get_column_count_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-    IRE = 1
-
-    ::Thrift::Struct.field_accessor self, :success, :ire
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::I32, :name => 'success'},
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Insert_args
-    include ::Thrift::Struct
-    TABLE = 1
-    KEY = 2
-    COLUMN_PATH = 3
-    VALUE = 4
-    TIMESTAMP = 5
-    CONSISTENCY_LEVEL = 6
-
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_path, :value, :timestamp, :consistency_level
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
-      KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => ColumnPath},
-      VALUE => {:type => ::Thrift::Types::STRING, :name => 'value'},
-      TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
-      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       0, :enum_class => ConsistencyLevel}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
-      end
-    end
-
-  end
-
-  class Insert_result
-    include ::Thrift::Struct
-    IRE = 1
-    UE = 2
-
-    ::Thrift::Struct.field_accessor self, :ire, :ue
-    FIELDS = {
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
-      UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => UnavailableException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Batch_insert_args
-    include ::Thrift::Struct
-    TABLE = 1
-    BATCH_MUTATION = 2
-    CONSISTENCY_LEVEL = 3
-
-    ::Thrift::Struct.field_accessor self, :table, :batch_mutation, :consistency_level
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
-      BATCH_MUTATION => {:type => ::Thrift::Types::STRUCT, :name => 'batch_mutation', :class => BatchMutation},
-      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       0, :enum_class => ConsistencyLevel}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
-      end
-    end
-
-  end
-
-  class Batch_insert_result
-    include ::Thrift::Struct
-    IRE = 1
-    UE = 2
-
-    ::Thrift::Struct.field_accessor self, :ire, :ue
-    FIELDS = {
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
-      UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => UnavailableException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Remove_args
-    include ::Thrift::Struct
-    TABLE = 1
-    KEY = 2
-    COLUMN_PATH_OR_PARENT = 3
-    TIMESTAMP = 4
-    CONSISTENCY_LEVEL = 5
-
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_path_or_parent, :timestamp, :consistency_level
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
-      KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMN_PATH_OR_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_path_or_parent', :class => ColumnPathOrParent},
-      TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
-      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       0, :enum_class => ConsistencyLevel}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
-      end
-    end
-
-  end
-
-  class Remove_result
-    include ::Thrift::Struct
-    IRE = 1
-    UE = 2
-
-    ::Thrift::Struct.field_accessor self, :ire, :ue
-    FIELDS = {
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
-      UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => UnavailableException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_slice_super_args
-    include ::Thrift::Struct
-    TABLE = 1
-    KEY = 2
-    COLUMN_FAMILY = 3
-    START = 4
-    FINISH = 5
-    IS_ASCENDING = 6
-    COUNT = 7
-    CONSISTENCY_LEVEL = 8
-
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_family, :start, :finish, :is_ascending, :count, :consistency_level
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
-      KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
-      START => {:type => ::Thrift::Types::STRING, :name => 'start'},
-      FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
-      IS_ASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'is_ascending'},
-      COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100},
-      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
-      end
-    end
-
-  end
-
-  class Get_slice_super_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-    IRE = 1
-
-    ::Thrift::Struct.field_accessor self, :success, :ire
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => SuperColumn}},
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_slice_super_by_names_args
-    include ::Thrift::Struct
-    TABLE = 1
-    KEY = 2
-    COLUMN_FAMILY = 3
-    SUPER_COLUMN_NAMES = 4
-    CONSISTENCY_LEVEL = 5
-
-    ::Thrift::Struct.field_accessor self, :table, :key, :column_family, :super_column_names, :consistency_level
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
-      KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
-      SUPER_COLUMN_NAMES => {:type => ::Thrift::Types::LIST, :name => 'super_column_names', :element => {:type => ::Thrift::Types::STRING}},
-      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
-      end
-    end
-
-  end
-
-  class Get_slice_super_by_names_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-    IRE = 1
-
-    ::Thrift::Struct.field_accessor self, :success, :ire
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => SuperColumn}},
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_super_column_args
-    include ::Thrift::Struct
-    TABLE = 1
-    KEY = 2
-    SUPER_COLUMN_PATH = 3
-    CONSISTENCY_LEVEL = 4
-
-    ::Thrift::Struct.field_accessor self, :table, :key, :super_column_path, :consistency_level
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
-      KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-      SUPER_COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'super_column_path', :class => SuperColumnPath},
-      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       1, :enum_class => ConsistencyLevel}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
-      end
-    end
-
-  end
-
-  class Get_super_column_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-    IRE = 1
-    NFE = 2
-
-    ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => SuperColumn},
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
-      NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => NotFoundException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Batch_insert_super_column_args
-    include ::Thrift::Struct
-    TABLE = 1
-    BATCH_MUTATION_SUPER = 2
-    CONSISTENCY_LEVEL = 3
-
-    ::Thrift::Struct.field_accessor self, :table, :batch_mutation_super, :consistency_level
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
-      BATCH_MUTATION_SUPER => {:type => ::Thrift::Types::STRUCT, :name => 'batch_mutation_super', :class => BatchMutationSuper},
-      CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>       0, :enum_class => ConsistencyLevel}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-      unless @consistency_level.nil? || ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
-      end
-    end
-
-  end
-
-  class Batch_insert_super_column_result
-    include ::Thrift::Struct
-    IRE = 1
-    UE = 2
-
-    ::Thrift::Struct.field_accessor self, :ire, :ue
-    FIELDS = {
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException},
-      UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => UnavailableException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_key_range_args
-    include ::Thrift::Struct
-    TABLE = 1
-    COLUMN_FAMILY = 2
-    START = 3
-    FINISH = 4
-    COUNT = 5
-
-    ::Thrift::Struct.field_accessor self, :table, :column_family, :start, :finish, :count
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
-      COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
-      START => {:type => ::Thrift::Types::STRING, :name => 'start', :default => %q""},
-      FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish', :default => %q""},
-      COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_key_range_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-    IRE = 1
-
-    ::Thrift::Struct.field_accessor self, :success, :ire
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRING}},
-      IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => InvalidRequestException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_string_property_args
-    include ::Thrift::Struct
-    PROPERTY = 1
-
-    ::Thrift::Struct.field_accessor self, :property
-    FIELDS = {
-      PROPERTY => {:type => ::Thrift::Types::STRING, :name => 'property'}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_string_property_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-
-    ::Thrift::Struct.field_accessor self, :success
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_string_list_property_args
-    include ::Thrift::Struct
-    PROPERTY = 1
-
-    ::Thrift::Struct.field_accessor self, :property
-    FIELDS = {
-      PROPERTY => {:type => ::Thrift::Types::STRING, :name => 'property'}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Get_string_list_property_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-
-    ::Thrift::Struct.field_accessor self, :success
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRING}}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Describe_table_args
-    include ::Thrift::Struct
-    TABLE = 1
-
-    ::Thrift::Struct.field_accessor self, :table
-    FIELDS = {
-      TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Describe_table_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-    NFE = 1
-
-    ::Thrift::Struct.field_accessor self, :success, :nfe
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::MAP, :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}}},
-      NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => NotFoundException}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Execute_query_args
-    include ::Thrift::Struct
-    QUERY = 1
-
-    ::Thrift::Struct.field_accessor self, :query
-    FIELDS = {
-      QUERY => {:type => ::Thrift::Types::STRING, :name => 'query'}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-  class Execute_query_result
-    include ::Thrift::Struct
-    SUCCESS = 0
-
-    ::Thrift::Struct.field_accessor self, :success
-    FIELDS = {
-      SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CqlResult}
-    }
-
-    def struct_fields; FIELDS; end
-
-    def validate
-    end
-
-  end
-
-end
-

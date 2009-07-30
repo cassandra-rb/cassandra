@@ -9,6 +9,7 @@ module Cassandra
     def method_missing(*args)
       @client.send(*args)
     rescue IOError
+      @transport.close rescue nil
       @transport.open
       raise if defined?(once)
       once = true
