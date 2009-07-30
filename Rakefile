@@ -5,7 +5,7 @@ Echoe.new("cassandra") do |p|
   p.project = "fauna"
   p.summary = "A Ruby client for the Cassandra distributed database."
   p.rubygems_version = ">= 0.8"
-  p.dependencies = ['json']
+  p.dependencies = ['json', 'thrift']
   p.ignore_pattern = /^(data|vendor\/cassandra|cassandra|vendor\/thrift)/
   p.rdoc_pattern = /^(lib|bin|tasks|ext)|_types.rb|_constants.rb|^README|^CHANGELOG|^TODO|^LICENSE|^COPYING$/
   p.url = "http://blog.evanweaver.com/files/doc/fauna/cassandra/"
