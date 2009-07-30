@@ -95,7 +95,11 @@ class CassandraClientTest < Test::Unit::TestCase
     last_column = {Long.new => 'v5'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => last_column})
     
+    keys = @twitter.get(:StatusRelationships, key, "user_timelines").keys
+    assert_equal keys.sort, keys
+    
     assert_equal(first_column, @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1, first_column.keys.first..''))
+    assert_equal(3, @twitter.get(:StatusRelationships, key, "user_timelines", nil, 100, last_column.keys.first..first_column.keys.first).size)
   end
 
   def test_get_super_sub_key
