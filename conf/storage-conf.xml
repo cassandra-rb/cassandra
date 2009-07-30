@@ -37,7 +37,7 @@
           <ColumnFamily CompareWith="UTF8Type" Name="Usernames" />
           <ColumnFamily CompareWith="UTF8Type" Name="Statuses" />
           <ColumnFamily CompareWith="UTF8Type" Name="StatusAudits" />
-          <ColumnFamily CompareWith="UTF8Type" CompareSubcolumnsWith="UUIDType" ColumnType="Super" Name="StatusRelationships" />  
+          <ColumnFamily CompareWith="UTF8Type" CompareSubcolumnsWith="LongType" ColumnType="Super" Name="StatusRelationships" />  
       </Table>
 
       <Table Name="Multiblog">      

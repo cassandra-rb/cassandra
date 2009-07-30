@@ -5,6 +5,8 @@ require "#{File.expand_path(File.dirname(__FILE__))}/../lib/cassandra_client"
 begin; require 'ruby-debug'; rescue LoadError; end
 
 class CassandraClientTest < Test::Unit::TestCase
+  include CassandraClient::Constants
+  
   def setup
     @twitter = CassandraClient.new('Twitter', '127.0.0.1')
     @twitter.clear_keyspace!
@@ -36,14 +38,14 @@ class CassandraClientTest < Test::Unit::TestCase
 
   def test_get_key_name_sorted_preserving_order
     # In-order hash is preserved
-    hash = CassandraClient::OrderedHash['a', nil, 'b', nil, 'c', nil, 'd', nil,]
+    hash = OrderedHash['a', nil, 'b', nil, 'c', nil, 'd', nil,]
     @twitter.insert(:Users, key, hash)
     assert_equal(hash.keys, @twitter.get(:Users, key).keys)
 
     @twitter.remove(:Users, key)
 
     # Out-of-order hash is returned sorted
-    hash = CassandraClient::OrderedHash['b', nil, 'c', nil, 'd', nil, 'a', nil]
+    hash = OrderedHash['b', nil, 'c', nil, 'd', nil, 'a', nil]
     @twitter.insert(:Users, key, hash)
     assert_equal(hash.keys.sort, @twitter.get(:Users, key).keys)
     assert_not_equal(hash.keys, @twitter.get(:Users, key).keys)
@@ -117,10 +119,10 @@ class CassandraClientTest < Test::Unit::TestCase
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
     @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
     assert_equal(
-      CassandraClient::OrderedHash[key + '1', {'body' => 'v1', 'user' => 'v1'}, key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}],
+      OrderedHash[key + '1', {'body' => 'v1', 'user' => 'v1'}, key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}],
       @twitter.multi_get(:Users, [key + '1', key + '2', 'bogus']))
     assert_equal(
-      CassandraClient::OrderedHash[key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}, key + '1', {'body' => 'v1', 'user' => 'v1'}],
+      OrderedHash[key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}, key + '1', {'body' => 'v1', 'user' => 'v1'}],
       @twitter.multi_get(:Users, [key + '2', 'bogus', key + '1']))
   end
 
@@ -181,8 +183,9 @@ class CassandraClientTest < Test::Unit::TestCase
   end
 
   def test_insert_super_key
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v', key => 'v'}})
-    assert_equal({UUID.new => 'v' , key => 'v'}, @twitter.get(:StatusRelationships, key, 'user_timelines'))
+    columns = {UUID.new => 'v', key => 'v'}
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
+    assert_equal(columns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
   end
 
   def test_get_columns
@@ -202,10 +205,10 @@ class CassandraClientTest < Test::Unit::TestCase
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
     @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
     assert_equal(
-      CassandraClient::OrderedHash[key + '1', ['v1', 'v1'], key + '2', ['v2', 'v2'], 'bogus', [nil, nil]],
+      OrderedHash[key + '1', ['v1', 'v1'], key + '2', ['v2', 'v2'], 'bogus', [nil, nil]],
       @twitter.multi_get_columns(:Users, [key + '1', key + '2', 'bogus'], ['body', 'user']))
     assert_equal(
-      CassandraClient::OrderedHash[key + '2', ['v2', 'v2'], 'bogus', [nil, nil], key + '1', ['v1', 'v1']],
+      OrderedHash[key + '2', ['v2', 'v2'], 'bogus', [nil, nil], key + '1', ['v1', 'v1']],
       @twitter.multi_get_columns(:Users, [key + '2', 'bogus', key + '1'], ['body', 'user']))
   end
 
@@ -246,10 +249,10 @@ class CassandraClientTest < Test::Unit::TestCase
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
     @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
     assert_equal(
-      CassandraClient::OrderedHash[key + '1', 2, key + '2', 2, 'bogus', 0],
+      OrderedHash[key + '1', 2, key + '2', 2, 'bogus', 0],
       @twitter.multi_count_columns(:Users, [key + '1', key + '2', 'bogus']))
     assert_equal(
-      CassandraClient::OrderedHash[key + '2', 2, 'bogus', 0, key + '1', 2],
+      OrderedHash[key + '2', 2, 'bogus', 0, key + '1', 2],
       @twitter.multi_count_columns(:Users, [key + '2', 'bogus', key + '1']))
   end
 
