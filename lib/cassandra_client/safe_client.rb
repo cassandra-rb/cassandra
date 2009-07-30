@@ -9,7 +9,7 @@ module CassandraThrift
       
       def method_missing(*args)
         @client.send(*args)
-      rescue IOError
+      rescue IOError, UnavailableException
         @transport.close rescue nil
         @transport.open
         raise if defined?(once)

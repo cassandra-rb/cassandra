@@ -1,5 +1,5 @@
 
-v0.4. Use new comparator API. Make tokens and limits actually work.
+v0.4. Use new comparator API. Namespace Thrift bindings. Make tokens and limits actually work. Retry UnavailableExceptions.
 
 v0.3. Use new Thrift API.
 
