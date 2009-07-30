@@ -78,6 +78,10 @@ class CassandraClient
   # path you request.
   def remove(column_family, key, column = nil, sub_column = nil, consistency = Consistency::WEAK, timestamp = Time.stamp)
     column_family = column_family.to_s
+    assert_column_name_classes(column_family, column, sub_column)
+
+    column = column.to_s if column
+    sub_column = sub_column.to_s if sub_column
     args = [column_family, key, column, sub_column, consistency, timestamp]
     @batch ? @batch << args : _remove(*args)
   end
@@ -117,6 +121,8 @@ class CassandraClient
   # request.
   def count_columns(column_family, key, super_column = nil, consistency = Consistency::WEAK)
     column_family = column_family.to_s
+    assert_column_name_classes(column_family, super_column)
+
     super_column = super_column.to_s if super_column
     @client.get_column_count(@keyspace, key, 
       ColumnParent.new(:column_family => column_family, :super_column => super_column),
@@ -132,9 +138,11 @@ class CassandraClient
   end  
   
   # Return a list of single values for the elements at the
-  # column_family:key:column:[sub_column] path you request.
+  # column_family:key:column[s]:[sub_columns] path you request.
   def get_columns(column_family, key, columns, sub_columns = nil, consistency = Consistency::WEAK)
     column_family = column_family.to_s
+    assert_column_name_classes(column_family, columns, sub_columns)
+    
     result = if is_super(column_family) 
       if sub_columns 
         columns_to_hash(column_family, @client.get_slice_by_names(@keyspace, key, 
@@ -162,6 +170,8 @@ class CassandraClient
   # path you request.
   def get(column_family, key, column = nil, sub_column = nil, limit = 100, consistency = Consistency::WEAK)
     column_family = column_family.to_s
+    assert_column_name_classes(column_family, column, sub_column)
+
     column = column.to_s if column
     sub_column = sub_column.to_s if sub_column
 

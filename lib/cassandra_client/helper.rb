@@ -33,12 +33,12 @@ class CassandraClient
       raise AccessError, "Invalid column family \"#{column_family}\""    
     end
     
-    def assert_column_name_class(column_family, column, sub_column = nil)      
-      if sub_column and !sub_column.is_a?(klass = sub_column_name_class(column_family))
-        raise Comparable::TypeError, "Expected #{sub_column.inspect} to be a #{klass}"
-      end 
-      if !column.is_a?(klass = column_name_class(column_family))
-        raise Comparable::TypeError, "Expected #{column.inspect} to be a #{klass}"
+    def assert_column_name_classes(column_family, columns, sub_columns = nil)      
+      {Array(columns) => column_name_class(column_family), 
+        Array(sub_columns) => sub_column_name_class(column_family)}.each do |columns, klass|
+        columns.each do |column|         
+          raise Comparable::TypeError, "Expected #{column.inspect} to be a #{klass}" if !column.is_a?(klass)
+        end 
       end
     end
     

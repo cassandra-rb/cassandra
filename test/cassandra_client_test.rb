@@ -149,9 +149,10 @@ class CassandraClientTest < Test::Unit::TestCase
   end
 
   def test_remove_super_value
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {Long.new => 'v'}})
-    @twitter.remove(:StatusRelationships, key, 'user_timelines', '1')
-    assert_nil @twitter.get(:StatusRelationships, key, 'user_timelines', '1')
+    columns = {Long.new => 'v'}
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
+    @twitter.remove(:StatusRelationships, key, 'user_timelines', columns.keys.first)
+    assert_nil @twitter.get(:StatusRelationships, key, 'user_timelines', columns.keys.first)
   end
 
   def test_clear_column_family
