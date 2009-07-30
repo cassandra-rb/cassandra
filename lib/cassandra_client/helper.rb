@@ -53,7 +53,7 @@ class CassandraClient
     def columns_to_hash_for_classes(columns, column_name_class, sub_column_name_class = nil)
       hash = OrderedHash.new
       Array(columns).each do |c|
-        hash[column_name_class.new(c.name)] = if c.is_a?(SuperColumn)
+        hash[column_name_class.new(c.name)] = if c.is_a?(CassandraThrift::SuperColumn)
           # Pop the class stack, and recurse
           columns_to_hash_for_classes(c.columns, sub_column_name_class)
         else
@@ -70,7 +70,7 @@ class CassandraClient
     
     def hash_to_columns_without_assertion(column_family, hash, timestamp)
       hash.map do |column, value|
-        Column.new(:name => column.to_s, :value => dump(value), :timestamp => timestamp)
+        CassandraThrift::Column.new(:name => column.to_s, :value => dump(value), :timestamp => timestamp)
       end    
     end    
     
@@ -78,7 +78,7 @@ class CassandraClient
       assert_column_name_classes(column_family, hash.keys)      
       hash.map do |column, sub_hash|
         assert_column_name_classes(column_family, nil, sub_hash.keys)
-        SuperColumn.new(:name => column.to_s, :columns => hash_to_columns_without_assertion(column_family, sub_hash, timestamp))
+        CassandraThrift::SuperColumn.new(:name => column.to_s, :columns => hash_to_columns_without_assertion(column_family, sub_hash, timestamp))
       end
     end    
   end

@@ -6,7 +6,7 @@ class CassandraClient
   MAX_INT = 2**31 - 1
   
   module Consistency
-    include ::ConsistencyLevel
+    include CassandraThrift::ConsistencyLevel
     NONE = ZERO
     WEAK = ONE
     STRONG = QUORUM
@@ -28,8 +28,8 @@ class CassandraClient
 
     @transport = Thrift::BufferedTransport.new(Thrift::Socket.new(@host, @port))
     @transport.open    
-    @client = Cassandra::SafeClient.new(
-      Cassandra::Client.new(Thrift::BinaryProtocol.new(@transport)), 
+    @client = CassandraThrift::Cassandra::SafeClient.new(
+      CassandraThrift::Cassandra::Client.new(Thrift::BinaryProtocol.new(@transport)), 
       @transport)
 
     keyspaces = @client.get_string_list_property("tables")
@@ -53,9 +53,9 @@ class CassandraClient
   def insert(column_family, key, hash, consistency = Consistency::WEAK, timestamp = Time.stamp)
     column_family = column_family.to_s
     mutation = if is_super(column_family) 
-      BatchMutationSuper.new(:key => key, :cfmap => {column_family.to_s => hash_to_super_columns(column_family, hash, timestamp)})
+      CassandraThrift::BatchMutationSuper.new(:key => key, :cfmap => {column_family.to_s => hash_to_super_columns(column_family, hash, timestamp)})
     else
-      BatchMutation.new(:key => key, :cfmap => {column_family.to_s => hash_to_columns(column_family, hash, timestamp)})      
+      CassandraThrift::BatchMutation.new(:key => key, :cfmap => {column_family.to_s => hash_to_columns(column_family, hash, timestamp)})      
     end
     # FIXME Batched operations discard the consistency argument
     @batch ? @batch << mutation : _insert(mutation, consistency)
@@ -65,8 +65,8 @@ class CassandraClient
   
   def _insert(mutation, consistency = Consistency::WEAK)
     case mutation
-    when BatchMutationSuper then @client.batch_insert_super_column(@keyspace, mutation, consistency)    
-    when BatchMutation then @client.batch_insert(@keyspace, mutation, consistency)
+    when CassandraThrift::BatchMutationSuper then @client.batch_insert_super_column(@keyspace, mutation, consistency)    
+    when CassandraThrift::BatchMutation then @client.batch_insert(@keyspace, mutation, consistency)
     end
   end  
   
@@ -90,9 +90,9 @@ class CassandraClient
   
   def _remove(column_family, key, column, sub_column, consistency, timestamp)
     column_path_or_parent = if is_super(column_family)
-      ColumnPathOrParent.new(:column_family => column_family, :super_column => column, :column => sub_column)
+      CassandraThrift::ColumnPathOrParent.new(:column_family => column_family, :super_column => column, :column => sub_column)
     else
-      ColumnPathOrParent.new(:column_family => column_family, :column => column)
+      CassandraThrift::ColumnPathOrParent.new(:column_family => column_family, :column => column)
     end
     @client.remove(@keyspace, key, column_path_or_parent, timestamp, consistency)
   end
@@ -125,7 +125,7 @@ class CassandraClient
 
     super_column = super_column.to_s if super_column
     @client.get_column_count(@keyspace, key, 
-      ColumnParent.new(:column_family => column_family, :super_column => super_column),
+      CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => super_column),
       consistency
     )
   end
@@ -146,14 +146,14 @@ class CassandraClient
     result = if is_super(column_family) 
       if sub_columns 
         columns_to_hash(column_family, @client.get_slice_by_names(@keyspace, key, 
-          ColumnParent.new(:column_family => column_family, :super_column => columns), 
+          CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => columns), 
           sub_columns, consistency))
       else
         columns_to_hash(column_family, @client.get_slice_super_by_names(@keyspace, key, column_family, columns, consistency))      
       end
     else
       columns_to_hash(column_family, @client.get_slice_by_names(@keyspace, key, 
-        ColumnParent.new(:column_family => column_family), columns, consistency))
+        CassandraThrift::ColumnParent.new(:column_family => column_family), columns, consistency))
     end    
     sub_columns || columns.map { |name| result[name] }
   end
@@ -172,7 +172,7 @@ class CassandraClient
     column_family = column_family.to_s
     assert_column_name_classes(column_family, column, sub_column)    
     _get(column_family, key, column, sub_column, limit = 100, column_range, reversed, consistency)
-  rescue NotFoundException
+  rescue CassandraThrift::NotFoundException
     is_super(column_family) && !sub_column ? OrderedHash.new : nil
   end
 
@@ -190,7 +190,7 @@ class CassandraClient
     assert_column_name_classes(column_family, column, sub_column)    
     _get(column_family, key, column, sub_column, 1, ''..'', false, consistency)
     true
-  rescue NotFoundException
+  rescue CassandraThrift::NotFoundException
   end
   
   private
@@ -206,12 +206,12 @@ class CassandraClient
       if sub_column
         # Limit and column_range parameters have no effect
         load(@client.get_column(@keyspace, key,  
-            ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column),
+            CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column),
             consistency).value)
       elsif column
         sub_columns_to_hash(column_family, 
           @client.get_slice(@keyspace, key, 
-            ColumnParent.new(:column_family => column_family, :super_column => column), 
+            CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column), 
             column_range.begin, column_range.end, !reversed, limit, consistency))
       else
         columns_to_hash(column_family, 
@@ -221,12 +221,12 @@ class CassandraClient
       if column
         # Limit and column_range parameters have no effect
         load(@client.get_column(@keyspace, key, 
-          ColumnPath.new(:column_family => column_family, :column => column),
+          CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column),
           consistency).value)
       else
         columns_to_hash(column_family, 
           @client.get_slice(@keyspace, key, 
-            ColumnParent.new(:column_family => column_family), 
+            CassandraThrift::ColumnParent.new(:column_family => column_family), 
             column_range.begin, column_range.end, !reversed, limit, consistency))
       end 
     end
@@ -296,7 +296,7 @@ class CassandraClient
       case args
       when Array 
         _remove(*args)
-      when BatchMutationSuper, BatchMutation 
+      when CassandraThrift::BatchMutationSuper, CassandraThrift::BatchMutation 
         _insert(*args)
       end
     end
