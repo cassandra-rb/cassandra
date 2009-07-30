@@ -53,9 +53,9 @@ class CassandraClient
   def insert(column_family, key, hash, consistency = Consistency::WEAK, timestamp = Time.stamp)
     column_family = column_family.to_s
     mutation = if is_super(column_family) 
-      BatchMutationSuper.new(:key => key, :cfmap => {column_family.to_s => hash_to_super_columns(hash, timestamp)})
+      BatchMutationSuper.new(:key => key, :cfmap => {column_family.to_s => hash_to_super_columns(column_family, hash, timestamp)})
     else
-      BatchMutation.new(:key => key, :cfmap => {column_family.to_s => hash_to_columns(hash, timestamp)})      
+      BatchMutation.new(:key => key, :cfmap => {column_family.to_s => hash_to_columns(column_family, hash, timestamp)})      
     end
     # FIXME Batched operations discard the consistency argument
     @batch ? @batch << mutation : _insert(mutation, consistency)
@@ -74,7 +74,7 @@ class CassandraClient
   
   ## Delete
   
-  # Remove the element at the column_family:key:super_column:column 
+  # Remove the element at the column_family:key:[column]:[sub_column]
   # path you request.
   def remove(column_family, key, column = nil, sub_column = nil, consistency = Consistency::WEAK, timestamp = Time.stamp)
     column_family = column_family.to_s

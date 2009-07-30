@@ -227,7 +227,7 @@ class CassandraClientTest < Test::Unit::TestCase
   end
 
   def test_count_super_sub_columns
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {Long.new => 'v1', key => 'v2'}})
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {Long.new => 'v1', Long.new => 'v2'}})
     assert_equal 2, @twitter.count_columns(:StatusRelationships, key, 'user_timelines')
   end
 
