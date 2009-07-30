@@ -30,7 +30,7 @@ class CassandraClient
     def column_family_property(column_family, key)
       @schema[column_family][key]
     rescue NoMethodError
-      raise AccessError, "Invalid column family \":#{column_family}\""    
+      raise AccessError, "Invalid column family \"#{column_family}\""    
     end
     
     def columns_to_hash(column_family, columns)
@@ -46,7 +46,7 @@ class CassandraClient
       Array(columns).each do |c|
         hash[column_name_class.new(c.name)] = if c.is_a?(SuperColumn)
           # Pop the class stack, and recurse
-          columns_to_hash(c.columns, sub_column_name_class)
+          columns_to_hash_for_classes(c.columns, sub_column_name_class)
         else
           load(c.value)
         end

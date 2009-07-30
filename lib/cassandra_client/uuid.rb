@@ -14,11 +14,11 @@ class CassandraClient
     end
     
     def to_i
-      value = 0
-      @bytes.unpack("QII").each_with_index do |int, position|
-        value += int * (MAX_UINT ** position)
+      @to_i ||= begin
+        ints = @bytes.unpack("QQ")
+        # FIXME I doubt this is right
+        ints[0] * 2**64 + ints[1]        
       end
-      value
     end
     
     def inspect
