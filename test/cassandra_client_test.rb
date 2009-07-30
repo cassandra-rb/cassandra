@@ -61,6 +61,15 @@ class CassandraClientTest < Test::Unit::TestCase
     @twitter.insert(:Statuses, key, {'body' => 'v'})
     assert_equal 'v', @twitter.get(:Statuses, key, 'body')
     assert_nil @twitter.get(:Statuses, 'bogus', 'body')
+
+    assert @twitter.exists?(:Statuses, key, 'body')
+    assert_nil @twitter.exists?(:Statuses, 'bogus', 'body')
+  end
+
+  def test_get_value_nil
+    @twitter.insert(:Statuses, key, {'body' => nil})
+    assert_nil @twitter.get(:Statuses, key, 'body')
+    assert @twitter.exists?(:Statuses, key, 'body')
   end
 
   def test_get_super_key

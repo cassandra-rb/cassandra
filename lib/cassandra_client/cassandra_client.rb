@@ -166,15 +166,39 @@ class CassandraClient
   end
         
   # Return a hash (actually, a CassandraClient::OrderedHash) or a single value 
-  # representing the element at the column_family:key:super_column:column 
+  # representing the element at the column_family:key:[column]:[sub_column]
   # path you request.
   def get(column_family, key, column = nil, sub_column = nil, limit = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
     column_family = column_family.to_s
-    assert_column_name_classes(column_family, column, sub_column)
+    assert_column_name_classes(column_family, column, sub_column)    
+    _get(column_family, key, column, sub_column, limit = 100, column_range, reversed, consistency)
+  rescue NotFoundException
+    is_super(column_family) && !sub_column ? OrderedHash.new : nil
+  end
 
+  # Multi-key version of CassandraClient#get.
+  def multi_get(column_family, keys, column = nil, sub_column = nil, limit = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
+    OrderedHash[*keys.map do |key| 
+      [key, get(column_family, key, column, sub_column, limit, column_range, reversed, consistency)]
+    end._flatten_once]
+  end
+  
+  # Return true if the column_family:key:[column]:[sub_column] path you 
+  # request exists.
+  def exists?(column_family, key, column = nil, sub_column = nil, consistency = Consistency::WEAK)
+    column_family = column_family.to_s
+    assert_column_name_classes(column_family, column, sub_column)    
+    _get(column_family, key, column, sub_column, 1, ''..'', false, consistency)
+    true
+  rescue NotFoundException
+  end
+  
+  private
+  
+  def _get(column_family, key, column = nil, sub_column = nil, limit = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
     column = column.to_s if column
     sub_column = sub_column.to_s if sub_column    
-    # FIXME Comparable types are not checked
+    # FIXME Comparable types in a are not checked
     column_range = (column_range.begin.to_s)..(column_range.end.to_s)
 
     # You have got to be kidding
@@ -206,21 +230,10 @@ class CassandraClient
             column_range.begin, column_range.end, !reversed, limit, consistency))
       end 
     end
-  rescue NotFoundException
-    is_super(column_family) && !sub_column ? OrderedHash.new : nil
   end
   
-  # Multi-key version of CassandraClient#get.
-  def multi_get(column_family, keys, column = nil, sub_column = nil, limit = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
-    OrderedHash[*keys.map do |key| 
-      [key, get(column_family, key, column, sub_column, limit, column_range, reversed, consistency)]
-    end._flatten_once]
-  end
-  
-  # FIXME
-  # def exists?
-  # end
-  
+  public
+    
   # Return a list of keys in the column_family you request. Requires the
   # table to be partitioned with OrderPreservingHash.
   def get_key_range(column_family, key_range = ''..'', limit = 100, consistency = Consistency::WEAK)      
