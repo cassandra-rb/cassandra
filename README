@@ -1,7 +1,7 @@
 
 cassandra
 
-A client for the Cassandra distributed database.
+A Ruby client for the Cassandra distributed database. 
 
 == License
 

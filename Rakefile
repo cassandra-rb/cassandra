@@ -3,7 +3,7 @@ require 'echoe'
 Echoe.new("cassandra") do |p|
   p.author = "Evan Weaver"
   p.project = "fauna"
-  p.summary = "A Ruby client for CassandraDB."
+  p.summary = "A Ruby client for the Cassandra distributed database."
   p.rubygems_version = ">= 0.8"
   p.dependencies = ['json']
   p.ignore_pattern = /^(data|vendor\/cassandra|cassandra|vendor\/thrift)/
