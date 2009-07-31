@@ -34,6 +34,7 @@ class ComparableTypesTest < Test::Unit::TestCase
     uuid = UUID.new
     assert_equal uuid, UUID.new(uuid.to_s)  
     assert_equal uuid, UUID.new(uuid.to_i)  
+    assert_equal uuid, UUID.new(uuid.to_guid)  
   end
   
   def test_uuid_error

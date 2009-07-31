@@ -26,12 +26,12 @@ class Cassandra
     def inspect
       ints = @bytes.unpack("Q")
       "<Cassandra::Long##{object_id} time: #{
-          Time.at((ints[0] >> 12) / 1_000_000).inspect
-        }, usecs: #{
-          (ints[0] >> 12) % 1_000_000
-        }, jitter: #{
-          ints[0] % ENTROPY_MAX
-        }>"
+        Time.at((ints[0] >> 12) / 1_000_000).inspect
+      }, usecs: #{
+        (ints[0] >> 12) % 1_000_000
+      }, jitter: #{
+        ints[0] % 2**12
+      }>"
     end      
   end  
 end
