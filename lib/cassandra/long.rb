@@ -10,27 +10,31 @@ class Cassandra
         @bytes = bytes
       when Integer
         raise TypeError, "Integer must be between 0 and 2**64" if bytes < 0 or bytes > 2**64
-        @bytes = [bytes].pack("Q")
+        @bytes = [bytes >> 32, bytes % 2**32].pack("NN")
       when NilClass
         # Time.stamp is 52 bytes, so we have 12 bytes of entropy left over
-        @bytes = [(Time.stamp << 12) + rand(2**12)].pack("Q")
+        int = (Time.stamp << 12) + rand(2**12)
+        @bytes = [int >> 32, int % 2**32].pack("NN")
       else
         raise TypeError, "Can't convert from #{bytes.class}"
       end
     end
 
     def to_i
-      @to_i ||= @bytes.unpack("Q")[0]
+      @to_i ||= begin
+        ints = @bytes.unpack("NN")
+        (ints[0] << 32) + 
+        ints[1]
+      end
     end    
     
     def inspect
-      ints = @bytes.unpack("Q")
       "<Cassandra::Long##{object_id} time: #{
-        Time.at((ints[0] >> 12) / 1_000_000).inspect
+        Time.at((to_i >> 12) / 1_000_000).inspect
       }, usecs: #{
-        (ints[0] >> 12) % 1_000_000
+        (to_i >> 12) % 1_000_000
       }, jitter: #{
-        ints[0] % 2**12
+        to_i % 2**12
       }>"
     end      
   end  

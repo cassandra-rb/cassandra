@@ -19,7 +19,7 @@ Manifest
 quickstart.sh
 Rakefile
 README
-test/cassandra_client_test.rb
+test/cassandra_test.rb
 test/comparable_types_test.rb
 vendor/gen-rb/cassandra.rb
 vendor/gen-rb/cassandra_constants.rb
