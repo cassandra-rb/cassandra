@@ -57,7 +57,7 @@ class Cassandra
           # Pop the class stack, and recurse
           columns_to_hash_for_classes(c.columns, sub_column_name_class)
         else
-          load(c.value)
+          c.value
         end
       end
       hash    
@@ -70,7 +70,7 @@ class Cassandra
     
     def hash_to_columns_without_assertion(column_family, hash, timestamp)
       hash.map do |column, value|
-        CassandraThrift::Column.new(:name => column.to_s, :value => dump(value), :timestamp => timestamp)
+        CassandraThrift::Column.new(:name => column.to_s, :value => value, :timestamp => timestamp)
       end    
     end    
     

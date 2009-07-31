@@ -16,7 +16,7 @@ class Cassandra
   attr_reader :keyspace, :host, :port, :serializer, :transport, :client, :schema
 
   # Instantiate a new Cassandra and open the connection.
-  def initialize(keyspace, host = '127.0.0.1', port = 9160, serializer = Cassandra::Serialization::JSON)
+  def initialize(keyspace, host = '127.0.0.1', port = 9160)
     @is_super = {}
     @column_name_class = {}
     @sub_column_name_class = {}
@@ -24,7 +24,6 @@ class Cassandra
     @keyspace = keyspace
     @host = host
     @port = port
-    @serializer = serializer
 
     @transport = Thrift::BufferedTransport.new(Thrift::Socket.new(@host, @port))
     @transport.open    
@@ -43,7 +42,7 @@ class Cassandra
   def inspect
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       schema.map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
-    }}, @host=#{host.inspect}, @port=#{port}, @serializer=#{serializer.name}>"
+    }}, @host=#{host.inspect}, @port=#{port}>"
   end
 
   ## Write
@@ -205,9 +204,9 @@ class Cassandra
     if is_super(column_family)
       if sub_column
         # Limit and column_range parameters have no effect
-        load(@client.get_column(@keyspace, key,  
+        @client.get_column(@keyspace, key,  
             CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column),
-            consistency).value)
+            consistency).value
       elsif column
         sub_columns_to_hash(column_family, 
           @client.get_slice(@keyspace, key, 
@@ -220,9 +219,9 @@ class Cassandra
     else
       if column
         # Limit and column_range parameters have no effect
-        load(@client.get_column(@keyspace, key, 
+        @client.get_column(@keyspace, key, 
           CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column),
-          consistency).value)
+          consistency).value
       else
         columns_to_hash(column_family, 
           @client.get_slice(@keyspace, key, 
@@ -300,16 +299,5 @@ class Cassandra
         _insert(*args)
       end
     end
-  end  
-  
-  def dump(object)
-    # Special-case nil as the empty byte array
-    return "" if object == nil
-    @serializer.dump(object)
-  end
-  
-  def load(object)
-    return nil if object == ""  
-    @serializer.load(object)
-  end  
+  end    
 end

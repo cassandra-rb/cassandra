@@ -38,14 +38,14 @@ class CassandraTest < Test::Unit::TestCase
 
   def test_get_key_name_sorted_preserving_order
     # In-order hash is preserved
-    hash = OrderedHash['a', nil, 'b', nil, 'c', nil, 'd', nil,]
+    hash = OrderedHash['a', '', 'b', '', 'c', '', 'd', '',]
     @twitter.insert(:Users, key, hash)
     assert_equal(hash.keys, @twitter.get(:Users, key).keys)
 
     @twitter.remove(:Users, key)
 
     # Out-of-order hash is returned sorted
-    hash = OrderedHash['b', nil, 'c', nil, 'd', nil, 'a', nil]
+    hash = OrderedHash['b', '', 'c', '', 'd', '', 'a', '']
     @twitter.insert(:Users, key, hash)
     assert_equal(hash.keys.sort, @twitter.get(:Users, key).keys)
     assert_not_equal(hash.keys, @twitter.get(:Users, key).keys)
@@ -64,12 +64,6 @@ class CassandraTest < Test::Unit::TestCase
 
     assert @twitter.exists?(:Statuses, key, 'body')
     assert_nil @twitter.exists?(:Statuses, 'bogus', 'body')
-  end
-
-  def test_get_value_nil
-    @twitter.insert(:Statuses, key, {'body' => nil})
-    assert_nil @twitter.get(:Statuses, key, 'body')
-    assert @twitter.exists?(:Statuses, key, 'body')
   end
 
   def test_get_super_key

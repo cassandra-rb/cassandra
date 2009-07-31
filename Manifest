@@ -10,7 +10,6 @@ lib/cassandra/helper.rb
 lib/cassandra/long.rb
 lib/cassandra/ordered_hash.rb
 lib/cassandra/safe_client.rb
-lib/cassandra/serialization.rb
 lib/cassandra/time.rb
 lib/cassandra/uuid.rb
 lib/cassandra.rb
