@@ -19,12 +19,13 @@ class Cassandra
     
     def column_name_class_for_key(column_family, comparator_key)
       property = column_family_property(column_family, comparator_key)
-      property =~ /.*\.(.*?)Type/
-      self.class.const_get($1) # Long, UUID
-    rescue NameError      
-      String # UTF8, Ascii, Bytes, anything else
-    rescue TypeError
-      nil # Called sub_column_name_class on a standard column family
+      property =~ /.*\.(.*?)$/
+      case $1
+      when "LongType" then Long
+      when "LexicalUUIDType", "TimeUUIDType" then UUID
+      else 
+        String # UTF8, Ascii, Bytes, anything else
+      end
     end
 
     def column_family_property(column_family, key)
