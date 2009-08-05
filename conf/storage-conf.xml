@@ -33,11 +33,11 @@
           <KeysCachedFraction>0.01</KeysCachedFraction>
           <ColumnFamily CompareWith="UTF8Type" Name="Users" />
           <ColumnFamily CompareWith="UTF8Type" Name="UserAudits" />
-          <ColumnFamily CompareWith="UTF8Type" CompareSubcolumnsWith="UUIDType" ColumnType="Super" Name="UserRelationships" />
+          <ColumnFamily CompareWith="UTF8Type" CompareSubcolumnsWith="TimeUUIDType" ColumnType="Super" Name="UserRelationships" />
           <ColumnFamily CompareWith="UTF8Type" Name="Usernames" />
           <ColumnFamily CompareWith="UTF8Type" Name="Statuses" />
           <ColumnFamily CompareWith="UTF8Type" Name="StatusAudits" />
-          <ColumnFamily CompareWith="UTF8Type" CompareSubcolumnsWith="LongType" ColumnType="Super" Name="StatusRelationships" />  
+          <ColumnFamily CompareWith="UTF8Type" CompareSubcolumnsWith="TimeUUIDType" ColumnType="Super" Name="StatusRelationships" />  
       </Table>
 
       <Table Name="Multiblog">      
@@ -71,11 +71,24 @@
          clusters with a small number of nodes. -->
     <InitialToken></InitialToken>
 
-    <!-- RackAware: Setting this to true instructs Cassandra to try and place the replicas in
-         a different rack in the same datacenter and one in a different datacenter
+	
+    <!-- EndPointSnitch: Setting this to the class that implements IEndPointSnitch
+	     which will see if two endpoints are in the same data center or on the same rack.
+         Out of the box, Cassandra provides
+         org.apache.cassandra.locator.EndPointSnitch
     -->
-    <RackAware>false</RackAware>
+    <EndPointSnitch>org.apache.cassandra.locator.EndPointSnitch</EndPointSnitch>
 
+    <!-- Strategy: Setting this to the class that implements IReplicaPlacementStrategy
+	     will change the way the node picker works.
+         Out of the box, Cassandra provides
+         org.apache.cassandra.locator.RackUnawareStrategy
+         org.apache.cassandra.locator.RackAwareStrategy 
+		 (place one replica in a different datacenter, and the
+         others on different racks in the same one.)
+    -->
+    <ReplicaPlacementStrategy>org.apache.cassandra.locator.RackUnawareStrategy</ReplicaPlacementStrategy>
+    
     <!-- Number of replicas of the data-->
     <ReplicationFactor>1</ReplicationFactor>
 
@@ -90,13 +103,14 @@
     <BootstrapFileDirectory>data/bootstrap</BootstrapFileDirectory>
     <StagingFileDirectory>data/staging</StagingFileDirectory>
 
-
-    <!-- Add names of hosts that are deemed contact points. Cassandra nodes use
+    <!-- Addresses of hosts that are deemed contact points. Cassandra nodes use
          this list of hosts to find each other and learn the topology of the ring.
+         You must change this if you are running multiple nodes!
     -->
     <Seeds>
         <Seed>127.0.0.1</Seed>
     </Seeds>
+
 
     <!-- Miscellaneous -->
 
@@ -193,5 +207,4 @@
          face of hardware failures.  The default value is ten days.
     -->
     <GCGraceSeconds>864000</GCGraceSeconds>
-
 </Storage>
