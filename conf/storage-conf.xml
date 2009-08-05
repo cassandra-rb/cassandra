@@ -28,8 +28,8 @@
 
          There is an implicit table named 'system' for Cassandra internals.
     -->
-    <Tables>
-      <Table Name="Twitter">
+    <Keyspaces>
+      <Keyspace Name="Twitter">
           <KeysCachedFraction>0.01</KeysCachedFraction>
           <ColumnFamily CompareWith="UTF8Type" Name="Users" />
           <ColumnFamily CompareWith="UTF8Type" Name="UserAudits" />
@@ -38,14 +38,14 @@
           <ColumnFamily CompareWith="UTF8Type" Name="Statuses" />
           <ColumnFamily CompareWith="UTF8Type" Name="StatusAudits" />
           <ColumnFamily CompareWith="UTF8Type" CompareSubcolumnsWith="TimeUUIDType" ColumnType="Super" Name="StatusRelationships" />  
-      </Table>
+      </Keyspace>
 
-      <Table Name="Multiblog">      
+      <Keyspace Name="Multiblog">      
         <KeysCachedFraction>0.01</KeysCachedFraction>
         <ColumnFamily CompareWith="UTF8Type" Name="Blogs"/>
         <ColumnFamily CompareWith="UTF8Type" Name="Comments"/>
-      </Table>
-    </Tables>
+      </Keyspace>
+    </Keyspaces>
 
     <!-- Partitioner: any IPartitioner may be used, including your own
          as long as it is on the classpath.  Out of the box,

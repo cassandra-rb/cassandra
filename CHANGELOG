@@ -1,4 +1,6 @@
 
+v0.5. More API changes. Working temporal comparators.
+
 v0.4. Use new comparator API. Namespace Thrift bindings; rename gem and class to Cassandra. Make tokens and limits actually work. Retry UnavailableExceptions.
 
 v0.3. Use new Thrift API.

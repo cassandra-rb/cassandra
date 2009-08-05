@@ -31,12 +31,12 @@ class Cassandra
       CassandraThrift::Cassandra::Client.new(Thrift::BinaryProtocol.new(@transport)), 
       @transport)
 
-    keyspaces = @client.get_string_list_property("tables")
+    keyspaces = @client.get_string_list_property("keyspaces")
     unless keyspaces.include?(@keyspace)
       raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
     end
         
-    @schema = @client.describe_table(@keyspace)    
+    @schema = @client.describe_keyspace(@keyspace)    
   end
     
   def inspect
