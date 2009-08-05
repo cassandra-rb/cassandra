@@ -11,3 +11,14 @@ Echoe.new("cassandra") do |p|
   p.url = "http://blog.evanweaver.com/files/doc/fauna/cassandra/"
   p.docs_host = "blog.evanweaver.com:~/www/bax/public/files/doc/"
 end
+
+desc "Package the current checkout of Cassandra"
+task :cassandra do
+  system(
+    "cd cassandra && 
+    ant clean && 
+    cd .. && 
+    tar cjf cassandra.tar.bz2 cassandra/* cassandra/.* && 
+    mv cassandra.tar.bz2 vendor"
+  )
+end
