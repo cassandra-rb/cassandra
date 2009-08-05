@@ -188,45 +188,65 @@ module CassandraThrift
       FIELDS = {
         COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
         SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :optional => true},
-        COLUMN => {:type => ::Thrift::Types::STRING, :name => 'column'}
-      }
-
-      def struct_fields; FIELDS; end
-
-      def validate
-      end
-
-    end
-
-    class SuperColumnPath
-      include ::Thrift::Struct
-      COLUMN_FAMILY = 3
-      SUPER_COLUMN = 4
-
-      ::Thrift::Struct.field_accessor self, :column_family, :super_column
-      FIELDS = {
-        COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
-        SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column'}
-      }
-
-      def struct_fields; FIELDS; end
-
-      def validate
-      end
-
-    end
-
-    class ColumnPathOrParent
-      include ::Thrift::Struct
-      COLUMN_FAMILY = 3
-      SUPER_COLUMN = 4
-      COLUMN = 5
-
-      ::Thrift::Struct.field_accessor self, :column_family, :super_column, :column
-      FIELDS = {
-        COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
-        SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :optional => true},
         COLUMN => {:type => ::Thrift::Types::STRING, :name => 'column', :optional => true}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+      end
+
+    end
+
+    class SliceRange
+      include ::Thrift::Struct
+      START = 1
+      FINISH = 2
+      IS_ASCENDING = 3
+      COUNT = 4
+
+      ::Thrift::Struct.field_accessor self, :start, :finish, :is_ascending, :count
+      FIELDS = {
+        START => {:type => ::Thrift::Types::STRING, :name => 'start'},
+        FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
+        IS_ASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'is_ascending', :default => true},
+        COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+      end
+
+    end
+
+    class SlicePredicate
+      include ::Thrift::Struct
+      COLUMN_NAMES = 1
+      SLICE_RANGE = 2
+
+      ::Thrift::Struct.field_accessor self, :column_names, :slice_range
+      FIELDS = {
+        COLUMN_NAMES => {:type => ::Thrift::Types::LIST, :name => 'column_names', :element => {:type => ::Thrift::Types::STRING}, :optional => true},
+        SLICE_RANGE => {:type => ::Thrift::Types::STRUCT, :name => 'slice_range', :class => CassandraThrift::SliceRange, :optional => true}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+      end
+
+    end
+
+    class ColumnOrSuperColumn
+      include ::Thrift::Struct
+      COLUMN = 1
+      SUPER_COLUMN = 2
+
+      ::Thrift::Struct.field_accessor self, :column, :super_column
+      FIELDS = {
+        COLUMN => {:type => ::Thrift::Types::STRUCT, :name => 'column', :class => CassandraThrift::Column, :optional => true},
+        SUPER_COLUMN => {:type => ::Thrift::Types::STRUCT, :name => 'super_column', :class => CassandraThrift::SuperColumn, :optional => true}
       }
 
       def struct_fields; FIELDS; end

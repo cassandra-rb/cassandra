@@ -19,6 +19,13 @@ task :cassandra do
     ant clean && 
     cd .. && 
     tar cjf cassandra.tar.bz2 cassandra/* cassandra/.* && 
-    mv cassandra.tar.bz2 vendor"
-  )
+    mv cassandra.tar.bz2 vendor")
+end
+
+desc "Generate thrift bindings for Cassandra"
+task :thrift do
+  system(
+    "cd vendor &&
+    rm -rf gen-rb &&
+    thrift -gen rb ../cassandra/interface/cassandra.thrift")
 end

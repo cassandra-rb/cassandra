@@ -1,12 +1,9 @@
 
 if [ ! -e cassandra ]; then
   rm -rf data
-  cd vendor
-  tar xjf cassandra.tar.bz2
-  mv cassandra ..
-  cd ../cassandra
-  ant
-  cd ..
+  tar xjf vendor/cassandra.tar.bz2
 fi
+
+cd cassandra && ant && cd ..
 
 env CASSANDRA_INCLUDE=`pwd`/conf/cassandra.in.sh cassandra/bin/cassandra -f
