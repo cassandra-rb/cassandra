@@ -19,8 +19,9 @@ end
 
 REVISION = "9d6f4752b6353c1374469fa78649b9bcda1e2e46"
 PATCHES = [
-  "https://issues.apache.org/jira/secure/attachment/12415393/0001-CASSANDRA-329-thrift.txt",
-  "https://issues.apache.org/jira/secure/attachment/12415864/0002-v2.patch"]
+  "http://issues.apache.org/jira/secure/attachment/12415393/0001-CASSANDRA-329-thrift.txt",
+  "http://issues.apache.org/jira/secure/attachment/12415864/0002-v2.patch"]
+  # "http://issues.apache.org/jira/secure/attachment/12415042/CASSANDRA-327.diff"]
   
 task :checkout do
   # Like a git submodule, but all in one obvious place
