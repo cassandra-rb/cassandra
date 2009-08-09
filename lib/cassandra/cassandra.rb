@@ -123,7 +123,7 @@ class Cassandra
     assert_column_name_classes(column_family, super_column)
 
     super_column = super_column.to_s if super_column
-    @client.get_column_count(@keyspace, key, 
+    @client.get_count(@keyspace, key, 
       CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => super_column),
       consistency
     )
@@ -144,14 +144,14 @@ class Cassandra
     
     result = if is_super(column_family) 
       if sub_columns 
-        columns_to_hash(column_family, @client.get_slice_by_names(@keyspace, key, 
+        columns_to_hash(column_family, @client.get_slice(@keyspace, key, 
           CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => columns), 
           sub_columns, consistency))
       else
-        columns_to_hash(column_family, @client.get_slice_super_by_names(@keyspace, key, column_family, columns, consistency))      
+        columns_to_hash(column_family, @client.get_slice(@keyspace, key, column_family, columns, consistency))      
       end
     else
-      columns_to_hash(column_family, @client.get_slice_by_names(@keyspace, key, 
+      columns_to_hash(column_family, @client.get_slice(@keyspace, key, 
         CassandraThrift::ColumnParent.new(:column_family => column_family), columns, consistency))
     end    
     sub_columns || columns.map { |name| result[name] }
@@ -214,7 +214,7 @@ class Cassandra
             column_range.begin, column_range.end, !reversed, limit, consistency))
       else
         columns_to_hash(column_family, 
-          @client.get_slice_super(@keyspace, key, column_family, column_range.begin, column_range.end, !reversed, limit, consistency))
+          @client.get_slice(@keyspace, key, column_family, column_range.begin, column_range.end, !reversed, limit, consistency))
       end
     else
       if column
