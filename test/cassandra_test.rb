@@ -13,7 +13,6 @@ class CassandraTest < Test::Unit::TestCase
     @blogs = Cassandra.new('Multiblog', '127.0.0.1')
     @blogs.clear_keyspace!
     @uuids = (0..6).map {|i| UUID.new(Time.at(2**(24+i))) }    
-    p @uuids
   end
 
   def test_inspect
@@ -69,7 +68,7 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_super_key
-    columns = {'user_timelines' => {UUID.new => '4', UUID.new => '5'}}
+    columns = {'user_timelines' => {@uuids[4] => '4', @uuids[5] => '5'}}
     @twitter.insert(:StatusRelationships, key, columns)
     assert_equal(columns, @twitter.get(:StatusRelationships, key))
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus'))
@@ -77,8 +76,8 @@ class CassandraTest < Test::Unit::TestCase
 
   def test_get_several_super_keys
     columns = {
-      'user_timelines' => {UUID.new => 'v1'},
-      'mentions_timelines' => {UUID.new => 'v2'}}
+      'user_timelines' => {@uuids[1]  => 'v1'},
+      'mentions_timelines' => {@uuids[2]  => 'v2'}}
     @twitter.insert(:StatusRelationships, key, columns)
 
     assert_equal(columns, @twitter.get(:StatusRelationships, key))
@@ -86,9 +85,9 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_super_sub_keys_with_count
-    columns = {UUID.new => 'v1'}
+    columns = {@uuids[1]  => 'v1'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v2'}})
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {@uuids[2]  => 'v2'}})
     assert_equal(columns, @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1))
   end
 
@@ -108,16 +107,16 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_super_sub_key
-    columns = {UUID.new => 'v', UUID.new => 'v'}
+    columns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
     assert_equal(columns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus', 'user_timelines'))
   end
 
   def test_get_super_value
-    columns = {UUID.new => 'v'}
+    columns = {@uuids[1] => 'v1'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
-    assert_equal('v', @twitter.get(:StatusRelationships, key, 'user_timelines', columns.keys.first))
+    assert_equal('v1', @twitter.get(:StatusRelationships, key, 'user_timelines', columns.keys.first))
     assert_nil @twitter.get(:StatusRelationships, 'bogus', 'user_timelines', columns.keys.first)
   end
 
@@ -157,19 +156,19 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_remove_super_key
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v'}})
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {@uuids[1] => 'v1'}})
     @twitter.remove(:StatusRelationships, key)
     assert_equal({}, @twitter.get(:StatusRelationships, key))
   end
 
   def test_remove_super_sub_key
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v'}})
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {@uuids[1] => 'v1'}})
     @twitter.remove(:StatusRelationships, key, 'user_timelines')
     assert_equal({}, @twitter.get(:StatusRelationships, key, 'user_timelines'))
   end
 
   def test_remove_super_value
-    columns = {UUID.new => 'v'}
+    columns = {@uuids[1] => 'v1'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
     @twitter.remove(:StatusRelationships, key, 'user_timelines', columns.keys.first)
     assert_nil @twitter.get(:StatusRelationships, key, 'user_timelines', columns.keys.first)
@@ -189,7 +188,7 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_insert_super_key
-    columns = {UUID.new => 'v', UUID.new => 'v'}
+    columns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
     assert_equal(columns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
   end
@@ -200,7 +199,7 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_column_values_super
-    user_columns, mentions_columns = {UUID.new => 'v1'}, {UUID.new => 'v2'}
+    user_columns, mentions_columns = {@uuids[1] => 'v1'}, {@uuids[2] => 'v2'}
     @twitter.insert(:StatusRelationships, key,
       {'user_timelines' => user_columns, 'mentions_timelines' => mentions_columns})
     assert_equal [user_columns, mentions_columns],
@@ -221,8 +220,8 @@ class CassandraTest < Test::Unit::TestCase
   # Not supported
   #  def test_get_columns_super_sub
   #    @twitter.insert(:StatusRelationships, key, {
-  #      'user_timelines' => {UUID.new => 'v1'},
-  #      'mentions_timelines' => {UUID.new => 'v2'}})
+  #      'user_timelines' => {@uuids[1] => 'v1'},
+  #      'mentions_timelines' => {@uuids[2] => 'v2'}})
   #    assert_equal ['v1', 'v2'],
   #      @twitter.get_columns(:StatusRelationships, key, 'user_timelines', ['1', key])
   #  end
@@ -241,13 +240,13 @@ class CassandraTest < Test::Unit::TestCase
 
   def test_count_super_columns
     @twitter.insert(:StatusRelationships, key, {
-      'user_timelines' => {UUID.new => 'v1'},
-      'mentions_timelines' => {UUID.new => 'v2'}})
+      'user_timelines' => {@uuids[1] => 'v1'},
+      'mentions_timelines' => {@uuids[2] => 'v2'}})
     assert_equal 2, @twitter.count_columns(:StatusRelationships, key)
   end
 
   def test_count_super_sub_columns
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v1', UUID.new => 'v2'}})
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {@uuids[1] => 'v1', @uuids[2] => 'v2'}})
     assert_equal 2, @twitter.count_columns(:StatusRelationships, key, 'user_timelines')
   end
 
