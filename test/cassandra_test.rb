@@ -54,6 +54,12 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({}, @twitter.get(:Statuses, 'bogus'))
   end
 
+  def test_get_with_count
+    @twitter.insert(:Statuses, key, {'1' => 'v', '2' => 'v', '3' => 'v'})
+    assert_equal 1, @twitter.get(:Statuses, key, nil, nil, 1).size
+    assert_equal 2, @twitter.get(:Statuses, key, nil, nil, 2).size
+  end  
+
   def test_get_value
     @twitter.insert(:Statuses, key, {'body' => 'v'})
     assert_equal 'v', @twitter.get(:Statuses, key, 'body')
@@ -63,11 +69,6 @@ class CassandraTest < Test::Unit::TestCase
     assert_nil @twitter.exists?(:Statuses, 'bogus', 'body')
   end
   
-  def test_get_values_with_count
-    @twitter.insert(:Statuses, key, {'1' => 'v', '2' => 'v', '3' => 'v'})
-    assert_equal 2, @twitter.get(:Statuses, key, nil, nil, 2).size
-  end  
-
   def test_get_super_key
     columns = {'user_timelines' => {@uuids[4] => '4', @uuids[5] => '5'}}
     @twitter.insert(:StatusRelationships, key, columns)
@@ -86,10 +87,12 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_super_sub_keys_with_count
-    columns = {@uuids[1]  => 'v1'}
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {@uuids[2]  => 'v2'}})
-    assert_equal(columns, @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1))
+    @twitter.insert(:StatusRelationships, key, 
+      {'user_timelines' => {@uuids[1]  => 'v1', @uuids[2]  => 'v2', @uuids[3]  => 'v3'}})
+    assert_equal({@uuids[1]  => 'v1'}, 
+      @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1))
+    assert_equal({@uuids[3]  => 'v3'}, 
+      @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1, nil, true))
   end
 
   def test_get_super_sub_keys_with_ranges              
