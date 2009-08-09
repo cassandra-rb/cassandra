@@ -12,14 +12,12 @@ The public certificate for this gem is here[http://rubyforge.org/frs/download.ph
 == Features
 
 * clean encapsulation of the Thrift API
-* pluggable serialization and compression
+* compatible UUID and Long classes, for GUID generation
 * Ruby 1.9 compatibility
 
 This is an alpha release and does not yet support the full Thrift API. 
 
-Cassandra is a rapidly moving target, but this library should always run against the bundle available {here}[http://github.com/fauna/cassandra/raw/6546d1155b77ca7bc5ebf58bdcce79ddda36f611/vendor/cassandra.tar.bz2]. Don't expect it to work against any other version right now.
-
-The Github source repository is {here}[http://github.com/fauna/cassandra/]; patches and contributions are very welcome.
+The Github source repository is {here}[http://github.com/fauna/cassandra/]. Patches and contributions are very welcome.
 
 == Installation
 
@@ -31,7 +29,11 @@ If you don't want to install Thrift from {source}[http://incubator.apache.org/th
   
 == Usage
 
-Require the library:
+Cassandra is a rapidly moving target. In order to get a working server, change to the checkout or gem directory, and run:
+
+  rake cassandra 
+
+Now, start IRb and require the library:
   
   require 'cassandra'
   
@@ -45,7 +47,7 @@ Insert into a column family. You can insert a Cassandra::OrderedHash, or a regul
 
 Insert into a super column family:
 
-  client.insert(:UserRelationships, "5", {"user_timeline" => {"1" => ""}})
+  client.insert(:UserRelationships, "5", {"user_timeline" => {UUID.new => "1"}})
 
 Query a super column:
 
