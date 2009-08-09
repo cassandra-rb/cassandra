@@ -88,20 +88,14 @@ class Cassandra
       total_usecs <=> other.send(:total_usecs)
     end
         
-    def inspect
+    def inspect(long = false)
       "<Cassandra::UUID##{object_id} time: #{
         Time.at(seconds).inspect
       }, usecs: #{
         usecs
       } jitter: #{
         @bytes.unpack('QQ')[1]
-      }, version: #{
-        version
-      }, variant: #{
-        variant
-      }, guid: #{
-        to_guid
-      }>"
+      }" + (long ? ", version: #{version}, variant: #{variant}, guid: #{to_guid}>" :  ">")
     end    
     
     private
