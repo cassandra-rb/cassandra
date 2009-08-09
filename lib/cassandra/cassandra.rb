@@ -203,57 +203,31 @@ class Cassandra
   def _get(column_family, key, column = nil, sub_column = nil, count = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
     column = column.to_s if column
     sub_column = sub_column.to_s if sub_column    
-    # FIXME Comparable types in a are not checked
-    column_range = (column_range.begin.to_s)..(column_range.end.to_s)
-
-    # You have got to be kidding
-    if is_super(column_family)
-      if sub_column
-        # Count and column_range parameters have no effect
-        @client.get(@keyspace, key,  
-            CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column),
-            consistency).column.value
-      elsif column
-        sub_columns_to_hash(column_family, 
-          @client.get_slice(@keyspace, key, 
-            CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column), 
-            CassandraThrift::SlicePredicate.new(:slice_range => 
-              CassandraThrift::SliceRange.new(
-                :start => column_range.begin,
-                :finish => column_range.end,
-                :is_ascending => !reversed,
-                :count => count)),
-            consistency))
+    
+    # Single values; count and column_range parameters have no effect
+    if is_super(column_family) and sub_column
+      column_path = CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column)      
+      @client.get(@keyspace, key, column_path, consistency).column.value
+    elsif !is_super(column_family) and column
+      column_path = CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column)
+      @client.get(@keyspace, key, column_path, consistency).column.value
+    
+    # Slices
+    else      
+      predicate = CassandraThrift::SlicePredicate.new(
+        :slice_range => CassandraThrift::SliceRange.new(
+          # FIXME Comparable types in a column_range are not checked
+          :start => column_range.begin.to_s,
+          :finish => column_range.end.to_s,
+          :is_ascending => !reversed,
+          :count => count))          
+      if is_super(column_family) and column
+        column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column)
+        sub_columns_to_hash(column_family, @client.get_slice(@keyspace, key, column_parent, predicate, consistency))
       else
-        columns_to_hash(column_family, 
-          @client.get_slice(@keyspace, key,
-          CassandraThrift::ColumnParent.new(:column_family => column_family),
-            CassandraThrift::SlicePredicate.new(:slice_range => 
-              CassandraThrift::SliceRange.new(
-                :start => column_range.begin,
-                :finish => column_range.end,
-                :is_ascending => !reversed,
-                :count => count)),
-           consistency))
+        column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family)
+        columns_to_hash(column_family, @client.get_slice(@keyspace, key, column_parent, predicate, consistency))
       end
-    else
-      if column
-        # Count and column_range parameters have no effect
-        @client.get(@keyspace, key, 
-          CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column),
-          consistency).column.value
-      else
-        columns_to_hash(column_family, 
-          @client.get_slice(@keyspace, key, 
-            CassandraThrift::ColumnParent.new(:column_family => column_family), 
-            CassandraThrift::SlicePredicate.new(:slice_range => 
-              CassandraThrift::SliceRange.new(
-                :start => column_range.begin,
-                :finish => column_range.end,
-                :is_ascending => !reversed,
-                :count => count)),
-             consistency))
-      end 
     end
   end
   
