@@ -228,11 +228,12 @@ class Cassandra
         columns_to_hash(column_family, 
           @client.get_slice(@keyspace, key,
           CassandraThrift::ColumnParent.new(:column_family => column_family),
-          CassandraThrift::SliceRange.new(
-            :start => column_range.begin,
-            :finish => column_range.end,
-            :is_ascending => !reversed,
-            :count => count),
+            CassandraThrift::SlicePredicate.new(:slice_range => 
+              CassandraThrift::SliceRange.new(
+                :start => column_range.begin,
+                :finish => column_range.end,
+                :is_ascending => !reversed,
+                :count => count)),
            consistency))
       end
     else
@@ -245,11 +246,12 @@ class Cassandra
         columns_to_hash(column_family, 
           @client.get_slice(@keyspace, key, 
             CassandraThrift::ColumnParent.new(:column_family => column_family), 
-            CassandraThrift::SliceRange.new(
-              :start => column_range.begin,
-              :finish => column_range.end,
-              :is_ascending => !reversed,
-              :count => count),
+            CassandraThrift::SlicePredicate.new(:slice_range => 
+              CassandraThrift::SliceRange.new(
+                :start => column_range.begin,
+                :finish => column_range.end,
+                :is_ascending => !reversed,
+                :count => count)),
              consistency))
       end 
     end
