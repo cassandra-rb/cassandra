@@ -26,7 +26,7 @@ class ComparableTypesTest < Test::Unit::TestCase
 
   def test_uuid_sort
     ary = []
-    10.times { ary << UUID.new }
+    10.times { ary << UUID.new; sleep(0.1) }
     assert_equal ary.sort, ary
   end
   

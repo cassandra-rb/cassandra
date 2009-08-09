@@ -83,7 +83,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus'))
   end
 
-  def test_get_super_sub_keys_with_limit
+  def test_get_super_sub_keys_with_count
     columns = {UUID.new => 'v1'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v2'}})

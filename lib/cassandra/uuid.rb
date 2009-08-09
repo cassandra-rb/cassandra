@@ -66,18 +66,20 @@ class Cassandra
       elements[-1] = '%02x%02x%02x%02x%02x%02x' % node
       "%08x-%04x-%04x-%02x%02x-%s" % elements
     end
-
-    def seconds_and_usecs
-      elements = @bytes.unpack("NnnQ")
-      time = (elements[0] + (elements[1] << 32) + ((elements[2] & 0x0FFF) << 48) - GREGORIAN_EPOCH_OFFSET) / 10
-      [time / 1_000_000, time % 1_000_000]
+    
+    def seconds
+      total_usecs / 1_000_000
     end
-
+    
+    def usecs
+      total_usecs % 1_000_000    
+    end
+        
     def inspect
       "<Cassandra::UUID##{object_id} time: #{
-        Time.at(seconds_and_usecs[0]).inspect
+        Time.at(seconds).inspect
       }, usecs: #{
-        seconds_and_usecs[1]
+        usecs
       } jitter: #{
         @bytes.unpack('QQ')[1]
       }, version: #{
@@ -85,6 +87,13 @@ class Cassandra
       }, guid: #{
         to_guid
       }>"
+    end    
+    
+    private
+    
+    def total_usecs
+      elements = @bytes.unpack("NnnQ")
+      (elements[0] + (elements[1] << 32) + ((elements[2] & 0x0FFF) << 48) - GREGORIAN_EPOCH_OFFSET) / 10      
     end
   end
 end
