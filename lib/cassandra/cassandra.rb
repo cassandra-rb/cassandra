@@ -146,13 +146,19 @@ class Cassandra
       if sub_columns 
         columns_to_hash(column_family, @client.get_slice(@keyspace, key, 
           CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => columns), 
-          sub_columns, consistency))
+          CassandraThrift::SlicePredicate.new(:column_names => sub_columns), 
+          consistency))
       else
-        columns_to_hash(column_family, @client.get_slice(@keyspace, key, column_family, columns, consistency))      
+        columns_to_hash(column_family, @client.get_slice(@keyspace, key, 
+          CassandraThrift::ColumnParent.new(:column_family => column_family),
+          CassandraThrift::SlicePredicate.new(:column_names => columns), 
+          consistency))      
       end
     else
       columns_to_hash(column_family, @client.get_slice(@keyspace, key, 
-        CassandraThrift::ColumnParent.new(:column_family => column_family), columns, consistency))
+        CassandraThrift::ColumnParent.new(:column_family => column_family),
+        CassandraThrift::SlicePredicate.new(:column_names => columns), 
+        consistency))
     end    
     sub_columns || columns.map { |name| result[name] }
   end
@@ -167,18 +173,18 @@ class Cassandra
   # Return a hash (actually, a Cassandra::OrderedHash) or a single value 
   # representing the element at the column_family:key:[column]:[sub_column]
   # path you request.
-  def get(column_family, key, column = nil, sub_column = nil, limit = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
+  def get(column_family, key, column = nil, sub_column = nil, count = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
     column_family = column_family.to_s
     assert_column_name_classes(column_family, column, sub_column)    
-    _get(column_family, key, column, sub_column, limit = 100, column_range, reversed, consistency)
+    _get(column_family, key, column, sub_column, count = 100, column_range, reversed, consistency)
   rescue CassandraThrift::NotFoundException
     is_super(column_family) && !sub_column ? OrderedHash.new : nil
   end
 
   # Multi-key version of Cassandra#get.
-  def multi_get(column_family, keys, column = nil, sub_column = nil, limit = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
+  def multi_get(column_family, keys, column = nil, sub_column = nil, count = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
     OrderedHash[*keys.map do |key| 
-      [key, get(column_family, key, column, sub_column, limit, column_range, reversed, consistency)]
+      [key, get(column_family, key, column, sub_column, count, column_range, reversed, consistency)]
     end._flatten_once]
   end
   
@@ -194,7 +200,7 @@ class Cassandra
   
   private
   
-  def _get(column_family, key, column = nil, sub_column = nil, limit = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
+  def _get(column_family, key, column = nil, sub_column = nil, count = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
     column = column.to_s if column
     sub_column = sub_column.to_s if sub_column    
     # FIXME Comparable types in a are not checked
@@ -203,7 +209,7 @@ class Cassandra
     # You have got to be kidding
     if is_super(column_family)
       if sub_column
-        # Limit and column_range parameters have no effect
+        # Count and column_range parameters have no effect
         @client.get(@keyspace, key,  
             CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column),
             consistency).column.value
@@ -211,14 +217,27 @@ class Cassandra
         sub_columns_to_hash(column_family, 
           @client.get_slice(@keyspace, key, 
             CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column), 
-            column_range.begin, column_range.end, !reversed, limit, consistency))
+            CassandraThrift::SlicePredicate.new(:slice_range => 
+              CassandraThrift::SliceRange.new(
+                :start => column_range.begin,
+                :finish => column_range.end,
+                :is_ascending => !reversed,
+                :count => count)),
+            consistency))
       else
         columns_to_hash(column_family, 
-          @client.get_slice(@keyspace, key, column_family, column_range.begin, column_range.end, !reversed, limit, consistency))
+          @client.get_slice(@keyspace, key,
+          CassandraThrift::ColumnParent.new(:column_family => column_family),
+          CassandraThrift::SliceRange.new(
+            :start => column_range.begin,
+            :finish => column_range.end,
+            :is_ascending => !reversed,
+            :count => count),
+           consistency))
       end
     else
       if column
-        # Limit and column_range parameters have no effect
+        # Count and column_range parameters have no effect
         @client.get(@keyspace, key, 
           CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column),
           consistency).column.value
@@ -226,7 +245,12 @@ class Cassandra
         columns_to_hash(column_family, 
           @client.get_slice(@keyspace, key, 
             CassandraThrift::ColumnParent.new(:column_family => column_family), 
-            column_range.begin, column_range.end, !reversed, limit, consistency))
+            CassandraThrift::SliceRange.new(
+              :start => column_range.begin,
+              :finish => column_range.end,
+              :is_ascending => !reversed,
+              :count => count),
+             consistency))
       end 
     end
   end
@@ -235,15 +259,15 @@ class Cassandra
     
   # Return a list of keys in the column_family you request. Requires the
   # table to be partitioned with OrderPreservingHash.
-  def get_key_range(column_family, key_range = ''..'', limit = 100, consistency = Consistency::WEAK)      
+  def get_key_range(column_family, key_range = ''..'', count = 100, consistency = Consistency::WEAK)      
     column_family = column_family.to_s
-    @client.get_key_range(@keyspace, column_family, key_range.begin, key_range.end, limit)
+    @client.get_key_range(@keyspace, column_family, key_range.begin, key_range.end, count)
   end
   
   # Count all rows in the column_family you request. Requires the table 
   # to be partitioned with OrderPreservingHash.
-  def count(column_family, key_range = ''..'', limit = MAX_INT, consistency = Consistency::WEAK)
-    get_key_range(column_family, key_range, limit, consistency).size
+  def count(column_family, key_range = ''..'', count = MAX_INT, consistency = Consistency::WEAK)
+    get_key_range(column_family, key_range, count, consistency).size
   end
   
   def batch

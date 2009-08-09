@@ -54,11 +54,12 @@ class Cassandra
     def columns_to_hash_for_classes(columns, column_name_class, sub_column_name_class = nil)
       hash = OrderedHash.new
       Array(columns).each do |c|
-        hash[column_name_class.new(c.name)] = if c.is_a?(CassandraThrift::SuperColumn)
-          # Pop the class stack, and recurse
-          columns_to_hash_for_classes(c.columns, sub_column_name_class)
-        else
-          c.value
+        c = c.super_column || c.column if c.is_a?(CassandraThrift::ColumnOrSuperColumn)
+        hash[column_name_class.new(c.name)] = case c
+          when CassandraThrift::SuperColumn            
+            columns_to_hash_for_classes(c.columns, sub_column_name_class) # Pop the class stack, and recurse
+          when CassandraThrift::Column
+            c.value
         end
       end
       hash    
