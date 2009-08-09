@@ -6,7 +6,9 @@ class Cassandra
 
     class InvalidVersion < StandardError; end
 
-    GREGORIAN_EPOCH_OFFSET = 0x01B21DD213814000 # Oct 15, 1582
+    GREGORIAN_EPOCH_OFFSET = 0x01B2_1DD2_1381_4000 # Oct 15, 1582
+    
+    VARIANT = 0b1000_0000_0000_0000
 
     def initialize(bytes = nil)
       case bytes
@@ -38,8 +40,11 @@ class Cassandra
           time & 0xFFFF_FFFF, 
           time >> 32, 
           ((time >> 48) & 0x0FFF) | 0x1000, 
-          rand(2**64)
-        ].pack("NnnQ")
+          # Top 3 bytes reserved         
+          rand(2**13) | VARIANT,
+          rand(2**16),
+          rand(2**32)
+        ].pack("NnnnnN")
         
       else
         raise TypeError, "Can't convert from #{bytes.class}"
@@ -58,6 +63,10 @@ class Cassandra
       time_high = @bytes.unpack("NnnQ")[2]
       version = (time_high & 0xF000).to_s(16)[0].chr.to_i
       version > 0 and version < 6 ? version : -1
+    end
+    
+    def variant
+      @bytes.unpack('QnnN')[1] >> 13
     end
 
     def to_guid
@@ -88,6 +97,8 @@ class Cassandra
         @bytes.unpack('QQ')[1]
       }, version: #{
         version
+      }, variant: #{
+        variant
       }, guid: #{
         to_guid
       }>"
