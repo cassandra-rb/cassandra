@@ -12,6 +12,8 @@ class CassandraTest < Test::Unit::TestCase
     @twitter.clear_keyspace!
     @blogs = Cassandra.new('Multiblog', '127.0.0.1')
     @blogs.clear_keyspace!
+    @uuids = (0..6).map {|i| UUID.new(Time.at(2**(24+i))) }    
+    p @uuids
   end
 
   def test_inspect
@@ -90,12 +92,12 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal(columns, @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1))
   end
 
-  def test_get_super_sub_keys_with_ranges
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v1'}})
-    first_column = {UUID.new => 'v2'}
+  def test_get_super_sub_keys_with_ranges              
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {@uuids[1] => 'v1'}})
+    first_column = {@uuids[2] => 'v2'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => first_column})
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v3', UUID.new => 'v4'}})    
-    last_column = {UUID.new => 'v5'}
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => {@uuids[3] => 'v3', @uuids[4] => 'v4'}})    
+    last_column = {@uuids[5] => 'v5'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => last_column})
     
     keys = @twitter.get(:StatusRelationships, key, "user_timelines").keys
