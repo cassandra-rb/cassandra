@@ -126,7 +126,7 @@ class Cassandra
   def get(column_family, key, column = nil, sub_column = nil, count = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
     column_family = column_family.to_s
     assert_column_name_classes(column_family, column, sub_column)
-    _get(column_family, key, column, sub_column, count = 100, column_range, reversed, consistency)
+    _get(column_family, key, column, sub_column, count, column_range, reversed, consistency)
   rescue CassandraThrift::NotFoundException
     is_super(column_family) && !sub_column ? OrderedHash.new : nil
   end
