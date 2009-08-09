@@ -84,14 +84,10 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_super_sub_keys_with_count
-    sleep(1)
-    puts('*' * 80)
     columns = {UUID.new => 'v1'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => {UUID.new => 'v2'}})
     assert_equal(columns, @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1))
-    sleep(1)
-    puts('*' * 80)
   end
 
   def test_get_super_sub_keys_with_ranges
@@ -123,13 +119,13 @@ class CassandraTest < Test::Unit::TestCase
     assert_nil @twitter.get(:StatusRelationships, 'bogus', 'user_timelines', columns.keys.first)
   end
 
-  def test_get_key_range
+  def test_get_range
     @twitter.insert(:Statuses, '2', {'body' => '1'})
     @twitter.insert(:Statuses, '3', {'body' => '1'})
     @twitter.insert(:Statuses, '4', {'body' => '1'})
     @twitter.insert(:Statuses, '5', {'body' => '1'})
     @twitter.insert(:Statuses, '6', {'body' => '1'})
-    assert_equal(['3', '4', '5'], @twitter.get_key_range(:Statuses, '3'..'5'))
+    assert_equal(['3', '4', '5'], @twitter.get_range(:Statuses, '3'..'5'))
   end
 
   def test_multi_get
@@ -149,7 +145,7 @@ class CassandraTest < Test::Unit::TestCase
 
     @twitter.remove(:Statuses, key)
     assert_equal({}, @twitter.get(:Statuses, key))
-    assert_equal 0, @twitter.count(:Statuses)
+    assert_equal 0, @twitter.count_range(:Statuses)
   end
 
   def test_remove_value
@@ -182,7 +178,7 @@ class CassandraTest < Test::Unit::TestCase
     @twitter.insert(:Statuses, key + "2", {'body' => '2'})
     @twitter.insert(:Statuses, key + "3", {'body' => '3'})
     @twitter.clear_column_family!(:Statuses)
-    assert_equal 0, @twitter.count(:Statuses)
+    assert_equal 0, @twitter.count_range(:Statuses)
   end
 
   def test_insert_key
@@ -233,7 +229,7 @@ class CassandraTest < Test::Unit::TestCase
     @twitter.insert(:Statuses, key + "1", {'body' => '1'})
     @twitter.insert(:Statuses, key + "2", {'body' => '2'})
     @twitter.insert(:Statuses, key + "3", {'body' => '3'})
-    assert_equal 3, @twitter.count(:Statuses)
+    assert_equal 3, @twitter.count_range(:Statuses)
   end
 
   def test_count_columns

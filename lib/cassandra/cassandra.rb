@@ -101,7 +101,7 @@ class Cassandra
   # Remove all rows in the column family you request.
   def clear_column_family!(column_family)
     # Does not support consistency argument
-    get_key_range(column_family).each do |key| 
+    get_range(column_family).each do |key| 
       remove(column_family, key)
     end
   end
@@ -235,15 +235,15 @@ class Cassandra
     
   # Return a list of keys in the column_family you request. Requires the
   # table to be partitioned with OrderPreservingHash.
-  def get_key_range(column_family, key_range = ''..'', count = 100, consistency = Consistency::WEAK)      
+  def get_range(column_family, key_range = ''..'', count = 100, consistency = Consistency::WEAK)      
     column_family = column_family.to_s
     @client.get_key_range(@keyspace, column_family, key_range.begin, key_range.end, count)
   end
   
   # Count all rows in the column_family you request. Requires the table 
   # to be partitioned with OrderPreservingHash.
-  def count(column_family, key_range = ''..'', count = MAX_INT, consistency = Consistency::WEAK)
-    get_key_range(column_family, key_range, count, consistency).size
+  def count_range(column_family, key_range = ''..'', count = MAX_INT, consistency = Consistency::WEAK)
+    get_range(column_family, key_range, count, consistency).size
   end
   
   def batch
