@@ -31,8 +31,8 @@ class Cassandra
           bytes & 0xFFFF_FFFF
         ].pack("NNNN")
         
-      when NilClass
-        time = Time.stamp * 10 + GREGORIAN_EPOCH_OFFSET
+      when NilClass, Time
+        time = (bytes || Time).stamp * 10 + GREGORIAN_EPOCH_OFFSET
         # See http://github.com/spectra/ruby-uuid/
         @bytes = [
           time & 0xFFFF_FFFF, 
@@ -73,6 +73,10 @@ class Cassandra
     
     def usecs
       total_usecs % 1_000_000    
+    end
+    
+    def <=>(other)
+      total_usecs <=> other.send(:total_usecs)
     end
         
     def inspect

@@ -26,8 +26,9 @@ class ComparableTypesTest < Test::Unit::TestCase
 
   def test_uuid_sort
     ary = []
-    10.times { ary << UUID.new; sleep(0.1) }
-    assert_equal ary.sort, ary
+    5.times { ary << UUID.new(Time.at(rand(2**31))) }
+    assert_equal ary.map { |_| _.seconds }.sort, ary.sort.map { |_| _.seconds }
+    assert_not_equal ary.sort, ary.sort_by {|_| _.to_guid }
   end
   
   def test_uuid_equality
