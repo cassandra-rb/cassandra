@@ -1,8 +1,4 @@
-
-require 'test/unit'
-require "#{File.expand_path(File.dirname(__FILE__))}/../lib/cassandra"
-
-begin; require 'ruby-debug'; rescue LoadError; end
+require File.expand_path(File.dirname(__FILE__) + '/test_helper')
 
 class CassandraTest < Test::Unit::TestCase
   include Cassandra::Constants
