@@ -123,7 +123,7 @@ class Cassandra
   # Return a hash (actually, a Cassandra::OrderedHash) or a single value
   # representing the element at the column_family:key:[column]:[sub_column]
   # path you request.
-  def get(column_family, key, column = nil, sub_column = nil, count = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
+  def get(column_family, key, column = nil, sub_column = nil, count = 100, column_range = nil, reversed = false, consistency = Consistency::WEAK)
     column_family = column_family.to_s
     assert_column_name_classes(column_family, column, sub_column)
     _get(column_family, key, column, sub_column, count, column_range, reversed, consistency)
@@ -132,7 +132,7 @@ class Cassandra
   end
 
   # Multi-key version of Cassandra#get.
-  def multi_get(column_family, keys, column = nil, sub_column = nil, count = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
+  def multi_get(column_family, keys, column = nil, sub_column = nil, count = 100, column_range = nil, reversed = false, consistency = Consistency::WEAK)
     OrderedHash[*keys.map do |key|
       [key, get(column_family, key, column, sub_column, count, column_range, reversed, consistency)]
     end._flatten_once]
@@ -143,20 +143,20 @@ class Cassandra
   def exists?(column_family, key, column = nil, sub_column = nil, consistency = Consistency::WEAK)
     column_family = column_family.to_s
     assert_column_name_classes(column_family, column, sub_column)
-    _get(column_family, key, column, sub_column, 1, ''..'', false, consistency)
+    _get(column_family, key, column, sub_column, 1, nil, false, consistency)
     true
   rescue CassandraThrift::NotFoundException
   end
 
   # Return a list of keys in the column_family you request. Requires the
   # table to be partitioned with OrderPreservingHash.
-  def get_range(column_family, key_range = ''..'', count = 100, consistency = Consistency::WEAK)
+  def get_range(column_family, key_range = nil, count = 100, consistency = Consistency::WEAK)
     _get_range(column_family, key_range, count, consistency)
   end
 
   # Count all rows in the column_family you request. Requires the table
   # to be partitioned with OrderPreservingHash.
-  def count_range(column_family, key_range = ''..'', count = MAX_INT, consistency = Consistency::WEAK)
+  def count_range(column_family, key_range = nil, count = MAX_INT, consistency = Consistency::WEAK)
     get_range(column_family, key_range, count, consistency).size
   end
 

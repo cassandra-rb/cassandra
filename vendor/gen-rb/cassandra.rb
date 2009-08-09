@@ -12,7 +12,7 @@ require 'cassandra_types'
         class Client
           include ::Thrift::Client
 
-          def get_slice(keyspace, key, column_parent, predicate, consistency_level)
+          def get_slice(keyspace, key, column_parent, predicate, consistency_level)          
             send_get_slice(keyspace, key, column_parent, predicate, consistency_level)
             return recv_get_slice()
           end

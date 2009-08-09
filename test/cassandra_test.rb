@@ -62,6 +62,11 @@ class CassandraTest < Test::Unit::TestCase
     assert @twitter.exists?(:Statuses, key, 'body')
     assert_nil @twitter.exists?(:Statuses, 'bogus', 'body')
   end
+  
+  def test_get_values_with_count
+    @twitter.insert(:Statuses, key, {'1' => 'v', '2' => 'v', '3' => 'v'})
+    assert_equal 2, @twitter.get(:Statuses, key, nil, nil, 2).size
+  end  
 
   def test_get_super_key
     columns = {'user_timelines' => {@uuids[4] => '4', @uuids[5] => '5'}}

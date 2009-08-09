@@ -56,7 +56,8 @@ class Cassandra
       sub_columns || columns.map { |name| result[name] }
     end
 
-    def _get(column_family, key, column = nil, sub_column = nil, count = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
+    def _get(column_family, key, column = nil, sub_column = nil, count = 100, column_range = nil, reversed = false, consistency = Consistency::WEAK)
+      column_range ||= ''..''
       column = column.to_s if column
       sub_column = sub_column.to_s if sub_column
 
@@ -70,13 +71,11 @@ class Cassandra
 
       # Slices
       else
-        predicate = CassandraThrift::SlicePredicate.new(
-          :slice_range => CassandraThrift::SliceRange.new(
-            # FIXME Comparable types in a column_range are not checked
-            :start => column_range.begin.to_s,
-            :finish => column_range.end.to_s,
-            :is_ascending => !reversed,
-            :count => count))
+        slice_options = {:is_ascending => !reversed, :count => count}
+        # FIXME Comparable types in a column_range are not checked
+        slice_options.merge!({:start => column_range.begin.to_s, :finish => column_range.end.to_s}) if column_range
+        predicate = CassandraThrift::SlicePredicate.new(:slice_range => CassandraThrift::SliceRange.new(slice_options))
+        
         if is_super(column_family) and column
           column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column)
           sub_columns_to_hash(column_family, @client.get_slice(@keyspace, key, column_parent, predicate, consistency))
@@ -88,6 +87,7 @@ class Cassandra
     end
 
     def _get_range(column_family, key_range, count, consistency)
+      key_range ||= ''..''
       column_family = column_family.to_s
       @client.get_key_range(@keyspace, column_family, key_range.begin, key_range.end, count)
     end
