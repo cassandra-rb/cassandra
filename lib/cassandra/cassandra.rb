@@ -204,9 +204,9 @@ class Cassandra
     if is_super(column_family)
       if sub_column
         # Limit and column_range parameters have no effect
-        @client.get_column(@keyspace, key,  
+        @client.get(@keyspace, key,  
             CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column),
-            consistency).value
+            consistency).column.value
       elsif column
         sub_columns_to_hash(column_family, 
           @client.get_slice(@keyspace, key, 
@@ -219,9 +219,9 @@ class Cassandra
     else
       if column
         # Limit and column_range parameters have no effect
-        @client.get_column(@keyspace, key, 
+        @client.get(@keyspace, key, 
           CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column),
-          consistency).value
+          consistency).column.value
       else
         columns_to_hash(column_family, 
           @client.get_slice(@keyspace, key, 
