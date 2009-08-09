@@ -1,10 +1,12 @@
 
 class Cassandra
-  include Helper  
+  include Columns
+  include Protocol
+
   class AccessError < StandardError; end
-  
+
   MAX_INT = 2**31 - 1
-  
+
   module Consistency
     include CassandraThrift::ConsistencyLevel
     NONE = ZERO
@@ -12,7 +14,7 @@ class Cassandra
     STRONG = QUORUM
     PERFECT = ALL
   end
-  
+
   attr_reader :keyspace, :host, :port, :serializer, :transport, :client, :schema
 
   # Instantiate a new Cassandra and open the connection.
@@ -26,19 +28,19 @@ class Cassandra
     @port = port
 
     @transport = Thrift::BufferedTransport.new(Thrift::Socket.new(@host, @port))
-    @transport.open    
+    @transport.open
     @client = CassandraThrift::Cassandra::SafeClient.new(
-      CassandraThrift::Cassandra::Client.new(Thrift::BinaryProtocol.new(@transport)), 
+      CassandraThrift::Cassandra::Client.new(Thrift::BinaryProtocol.new(@transport)),
       @transport)
 
     keyspaces = @client.get_string_list_property("keyspaces")
     unless keyspaces.include?(@keyspace)
       raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
     end
-        
-    @schema = @client.describe_keyspace(@keyspace)    
+
+    @schema = @client.describe_keyspace(@keyspace)
   end
-    
+
   def inspect
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       schema.map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
@@ -46,33 +48,22 @@ class Cassandra
   end
 
   ## Write
-  
-  # Insert a row for a key. Pass a flat hash for a regular column family, and 
+
+  # Insert a row for a key. Pass a flat hash for a regular column family, and
   # a nested hash for a super column family.
   def insert(column_family, key, hash, consistency = Consistency::WEAK, timestamp = Time.stamp)
     column_family = column_family.to_s
-    mutation = if is_super(column_family) 
+    mutation = if is_super(column_family)
       CassandraThrift::BatchMutationSuper.new(:key => key, :cfmap => {column_family.to_s => hash_to_super_columns(column_family, hash, timestamp)})
     else
-      CassandraThrift::BatchMutation.new(:key => key, :cfmap => {column_family.to_s => hash_to_columns(column_family, hash, timestamp)})      
+      CassandraThrift::BatchMutation.new(:key => key, :cfmap => {column_family.to_s => hash_to_columns(column_family, hash, timestamp)})
     end
     # FIXME Batched operations discard the consistency argument
     @batch ? @batch << mutation : _insert(mutation, consistency)
   end
-  
-  private
-  
-  def _insert(mutation, consistency = Consistency::WEAK)
-    case mutation
-    when CassandraThrift::BatchMutationSuper then @client.batch_insert_super_column(@keyspace, mutation, consistency)    
-    when CassandraThrift::BatchMutation then @client.batch_insert(@keyspace, mutation, consistency)
-    end
-  end  
-  
-  public
-  
+
   ## Delete
-  
+
   # Remove the element at the column_family:key:[column]:[sub_column]
   # path you request.
   def remove(column_family, key, column = nil, sub_column = nil, consistency = Consistency::WEAK, timestamp = Time.stamp)
@@ -84,24 +75,11 @@ class Cassandra
     args = [column_family, key, column, sub_column, consistency, timestamp]
     @batch ? @batch << args : _remove(*args)
   end
-  
-  private 
-  
-  def _remove(column_family, key, column, sub_column, consistency, timestamp)
-    column_path_or_parent = if is_super(column_family)
-      CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column)
-    else
-      CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column)
-    end
-    @client.remove(@keyspace, key, column_path_or_parent, timestamp, consistency)
-  end
-   
-  public
-  
+
   # Remove all rows in the column family you request.
   def clear_column_family!(column_family)
     # Does not support consistency argument
-    get_range(column_family).each do |key| 
+    get_range(column_family).each do |key|
       remove(column_family, key)
     end
   end
@@ -113,69 +91,41 @@ class Cassandra
       clear_column_family!(column_family)
     end
   end
-  
+
   ## Read
 
-  # Count the elements at the column_family:key:[super_column] path you 
+  # Count the elements at the column_family:key:[super_column] path you
   # request.
   def count_columns(column_family, key, super_column = nil, consistency = Consistency::WEAK)
-    column_family = column_family.to_s
-    assert_column_name_classes(column_family, super_column)
-
-    super_column = super_column.to_s if super_column
-    @client.get_count(@keyspace, key, 
-      CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => super_column),
-      consistency
-    )
+    _count_columns(column_family, key, super_column, consistency)
   end
-  
+
   # Multi-key version of Cassandra#count_columns.
   def multi_count_columns(column_family, keys, super_column = nil, consistency = Consistency::WEAK)
-    OrderedHash[*keys.map do |key|   
+    OrderedHash[*keys.map do |key|
       [key, count_columns(column_family, key, super_column)]
     end._flatten_once]
-  end  
-  
+  end
+
   # Return a list of single values for the elements at the
   # column_family:key:column[s]:[sub_columns] path you request.
   def get_columns(column_family, key, columns, sub_columns = nil, consistency = Consistency::WEAK)
-    column_family = column_family.to_s
-    assert_column_name_classes(column_family, columns, sub_columns)
-    
-    result = if is_super(column_family) 
-      if sub_columns 
-        columns_to_hash(column_family, @client.get_slice(@keyspace, key, 
-          CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => columns), 
-          CassandraThrift::SlicePredicate.new(:column_names => sub_columns), 
-          consistency))
-      else
-        columns_to_hash(column_family, @client.get_slice(@keyspace, key, 
-          CassandraThrift::ColumnParent.new(:column_family => column_family),
-          CassandraThrift::SlicePredicate.new(:column_names => columns), 
-          consistency))      
-      end
-    else
-      columns_to_hash(column_family, @client.get_slice(@keyspace, key, 
-        CassandraThrift::ColumnParent.new(:column_family => column_family),
-        CassandraThrift::SlicePredicate.new(:column_names => columns), 
-        consistency))
-    end    
-    sub_columns || columns.map { |name| result[name] }
+    _get_columns(column_family, key, columns, sub_columns, consistency)
   end
 
   # Multi-key version of Cassandra#get_columns.
   def multi_get_columns(column_family, keys, columns, sub_columns = nil, consistency = Consistency::WEAK)
-    OrderedHash[*keys.map do |key| 
+    OrderedHash[*keys.map do |key|
       [key, get_columns(column_family, key, columns, sub_columns, consistency)]
     end._flatten_once]
   end
-        
-  # Return a hash (actually, a Cassandra::OrderedHash) or a single value 
+
+  # Return a hash (actually, a Cassandra::OrderedHash) or a single value
   # representing the element at the column_family:key:[column]:[sub_column]
   # path you request.
   def get(column_family, key, column = nil, sub_column = nil, count = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
     column_family = column_family.to_s
-    assert_column_name_classes(column_family, column, sub_column)    
+    assert_column_name_classes(column_family, column, sub_column)
     _get(column_family, key, column, sub_column, count = 100, column_range, reversed, consistency)
   rescue CassandraThrift::NotFoundException
     is_super(column_family) && !sub_column ? OrderedHash.new : nil
@@ -183,121 +133,40 @@ class Cassandra
 
   # Multi-key version of Cassandra#get.
   def multi_get(column_family, keys, column = nil, sub_column = nil, count = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
-    OrderedHash[*keys.map do |key| 
+    OrderedHash[*keys.map do |key|
       [key, get(column_family, key, column, sub_column, count, column_range, reversed, consistency)]
     end._flatten_once]
   end
-  
-  # Return true if the column_family:key:[column]:[sub_column] path you 
+
+  # Return true if the column_family:key:[column]:[sub_column] path you
   # request exists.
   def exists?(column_family, key, column = nil, sub_column = nil, consistency = Consistency::WEAK)
     column_family = column_family.to_s
-    assert_column_name_classes(column_family, column, sub_column)    
+    assert_column_name_classes(column_family, column, sub_column)
     _get(column_family, key, column, sub_column, 1, ''..'', false, consistency)
     true
   rescue CassandraThrift::NotFoundException
   end
-  
-  private
-  
-  def _get(column_family, key, column = nil, sub_column = nil, count = 100, column_range = ''..'', reversed = false, consistency = Consistency::WEAK)
-    column = column.to_s if column
-    sub_column = sub_column.to_s if sub_column    
-    
-    # Single values; count and column_range parameters have no effect
-    if is_super(column_family) and sub_column
-      column_path = CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column)      
-      @client.get(@keyspace, key, column_path, consistency).column.value
-    elsif !is_super(column_family) and column
-      column_path = CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column)
-      @client.get(@keyspace, key, column_path, consistency).column.value
-    
-    # Slices
-    else      
-      predicate = CassandraThrift::SlicePredicate.new(
-        :slice_range => CassandraThrift::SliceRange.new(
-          # FIXME Comparable types in a column_range are not checked
-          :start => column_range.begin.to_s,
-          :finish => column_range.end.to_s,
-          :is_ascending => !reversed,
-          :count => count))          
-      if is_super(column_family) and column
-        column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column)
-        sub_columns_to_hash(column_family, @client.get_slice(@keyspace, key, column_parent, predicate, consistency))
-      else
-        column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family)
-        columns_to_hash(column_family, @client.get_slice(@keyspace, key, column_parent, predicate, consistency))
-      end
-    end
-  end
-  
-  public
-    
+
   # Return a list of keys in the column_family you request. Requires the
   # table to be partitioned with OrderPreservingHash.
-  def get_range(column_family, key_range = ''..'', count = 100, consistency = Consistency::WEAK)      
-    column_family = column_family.to_s
-    @client.get_key_range(@keyspace, column_family, key_range.begin, key_range.end, count)
+  def get_range(column_family, key_range = ''..'', count = 100, consistency = Consistency::WEAK)
+    _get_range(column_family, key_range, count, consistency)
   end
-  
-  # Count all rows in the column_family you request. Requires the table 
+
+  # Count all rows in the column_family you request. Requires the table
   # to be partitioned with OrderPreservingHash.
   def count_range(column_family, key_range = ''..'', count = MAX_INT, consistency = Consistency::WEAK)
     get_range(column_family, key_range, count, consistency).size
   end
-  
+
+  # Open a batch operation. Inserts and deletes will be queued until the block
+  # closes, and then sent atomically to the server.
   def batch
     @batch = []
-    yield    
-    compact_mutations!
-    dispatch_mutations!    
+    yield
+    _compact_mutations
+    _dispatch_mutations
     @batch = nil
   end
-  
-  private
-
-  def compact_mutations!
-    compact_batch = []
-    mutations = {}   
-
-    @batch << nil # Close it
-    @batch.each do |m|
-      case m
-      when Array, nil
-        # Flush compacted mutations
-        compact_batch.concat(mutations.values.map {|x| x.values}.flatten)
-        mutations = {}
-        # Insert delete operation
-        compact_batch << m 
-      else # BatchMutation, BatchMutationSuper
-        # Do a nested hash merge
-        if mutation_class = mutations[m.class]
-          if mutation = mutation_class[m.key]
-            if columns = mutation.cfmap[m.cfmap.keys.first]
-              columns.concat(m.cfmap.values.first)
-            else
-              mutation.cfmap.merge!(m.cfmap)
-            end
-          else
-            mutation_class[m.key] = m
-          end
-        else
-          mutations[m.class] = {m.key => m}
-        end
-      end
-    end
-            
-    @batch = compact_batch
-  end
-  
-  def dispatch_mutations!
-    @batch.each do |args| 
-      case args
-      when Array 
-        _remove(*args)
-      when CassandraThrift::BatchMutationSuper, CassandraThrift::BatchMutation 
-        _insert(*args)
-      end
-    end
-  end    
 end

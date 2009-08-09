@@ -1,8 +1,7 @@
-class Cassandra
 
+class Cassandra
   # A bunch of crap, mostly related to introspecting on column types
-  module Helper
-  
+  module Columns
     private
     
     def is_super(column_family)
