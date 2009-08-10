@@ -1,5 +1,25 @@
 
 class Cassandra
+
+=begin rdoc
+Create a new Cassandra client instance. Accepts a keyspace name, and optional host and port.
+
+  Cassandra.new('twitter', '127.0.0.1', 9160)
+  
+For mutation operations, valid option parameters are:
+ 
+<tt>:consistency</tt>:: The consistency level of the request. Defaults to <tt>Cassandra::Consistency::WEAK</tt> (one node must respond). Other valid options are <tt>Cassandra::Consistency::NONE</tt>, <tt>Cassandra::Consistency::STRONG</tt>, and <tt>Cassandra::Consistency::PERFECT</tt>.
+<tt>:timestamp </tt>:: The transaction timestamp. Defaults to the current time in milliseconds. This is used for conflict resolution by the server; you normally never need to change it.
+
+For read operations, valid option parameters are:
+
+<tt>:distribution</tt>:: Either <tt>:modula</tt>, <tt>:consistent_ketama</tt>, <tt>:consistent_wheel</tt>, or <tt>:ketama</tt>. Defaults to <tt>:ketama</tt>.
+<tt>:server_failure_limit</tt>:: How many consecutive failures to allow before marking a host as dead. Has no effect unless <tt>:retry_timeout</tt> is also set.
+<tt>:retry_timeout</tt>:: How long to wait until retrying a dead server. Has no effect unless <tt>:server_failure_limit</tt> is non-zero. Defaults to <tt>30</tt>.
+<tt>:auto_eject_hosts</tt>:: Whether to temporarily eject dead hosts from the pool. Defaults to <tt>true</tt>. Note that in the event of an ejection, <tt>:auto_eject_hosts</
+
+=end rdoc
+
   include Columns
   include Protocol
 
@@ -50,16 +70,13 @@ class Cassandra
   ## Write
 
   # Insert a row for a key. Pass a flat hash for a regular column family, and
-  # a nested hash for a super column family.
-  #
-  # options:
-  # consistency: request consistency level. default Consistency::WEAK
-  # timestamp: transaction timestamp. WARNING CHANGE ONLY IF REALY KNOW THAT ARE YOU DOING. Cassandra use clients timestamps to resolve conflicts
+  # a nested hash for a super column family. Supports options :consistency
+  # and :timestamp.
   def insert(column_family, key, hash, options = {})
     options = merge_default_consistency(options)
     options[:timestamp] ||= Time.stamp
-
     column_family = column_family.to_s
+    
     mutation = if is_super(column_family)
       CassandraThrift::BatchMutationSuper.new(:key => key, :cfmap => {column_family.to_s => hash_to_super_columns(column_family, hash, options[:timestamp])})
     else
@@ -79,7 +96,6 @@ class Cassandra
   def remove(column_family, key, column = nil, sub_column = nil, options ={})
     options = merge_default_consistency(options)
     options[:timestamp] ||= Time.stamp
-
     column_family = column_family.to_s
     assert_column_name_classes(column_family, column, sub_column)
 
@@ -90,18 +106,20 @@ class Cassandra
   end
 
   # Remove all rows in the column family you request.
+  # FIXME May not currently delete all records without multiple calls. Waiting 
+  # for ranged remove support in Cassandra.
   def clear_column_family!(column_family)
     # Does not support consistency argument
-    # FIXME this will delete only MAX_INT records
     get_range(column_family).each do |key|
       remove(column_family, key, nil, nil, :count => MAX_INT)
     end
   end
 
-  # Remove all rows in the keyspace
+  # Remove all rows in the keyspace.
+  # FIXME May not currently delete all records without multiple calls. Waiting 
+  # for ranged remove support in Cassandra.
   def clear_keyspace!
-    # Does not support consistency argument
-    # FIXME this will delete only MAX_INT records in each column_family
+    # Does not support consistency argument    
     @schema.keys.each do |column_family|
       clear_column_family!(column_family)
     end
@@ -118,7 +136,8 @@ class Cassandra
   # consistency: request consistency level. default Consistency::WEAK
   def count_columns(column_family, key, super_column = nil, options={})
     options = merge_default_consistency(options)
-
+    column_family = column_family.to_s
+    
     _count_columns(column_family, key, super_column, options[:consistency])
   end
 
@@ -159,9 +178,9 @@ class Cassandra
   # consistency: request consistency level. default Consistency::WEAK
   def get(column_family, key, column = nil, sub_column = nil, options={})
     options = merge_default_get_options(options)
-
     column_family = column_family.to_s
     assert_column_name_classes(column_family, column, sub_column)
+    
     _get(column_family, key, column, sub_column, options[:count], options[:column_range], options[:reversed], options[:consistency])
   rescue CassandraThrift::NotFoundException
     is_super(column_family) && !sub_column ? OrderedHash.new : nil
@@ -182,9 +201,9 @@ class Cassandra
   # consistency: request consistency level. default Consistency::WEAK
   def exists?(column_family, key, column = nil, sub_column = nil, options={})
     options = merge_default_consistency(options)
-
     column_family = column_family.to_s
     assert_column_name_classes(column_family, column, sub_column)
+    
     _get(column_family, key, column, sub_column, 1, nil, false, options[:consistency])
     true
   rescue CassandraThrift::NotFoundException
