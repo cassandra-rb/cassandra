@@ -129,8 +129,7 @@ class Cassandra
         when Array
           _remove(*args)
         when CassandraThrift::BatchMutationSuper, CassandraThrift::BatchMutation
-          args << Consistency::WEAK
-          _insert(*args)
+          _insert(args, Consistency::WEAK)
         end
       end
     end
