@@ -125,11 +125,12 @@ class Cassandra
 
     def _dispatch_mutations
       @batch.each do |args|
-        case args
-        when Array
-          _remove(*args)
+        next unless args
+        case args.first
         when CassandraThrift::BatchMutationSuper, CassandraThrift::BatchMutation
-          _insert(args, Consistency::WEAK)
+          _insert(*args)
+        else
+          _remove(*args)
         end
       end
     end

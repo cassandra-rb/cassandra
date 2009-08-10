@@ -99,8 +99,9 @@ For read operations, valid option parameters usually are:
         :key => key, 
         :cfmap => {column_family => hash_to_columns(*args)})
     end
-    # FIXME Batched operations discard the consistency argument
-    @batch ? @batch << mutation : _insert(mutation, options[:consistency])
+    
+    args = [mutation, options[:consistency]]
+    @batch ? @batch << args : _insert(*args)
   end
 
   ## Delete
