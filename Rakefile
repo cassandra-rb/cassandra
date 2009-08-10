@@ -21,7 +21,7 @@ REVISION = "15354b4906fd654d58fe50fd01ebf95b69434ba9"
 PATCHES = [
   "http://issues.apache.org/jira/secure/attachment/12416014/0001-CASSANDRA-356-rename-clean-up-collectColumns-methods.txt",
   "https://issues.apache.org/jira/secure/attachment/12416073/0002-v3.patch",
-  "https://issues.apache.org/jira/secure/attachment/12416074/357-v2.patch"]
+  "https://issues.apache.org/jira/secure/attachment/12416074/357-v3.patch"]
   
 task :checkout do
   # Like a git submodule, but all in one obvious place

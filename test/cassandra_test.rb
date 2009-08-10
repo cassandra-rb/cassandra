@@ -106,9 +106,9 @@ class CassandraTest < Test::Unit::TestCase
 
     keys = @twitter.get(:StatusRelationships, key, "user_timelines").keys
     assert_equal keys.sort, keys    
-    assert_equal({@uuids[1] => 'v1'}, @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1, [nil, @uuids[2]]))
-    assert_equal({@uuids[2] => 'v2'}, @twitter.get(:StatusRelationships, key, "user_timelines", nil, 1, [@uuids[2], nil]))
-    assert_equal 4, @twitter.get(:StatusRelationships, key, "user_timelines", nil, nil, [@uuids[2], @uuids[5]]).size
+    assert_equal({@uuids[1] => 'v1'}, @twitter.get(:StatusRelationships, key, "user_timelines", nil, {:column_range => [nil, @uuids[2]], :count => 1}))
+    assert_equal({@uuids[2] => 'v2'}, @twitter.get(:StatusRelationships, key, "user_timelines", nil, {:column_range => [@uuids[2], nil], :count => 1}))
+    assert_equal 4, @twitter.get(:StatusRelationships, key, "user_timelines", nil, {:column_range => [@uuids[2], @uuids[5]]}).size
   end
 
   def test_get_super_sub_key
