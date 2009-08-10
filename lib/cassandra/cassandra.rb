@@ -103,7 +103,7 @@ class Cassandra
   # Multi-key version of Cassandra#count_columns.
   def multi_count_columns(column_family, keys, super_column = nil, consistency = Consistency::WEAK)
     OrderedHash[*keys.map do |key|
-      [key, count_columns(column_family, key, super_column)]
+      [key, count_columns(column_family, key, super_column, consistency)]
     end._flatten_once]
   end
 
