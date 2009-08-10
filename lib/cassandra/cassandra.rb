@@ -1,17 +1,15 @@
 
-class Cassandra
-
 =begin rdoc
 Create a new Cassandra client instance. Accepts a keyspace name, and optional host and port.
 
-  Cassandra.new('twitter', '127.0.0.1', 9160)
+  client = Cassandra.new('twitter', '127.0.0.1', 9160)
   
-For write operations, valid option parameters usually are:
+You can then make calls to the server via the <tt>client</tt> instance.
  
-<tt>:consistency</tt>:: The consistency level of the request. Defaults to <tt>Cassandra::Consistency::ONE</tt> (one node must respond). Other valid options are <tt>Cassandra::Consistency::ZERO</tt>, <tt>Cassandra::Consistency::QUORUM</tt>, and <tt>Cassandra::Consistency::ALL</tt>.
-<tt>:timestamp </tt>:: The transaction timestamp. Defaults to the current time in milliseconds. This is used for conflict resolution by the server; you normally never need to change it.
-
-For read operations, valid option parameters usually are:
+  client.insert(:UserRelationships, "5", {"user_timeline" => {UUID.new => "1"}})
+  client.get(:UserRelationships, "5", "user_timeline")
+  
+For read methods, valid option parameters are:
 
 <tt>:count</tt>:: How many results to return. Defaults to 100.
 <tt>:start</tt>:: Column name token at which to start iterating, inclusive. Defaults to nil, which means the first column in the collation order.
@@ -19,12 +17,21 @@ For read operations, valid option parameters usually are:
 <tt>:reversed</tt>:: Swap the direction of the collation order.
 <tt>:consistency</tt>:: The consistency level of the request. Defaults to <tt>Cassandra::Consistency::ONE</tt> (one node must respond). Other valid options are <tt>Cassandra::Consistency::ZERO</tt>, <tt>Cassandra::Consistency::QUORUM</tt>, and <tt>Cassandra::Consistency::ALL</tt>.
 
+Note that some read options have no relevance in some contexts.
+ 
+For write methods, valid option parameters are:
+ 
+<tt>:timestamp </tt>:: The transaction timestamp. Defaults to the current time in milliseconds. This is used for conflict resolution by the server; you normally never need to change it.
+<tt>:consistency</tt>:: See above.
+
 =end rdoc
 
+class Cassandra
   include Columns
   include Protocol
 
-  class AccessError < StandardError; end
+  class AccessError < StandardError #:nodoc:
+  end
 
   module Consistency
     include CassandraThrift::ConsistencyLevel

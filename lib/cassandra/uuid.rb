@@ -4,7 +4,8 @@ class Cassandra
   # UUID format version 1, as specified in RFC 4122, with jitter in place of the mac address and sequence counter.
   class UUID < Comparable
 
-    class InvalidVersion < StandardError; end
+    class InvalidVersion < StandardError #:nodoc:
+    end
 
     GREGORIAN_EPOCH_OFFSET = 0x01B2_1DD2_1381_4000 # Oct 15, 1582
     

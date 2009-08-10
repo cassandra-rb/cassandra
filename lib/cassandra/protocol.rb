@@ -1,7 +1,7 @@
 
 class Cassandra
   # Inner methods for actually doing the Thrift calls
-  module Protocol
+  module Protocol #:nodoc:
     private
 
     def _insert(mutation, consistency)

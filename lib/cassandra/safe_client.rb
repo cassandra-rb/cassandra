@@ -1,5 +1,5 @@
 
-module CassandraThrift
+module CassandraThrift #:nodoc: all
   module Cassandra
     class SafeClient  
       def initialize(client, transport)

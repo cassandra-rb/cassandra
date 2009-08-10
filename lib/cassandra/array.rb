@@ -1,6 +1,4 @@
 
-#:stopdoc:
-
 class Array
   def _flatten_once
     result = []
@@ -8,5 +6,3 @@ class Array
     result
   end  
 end
-
-#:startdoc:

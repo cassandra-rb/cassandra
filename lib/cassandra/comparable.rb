@@ -2,7 +2,7 @@
 class Cassandra
   # Abstract base class for comparable numeric column name types
   class Comparable
-    class TypeError < ::TypeError
+    class TypeError < ::TypeError #:nodoc:
     end
   
     def <=>(other)
