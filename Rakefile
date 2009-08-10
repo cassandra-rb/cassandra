@@ -23,7 +23,8 @@ PATCHES = [
   "http://issues.apache.org/jira/secure/attachment/12415864/0002-v2.patch",
   "http://issues.apache.org/jira/secure/attachment/12415998/CASSANDRA-327-2.diff",
   "http://issues.apache.org/jira/secure/attachment/12416014/0001-CASSANDRA-356-rename-clean-up-collectColumns-methods.txt",
-  "http://issues.apache.org/jira/secure/attachment/12416015/0002-use-the-existing-collectReducedColumns-api-to-make-sub.txt"]
+  "http://issues.apache.org/jira/secure/attachment/12416015/0002-use-the-existing-collectReducedColumns-api-to-make-sub.txt",
+  "https://issues.apache.org/jira/secure/attachment/12416016/357.patch"]
   
 task :checkout do
   # Like a git submodule, but all in one obvious place

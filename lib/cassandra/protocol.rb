@@ -57,7 +57,7 @@ class Cassandra
     end
 
     def _get(column_family, key, column = nil, sub_column = nil, count = 100, column_range = nil, reversed = false, consistency = Consistency::WEAK)
-      column_range ||= ''..''
+      column_range ||= [nil, nil]
       column = column.to_s if column
       sub_column = sub_column.to_s if sub_column
 
@@ -73,7 +73,7 @@ class Cassandra
       else
         slice_options = {:is_ascending => !reversed, :count => count}
         # FIXME Comparable types in a column_range are not checked
-        slice_options.merge!({:start => column_range.begin.to_s, :finish => column_range.end.to_s}) if column_range
+        slice_options.merge!({:start => column_range[0].to_s, :finish => column_range[1].to_s}) if column_range
         predicate = CassandraThrift::SlicePredicate.new(:slice_range => CassandraThrift::SliceRange.new(slice_options))
         
         if is_super(column_family) and column
@@ -87,9 +87,9 @@ class Cassandra
     end
 
     def _get_range(column_family, key_range, count, consistency)
-      key_range ||= ''..''
+      key_range ||= [nil, nil]
       column_family = column_family.to_s
-      @client.get_key_range(@keyspace, column_family, key_range.begin, key_range.end, count)
+      @client.get_key_range(@keyspace, column_family, key_range[0].to_s, key_range[1].to_s, count)
     end
 
     def _compact_mutations

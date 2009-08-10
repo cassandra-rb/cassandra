@@ -1,0 +1,4 @@
+
+class String
+  
+end
