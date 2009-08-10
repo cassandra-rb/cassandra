@@ -240,7 +240,7 @@ For read operations, valid option parameters usually are:
         this = "#{self.class}##{caller[0].split('`').last[0..-2]}"
         raise ArgumentError, "Invalid options #{invalid_keys.inspect[1..-2]} for #{this}"
       end
-      options.merge!(args.last)
+      options.merge!(args.pop)
     end    
     [args[0], args[1], options]
   end
