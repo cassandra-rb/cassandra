@@ -17,14 +17,11 @@ task :cassandra => [:checkout, :patch, :build] do
   exec("env CASSANDRA_INCLUDE=#{Dir.pwd}/conf/cassandra.in.sh cassandra/bin/cassandra -f")
 end
 
-REVISION = "9d6f4752b6353c1374469fa78649b9bcda1e2e46"
+REVISION = "15354b4906fd654d58fe50fd01ebf95b69434ba9"
 PATCHES = [
-  "http://issues.apache.org/jira/secure/attachment/12415393/0001-CASSANDRA-329-thrift.txt",
-  "http://issues.apache.org/jira/secure/attachment/12415864/0002-v2.patch",
-  "http://issues.apache.org/jira/secure/attachment/12415998/CASSANDRA-327-2.diff",
   "http://issues.apache.org/jira/secure/attachment/12416014/0001-CASSANDRA-356-rename-clean-up-collectColumns-methods.txt",
-  "http://issues.apache.org/jira/secure/attachment/12416015/0002-use-the-existing-collectReducedColumns-api-to-make-sub.txt",
-  "https://issues.apache.org/jira/secure/attachment/12416016/357.patch"]
+  "https://issues.apache.org/jira/secure/attachment/12416073/0002-v3.patch",
+  "https://issues.apache.org/jira/secure/attachment/12416074/357-v2.patch"]
   
 task :checkout do
   # Like a git submodule, but all in one obvious place
