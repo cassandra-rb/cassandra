@@ -212,8 +212,8 @@ For read operations, valid option parameters usually are:
   def batch
     @batch = []
     yield
-    _compact_mutations
-    _dispatch_mutations
+    compact_mutations
+    dispatch_mutations
     @batch = nil
   end
   
@@ -245,4 +245,51 @@ For read operations, valid option parameters usually are:
     end
   end
   
+  # Roll up queued mutations as much as possible, to improve atomicity.
+  def compact_mutations
+    compact_batch = []
+    mutations = {}
+
+    @batch << nil # Close it
+    @batch.each do |m|
+      case m
+      when Array, nil
+        # Flush compacted mutations
+        compact_batch.concat(mutations.values.map {|x| x.values}.flatten)
+        mutations = {}
+        # Insert delete operation
+        compact_batch << m
+      else # BatchMutation, BatchMutationSuper
+        # Do a nested hash merge
+        if mutation_class = mutations[m.class]
+          if mutation = mutation_class[m.key]
+            if columns = mutation.cfmap[m.cfmap.keys.first]
+              columns.concat(m.cfmap.values.first)
+            else
+              mutation.cfmap.merge!(m.cfmap)
+            end
+          else
+            mutation_class[m.key] = m
+          end
+        else
+          mutations[m.class] = {m.key => m}
+        end
+      end
+    end
+
+    @batch = compact_batch
+  end
+
+  # Send all the queued mutations to the server.
+  def dispatch_mutations
+    @batch.compact!
+    @batch.each do |args|
+      case args.first
+      when CassandraThrift::BatchMutationSuper, CassandraThrift::BatchMutation
+        _insert(*args)
+      else
+        _remove(*args)
+      end
+    end
+  end  
 end
