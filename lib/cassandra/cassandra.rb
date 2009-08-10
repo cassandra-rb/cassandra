@@ -82,24 +82,24 @@ For read operations, valid option parameters usually are:
     }}, @host=#{host.inspect}, @port=#{port}>"
   end
 
-  ## Write
+### Write
 
   # Insert a row for a key. Pass a flat hash for a regular column family, and
   # a nested hash for a super column family. Supports the <tt>:consistency</tt>
   # and <tt>:timestamp</tt> options.
   def insert(column_family, key, hash, options = {})
-    _, _, options = parse_options([options], WRITE_DEFAULTS)
-    column_family = column_family.to_s    
-    args = [column_family, hash, options[:timestamp] || Time.stamp]
-    
+    column_family, _, _, options = params(column_family, [options], WRITE_DEFAULTS)
+
     mutation = if is_super(column_family)
       CassandraThrift::BatchMutationSuper.new(
         :key => key, 
-        :cfmap => {column_family => hash_to_super_columns(*args)})
+        :cfmap => {column_family => 
+          hash_to_super_columns(column_family, hash, options[:timestamp] || Time.stamp)})
     else
       CassandraThrift::BatchMutation.new(
         :key => key, 
-        :cfmap => {column_family => hash_to_columns(*args)})
+        :cfmap => {column_family => 
+          hash_to_columns(column_family, hash, options[:timestamp] || Time.stamp)})
     end
     
     args = [mutation, options[:consistency]]
@@ -112,12 +112,7 @@ For read operations, valid option parameters usually are:
   # path you request. Supports the <tt>:consistency</tt> and <tt>:timestamp</tt>
   # options.
   def remove(column_family, key, *columns_and_options)
-    column, sub_column, options = parse_options(columns_and_options, WRITE_DEFAULTS)
-    column_family = column_family.to_s
-    assert_column_name_classes(column_family, column, sub_column)
-
-    column = column.to_s if column
-    sub_column = sub_column.to_s if sub_column
+    column_family, column, sub_column, options = params(column_family, columns_and_options, WRITE_DEFAULTS)    
     args = [column_family, key, column, sub_column, options[:consistency], options[:timestamp] || Time.stamp]
     @batch ? @batch << args : _remove(*args)
   end
@@ -138,16 +133,13 @@ For read operations, valid option parameters usually are:
     @schema.keys.each { |column_family| clear_column_family!(column_family, options) }
   end
 
-  ## Read
+### Read
 
   # Count the elements at the column_family:key:[super_column] path you
   # request. Supports options <tt>:count</tt>, <tt>:start</tt>, <tt>:finish</tt>, 
   # <tt>:reversed</tt>, and <tt>:consistency</tt>.
   def count_columns(column_family, key, *columns_and_options)
-    super_column, _, options = parse_options(columns_and_options, READ_DEFAULTS)
-    column_family = column_family.to_s
-    assert_column_name_classes(column_family, super_column)
-    
+    column_family, super_column, _, options = params(column_family, columns_and_options, READ_DEFAULTS)
     _count_columns(column_family, key, super_column, options[:consistency])
   end
 
@@ -161,10 +153,7 @@ For read operations, valid option parameters usually are:
   # column_family:key:column[s]:[sub_columns] path you request. Supports the 
   # <tt>:consistency</tt> option.
   def get_columns(column_family, key, *columns_and_options)
-    columns, sub_columns, options = parse_options(columns_and_options, READ_DEFAULTS)
-    column_family = column_family.to_s
-    assert_column_name_classes(column_family, columns, sub_columns)    
-    
+    column_family, columns, sub_columns, options = params(column_family, columns_and_options, READ_DEFAULTS)    
     _get_columns(column_family, key, columns, sub_columns, options[:consistency])
   end
 
@@ -179,10 +168,7 @@ For read operations, valid option parameters usually are:
   # path you request. Supports options <tt>:count</tt>, <tt>:start</tt>, 
   # <tt>:finish</tt>, <tt>:reversed</tt>, and <tt>:consistency</tt>.
   def get(column_family, key, *columns_and_options)
-    column, sub_column, options = parse_options(columns_and_options, READ_DEFAULTS)
-    column_family = column_family.to_s
-    assert_column_name_classes(column_family, column, sub_column)
-    
+    column_family, column, sub_column, options = params(column_family, columns_and_options, READ_DEFAULTS)
     _get(column_family, key, column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency])
   rescue CassandraThrift::NotFoundException
     is_super(column_family) && !sub_column ? OrderedHash.new : nil
@@ -197,10 +183,7 @@ For read operations, valid option parameters usually are:
   # Return true if the column_family:key:[column]:[sub_column] path you
   # request exists. Supports the <tt>:consistency</tt> option.
   def exists?(column_family, key, *columns_and_options)
-    column, sub_column, options = parse_options(columns_and_options, READ_DEFAULTS)
-    column_family = column_family.to_s
-    assert_column_name_classes(column_family, column, sub_column)
-    
+    column_family, column, sub_column, options = params(column_family, columns_and_options, READ_DEFAULTS)    
     _get(column_family, key, column, sub_column, 1, nil, nil, nil, options[:consistency])
     true
   rescue CassandraThrift::NotFoundException
@@ -211,7 +194,7 @@ For read operations, valid option parameters usually are:
   # <tt>:count</tt>, <tt>:start</tt>, <tt>:finish</tt>, and <tt>:consistency</tt> 
   # options.
   def get_range(column_family, options = {})
-    _, _, options = parse_options([options], READ_DEFAULTS)
+    column_family, _, _, options = params(column_family, [options], READ_DEFAULTS)
     _get_range(column_family, options[:start], options[:finish], options[:count], options[:consistency])
   end
 
@@ -223,8 +206,9 @@ For read operations, valid option parameters usually are:
     get_range(column_family, options.merge(:count => MAX_INT)).size
   end
 
-  # Open a batch operation. Inserts and deletes will be queued until the block
-  # closes, and then sent atomically to the server.
+  # Open a batch operation and yield. Inserts and deletes will be queued until
+  # the block closes, and then sent atomically to the server.
+  # FIXME Make deletes truly atomic.
   def batch
     @batch = []
     yield
@@ -235,17 +219,30 @@ For read operations, valid option parameters usually are:
   
   private
   
-  def parse_options(args, defaults)
-    args, options = Array(args), defaults
-    if args.last.is_a?(Hash)
-      invalid_keys = args.last.keys - options.keys
-      if invalid_keys.any?
+  # Extract and validate options.
+  def params(column_family, args, options)
+    if args.last.is_a?(Hash)      
+      if (extras = args.last.keys - options.keys).any?
         this = "#{self.class}##{caller[0].split('`').last[0..-2]}"
-        raise ArgumentError, "Invalid options #{invalid_keys.inspect[1..-2]} for #{this}"
+        raise ArgumentError, "Invalid options #{extras.inspect[1..-2]} for #{this}"
       end
       options = options.merge(args.pop)
     end    
-    [args[0], args[1], options]
+
+    column_family, column, sub_column = column_family.to_s, args[0], args[1]
+    assert_column_name_classes(column_family, column, sub_column)    
+    [column_family, map_to_s(column), map_to_s(sub_column), options]
+  end
+  
+  # Convert stuff to strings.
+  def map_to_s(el)
+    case el
+    when NilClass # nil
+    when Array then el.map { |i| map_to_s(i) }
+    when Cassandra::Comparable, String, Symbol then el.to_s
+    else
+      raise TypeError, "Can't map #{el.inspect}"
+    end
   end
   
 end

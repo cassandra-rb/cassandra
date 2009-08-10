@@ -21,7 +21,6 @@ class Cassandra
     end
 
     def _count_columns(column_family, key, super_column, consistency)
-      super_column = super_column.to_s if super_column
       @client.get_count(@keyspace, key,
         CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => super_column),
         consistency
@@ -51,9 +50,6 @@ class Cassandra
     end
 
     def _get(column_family, key, column, sub_column, count, start, finish, reversed, consistency)
-      column = column.to_s if column
-      sub_column = sub_column.to_s if sub_column
-      
       # Single values; count and range parameters have no effect
       if is_super(column_family) and sub_column
         column_path = CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column)
@@ -84,8 +80,6 @@ class Cassandra
 
     def _get_range(column_family, start, finish, count, consistency)
       # FIXME Consistency is ignored
-      key_range ||= [nil, nil]
-      column_family = column_family.to_s
       @client.get_key_range(@keyspace, column_family, start.to_s, finish.to_s, count)
     end
 
