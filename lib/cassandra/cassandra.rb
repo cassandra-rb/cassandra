@@ -8,7 +8,7 @@ Create a new Cassandra client instance. Accepts a keyspace name, and optional ho
   
 For write operations, valid option parameters usually are:
  
-<tt>:consistency</tt>:: The consistency level of the request. Defaults to <tt>Cassandra::Consistency::WEAK</tt> (one node must respond). Other valid options are <tt>Cassandra::Consistency::NONE</tt>, <tt>Cassandra::Consistency::STRONG</tt>, and <tt>Cassandra::Consistency::PERFECT</tt>.
+<tt>:consistency</tt>:: The consistency level of the request. Defaults to <tt>Cassandra::Consistency::ONE</tt> (one node must respond). Other valid options are <tt>Cassandra::Consistency::ZERO</tt>, <tt>Cassandra::Consistency::QUORUM</tt>, and <tt>Cassandra::Consistency::ALL</tt>.
 <tt>:timestamp </tt>:: The transaction timestamp. Defaults to the current time in milliseconds. This is used for conflict resolution by the server; you normally never need to change it.
 
 For read operations, valid option parameters usually are:
@@ -17,7 +17,7 @@ For read operations, valid option parameters usually are:
 <tt>:start</tt>:: Column name token at which to start iterating, inclusive. Defaults to nil, which means the first column in the collation order.
 <tt>:finish</tt>:: Column name token at which to stop iterating, inclusive. Defaults to nil, which means no boundary.
 <tt>:reversed</tt>:: Swap the direction of the collation order.
-<tt>:consistency</tt>:: The consistency level of the request. Defaults to <tt>Cassandra::Consistency::WEAK</tt> (one node must respond). Other valid options are <tt>Cassandra::Consistency::NONE</tt>, <tt>Cassandra::Consistency::STRONG</tt>, and <tt>Cassandra::Consistency::PERFECT</tt>.
+<tt>:consistency</tt>:: The consistency level of the request. Defaults to <tt>Cassandra::Consistency::ONE</tt> (one node must respond). Other valid options are <tt>Cassandra::Consistency::ZERO</tt>, <tt>Cassandra::Consistency::QUORUM</tt>, and <tt>Cassandra::Consistency::ALL</tt>.
 
 =end rdoc
 
@@ -28,10 +28,6 @@ For read operations, valid option parameters usually are:
 
   module Consistency
     include CassandraThrift::ConsistencyLevel
-    NONE = ZERO
-    WEAK = ONE
-    STRONG = QUORUM
-    PERFECT = ALL
   end
 
   MAX_INT = 2**31 - 1
@@ -39,7 +35,7 @@ For read operations, valid option parameters usually are:
   WRITE_DEFAULTS = {    
     :count => MAX_INT,
     :timestamp => nil,
-    :consistency => Consistency::WEAK 
+    :consistency => Consistency::ONE 
   }.freeze
 
   READ_DEFAULTS = {
@@ -47,7 +43,7 @@ For read operations, valid option parameters usually are:
     :start => nil, 
     :finish => nil, 
     :reversed => false, 
-    :consistency => Consistency::WEAK
+    :consistency => Consistency::ONE
   }.freeze
 
   attr_reader :keyspace, :host, :port, :serializer, :transport, :client, :schema
