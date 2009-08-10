@@ -4,7 +4,7 @@ class Cassandra
   module Protocol
     private
 
-    def _insert(mutation, consistency = Consistency::WEAK)
+    def _insert(mutation, consistency)
       case mutation
       when CassandraThrift::BatchMutationSuper then @client.batch_insert_super_column(@keyspace, mutation, consistency)
       when CassandraThrift::BatchMutation then @client.batch_insert(@keyspace, mutation, consistency)
@@ -21,9 +21,6 @@ class Cassandra
     end
 
     def _count_columns(column_family, key, super_column, consistency)
-      column_family = column_family.to_s
-      assert_column_name_classes(column_family, super_column)
-
       super_column = super_column.to_s if super_column
       @client.get_count(@keyspace, key,
         CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => super_column),
@@ -32,9 +29,6 @@ class Cassandra
     end
 
     def _get_columns(column_family, key, columns, sub_columns, consistency)
-      column_family = column_family.to_s
-      assert_column_name_classes(column_family, columns, sub_columns)
-
       result = if is_super(column_family)
         if sub_columns
           columns_to_hash(column_family, @client.get_slice(@keyspace, key,
@@ -56,12 +50,11 @@ class Cassandra
       sub_columns || columns.map { |name| result[name] }
     end
 
-    def _get(column_family, key, column = nil, sub_column = nil, count = 100, column_range = nil, reversed = false, consistency = Consistency::WEAK)
-      column_range ||= [nil, nil]
+    def _get(column_family, key, column, sub_column, count, start, finish, reversed, consistency)
       column = column.to_s if column
       sub_column = sub_column.to_s if sub_column
-
-      # Single values; count and column_range parameters have no effect
+      
+      # Single values; count and range parameters have no effect
       if is_super(column_family) and sub_column
         column_path = CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column)
         @client.get(@keyspace, key, column_path, consistency).column.value
@@ -71,10 +64,13 @@ class Cassandra
 
       # Slices
       else
-        slice_options = {:is_ascending => !reversed, :count => count}
-        # FIXME Comparable types in a column_range are not checked
-        slice_options.merge!({:start => column_range[0].to_s, :finish => column_range[1].to_s}) if column_range
-        predicate = CassandraThrift::SlicePredicate.new(:slice_range => CassandraThrift::SliceRange.new(slice_options))
+        # FIXME Comparable types in range are not enforced
+        predicate = CassandraThrift::SlicePredicate.new(:slice_range => 
+          CassandraThrift::SliceRange.new(
+            :is_ascending => !reversed, 
+            :count => count, 
+            :start => start.to_s, 
+            :finish => finish.to_s))
         
         if is_super(column_family) and column
           column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column)
@@ -86,10 +82,11 @@ class Cassandra
       end
     end
 
-    def _get_range(column_family, key_range, count, consistency)
+    def _get_range(column_family, start, finish, count, consistency)
+      # FIXME Consistency is ignored
       key_range ||= [nil, nil]
       column_family = column_family.to_s
-      @client.get_key_range(@keyspace, column_family, key_range[0].to_s, key_range[1].to_s, count)
+      @client.get_key_range(@keyspace, column_family, start.to_s, finish.to_s, count)
     end
 
     def _compact_mutations
@@ -132,6 +129,7 @@ class Cassandra
         when Array
           _remove(*args)
         when CassandraThrift::BatchMutationSuper, CassandraThrift::BatchMutation
+          args << Consistency::WEAK
           _insert(*args)
         end
       end
