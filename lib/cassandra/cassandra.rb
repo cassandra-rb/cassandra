@@ -235,9 +235,9 @@ For read operations, valid option parameters usually are:
     case el
     when NilClass # nil
     when Array then el.map { |i| map_to_s(i) }
-    when Cassandra::Comparable, String, Symbol then el.to_s
+    when Comparable, String, Symbol then el.to_s
     else
-      raise TypeError, "Can't map #{el.inspect}"
+      raise Comparable::TypeError, "Can't map #{el.inspect}"
     end
   end
   
