@@ -39,14 +39,16 @@ For read operations, valid option parameters usually are:
   WRITE_DEFAULTS = {    
     :count => MAX_INT,
     :timestamp => nil,
-    :consistency => Consistency::WEAK }
+    :consistency => Consistency::WEAK 
+  }.freeze
 
   READ_DEFAULTS = {
     :count => 100, 
     :start => nil, 
     :finish => nil, 
     :reversed => false, 
-    :consistency => Consistency::WEAK }
+    :consistency => Consistency::WEAK
+  }.freeze
 
   attr_reader :keyspace, :host, :port, :serializer, :transport, :client, :schema
 
@@ -234,14 +236,14 @@ For read operations, valid option parameters usually are:
   private
   
   def parse_options(args, defaults)
-    args, options = Array(args), defaults    
+    args, options = Array(args), defaults
     if args.last.is_a?(Hash)
       invalid_keys = args.last.keys - options.keys
       if invalid_keys.any?
         this = "#{self.class}##{caller[0].split('`').last[0..-2]}"
         raise ArgumentError, "Invalid options #{invalid_keys.inspect[1..-2]} for #{this}"
       end
-      options.merge!(args.pop)
+      options = options.merge(args.pop)
     end    
     [args[0], args[1], options]
   end
