@@ -92,16 +92,16 @@ class Cassandra
   # Remove all rows in the column family you request.
   def clear_column_family!(column_family)
     # Does not support consistency argument
-    # FIXME this will delete only 100 records
+    # FIXME this will delete only MAX_INT records
     get_range(column_family).each do |key|
-      remove(column_family, key)
+      remove(column_family, key, nil, nil, :count => MAX_INT)
     end
   end
 
   # Remove all rows in the keyspace
   def clear_keyspace!
     # Does not support consistency argument
-    # FIXME this will delete only 100 records in each column_family
+    # FIXME this will delete only MAX_INT records in each column_family
     @schema.keys.each do |column_family|
       clear_column_family!(column_family)
     end
