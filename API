@@ -1,0 +1,5 @@
+Database <record collections>
+Record collection <records>
+Record <record id, record attributes>
+Super attribute <name, attributes>
+Attribute <name, value, timestamp>
