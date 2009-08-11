@@ -14,7 +14,8 @@ end
 
 desc "Start Cassandra"
 task :cassandra => [:checkout, :patch, :build] do
-  exec("env CASSANDRA_INCLUDE=#{Dir.pwd}/conf/cassandra.in.sh cassandra/bin/cassandra -f")
+  env = "CASSANDRA_INCLUDE=#{Dir.pwd}/conf/cassandra.in.sh" unless ENV["CASSANDRA_INCLUDE"]
+  exec("env #{env} cassandra/bin/cassandra -f")
 end
 
 REVISION = "15354b4906fd654d58fe50fd01ebf95b69434ba9"
