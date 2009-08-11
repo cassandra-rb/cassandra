@@ -20,6 +20,7 @@ Rakefile
 README
 test/cassandra_test.rb
 test/comparable_types_test.rb
+test/test_helper.rb
 vendor/gen-rb/cassandra.rb
 vendor/gen-rb/cassandra_constants.rb
 vendor/gen-rb/cassandra_types.rb
