@@ -50,8 +50,13 @@ task :patch do
   end
 end
 
+#[delete] Deleting directory /home/gregory/projects/ruby/cassandra/cassandra/build
+#[delete] Deleting directory /home/gregory/projects/ruby/cassandra/cassandra/src/gen-java
+
 task :build do
-  Dir.chdir("cassandra") { system("ant") }
+  unless File.exist?("cassandra/build") && File.exist?("cassandra/src/gen-java") 
+    Dir.chdir("cassandra") { system("ant") }
+  end
 end
 
 task :clean do
