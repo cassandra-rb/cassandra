@@ -6,57 +6,57 @@ class Cassandra
 
     def _insert(mutation, consistency)
       case mutation
-      when CassandraThrift::BatchMutationSuper then @client.batch_insert_super_column(@keyspace, mutation, consistency)
-      when CassandraThrift::BatchMutation then @client.batch_insert(@keyspace, mutation, consistency)
+      when CassandraThrift::BatchMutationSuper then @client.batch_insert_super_column(@database, mutation, consistency)
+      when CassandraThrift::BatchMutation then @client.batch_insert(@database, mutation, consistency)
       end
     end
 
-    def _remove(column_family, key, column, sub_column, consistency, timestamp)
-      column_path_or_parent = if is_super(column_family)
-        CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column)
+    def _remove(row_set, key, field, sub_field, consistency, timestamp)
+      field_path_or_parent = if is_set(row_set)
+        CassandraThrift::ColumnPath.new(:column_family => row_set, :super_column => field, :column => sub_field)
       else
-        CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column)
+        CassandraThrift::ColumnPath.new(:column_family => row_set, :column => field)
       end
-      @client.remove(@keyspace, key, column_path_or_parent, timestamp, consistency)
+      @client.remove(@database, key, field_path_or_parent, timestamp, consistency)
     end
 
-    def _count_columns(column_family, key, super_column, consistency)
-      @client.get_count(@keyspace, key,
-        CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => super_column),
+    def _count_fields(row_set, key, super_field, consistency)
+      @client.get_count(@database, key,
+        CassandraThrift::ColumnParent.new(:column_family => row_set, :super_column => super_field),
         consistency
       )
     end
 
-    def _get_columns(column_family, key, columns, sub_columns, consistency)
-      result = if is_super(column_family)
-        if sub_columns
-          columns_to_hash(column_family, @client.get_slice(@keyspace, key,
-            CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => columns),
-            CassandraThrift::SlicePredicate.new(:column_names => sub_columns),
+    def _get_fields(row_set, key, fields, sub_fields, consistency)
+      result = if is_set(row_set)
+        if sub_fields
+          fields_to_hash(row_set, @client.get_slice(@database, key,
+            CassandraThrift::ColumnParent.new(:column_family => row_set, :super_column => fields),
+            CassandraThrift::SlicePredicate.new(:column_names => sub_fields),
             consistency))
         else
-          columns_to_hash(column_family, @client.get_slice(@keyspace, key,
-            CassandraThrift::ColumnParent.new(:column_family => column_family),
-            CassandraThrift::SlicePredicate.new(:column_names => columns),
+          fields_to_hash(row_set, @client.get_slice(@database, key,
+            CassandraThrift::ColumnParent.new(:column_family => row_set),
+            CassandraThrift::SlicePredicate.new(:column_names => fields),
             consistency))
         end
       else
-        columns_to_hash(column_family, @client.get_slice(@keyspace, key,
-          CassandraThrift::ColumnParent.new(:column_family => column_family),
-          CassandraThrift::SlicePredicate.new(:column_names => columns),
+        fields_to_hash(row_set, @client.get_slice(@database, key,
+          CassandraThrift::ColumnParent.new(:column_family => row_set),
+          CassandraThrift::SlicePredicate.new(:column_names => fields),
           consistency))
       end
-      sub_columns || columns.map { |name| result[name] }
+      sub_fields || fields.map { |name| result[name] }
     end
 
-    def _get(column_family, key, column, sub_column, count, start, finish, reversed, consistency)
+    def _get(row_set, key, field, sub_field, count, start, finish, reversed, consistency)
       # Single values; count and range parameters have no effect
-      if is_super(column_family) and sub_column
-        column_path = CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column)
-        @client.get(@keyspace, key, column_path, consistency).column.value
-      elsif !is_super(column_family) and column
-        column_path = CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column)
-        @client.get(@keyspace, key, column_path, consistency).column.value
+      if is_set(row_set) and sub_field
+        field_path = CassandraThrift::ColumnPath.new(:column_family => row_set, :super_column => field, :column => sub_field)
+        @client.get(@database, key, field_path, consistency).column.value
+      elsif !is_set(row_set) and field
+        field_path = CassandraThrift::ColumnPath.new(:column_family => row_set, :column => field)
+        @client.get(@database, key, field_path, consistency).column.value
 
       # Slices
       else
@@ -68,19 +68,19 @@ class Cassandra
             :start => start.to_s, 
             :finish => finish.to_s))
         
-        if is_super(column_family) and column
-          column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column)
-          sub_columns_to_hash(column_family, @client.get_slice(@keyspace, key, column_parent, predicate, consistency))
+        if is_set(row_set) and field
+          field_parent = CassandraThrift::ColumnParent.new(:column_family => row_set, :super_column => field)
+          sub_fields_to_hash(row_set, @client.get_slice(@database, key, field_parent, predicate, consistency))
         else
-          column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family)
-          columns_to_hash(column_family, @client.get_slice(@keyspace, key, column_parent, predicate, consistency))
+          field_parent = CassandraThrift::ColumnParent.new(:column_family => row_set)
+          fields_to_hash(row_set, @client.get_slice(@database, key, field_parent, predicate, consistency))
         end
       end
     end
 
-    def _get_range(column_family, start, finish, count, consistency)
+    def _get_range(row_set, start, finish, count, consistency)
       # FIXME Consistency is ignored
-      @client.get_key_range(@keyspace, column_family, start.to_s, finish.to_s, count)
+      @client.get_key_range(@database, row_set, start.to_s, finish.to_s, count)
     end
   end
 end

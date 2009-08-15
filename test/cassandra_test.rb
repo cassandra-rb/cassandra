@@ -5,9 +5,9 @@ class CassandraTest < Test::Unit::TestCase
 
   def setup
     @twitter = Cassandra.new('Twitter', '127.0.0.1')
-    @twitter.clear_keyspace!
+    @twitter.clear_database!
     @blogs = Cassandra.new('Multiblog', '127.0.0.1')
-    @blogs.clear_keyspace!
+    @blogs.clear_database!
     @uuids = (0..6).map {|i| UUID.new(Time.at(2**(24+i))) }    
   end
 
@@ -27,13 +27,13 @@ class CassandraTest < Test::Unit::TestCase
     end
   end
 
-  def test_get_key_name_sorted
+  def test_get_row_name_sorted
     @twitter.insert(:Users, key, {'body' => 'v', 'user' => 'v'})
     assert_equal({'body' => 'v', 'user' => 'v'}, @twitter.get(:Users, key))
     assert_equal({}, @twitter.get(:Users, 'bogus'))
   end
 
-  def test_get_key_name_sorted_preserving_order
+  def test_get_row_name_sorted_preserving_order
     # In-order hash is preserved
     hash = OrderedHash['a', '', 'b', '', 'c', '', 'd', '',]
     @twitter.insert(:Users, key, hash)
@@ -48,7 +48,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_not_equal(hash.keys, @twitter.get(:Users, key).keys)
   end
 
-  def test_get_key_time_sorted
+  def test_get_row_time_sorted
     @twitter.insert(:Statuses, key, {'body' => 'v', 'user' => 'v'})
     assert_equal({'body' => 'v', 'user' => 'v'}, @twitter.get(:Statuses, key))
     assert_equal({}, @twitter.get(:Statuses, 'bogus'))
@@ -60,7 +60,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal 2, @twitter.get(:Statuses, key, :count => 2).size
   end  
 
-  def test_get_value
+  def test_get_field_value
     @twitter.insert(:Statuses, key, {'body' => 'v'})
     assert_equal 'v', @twitter.get(:Statuses, key, 'body')
     assert_nil @twitter.get(:Statuses, 'bogus', 'body')
@@ -69,24 +69,24 @@ class CassandraTest < Test::Unit::TestCase
     assert_nil @twitter.exists?(:Statuses, 'bogus', 'body')
   end
   
-  def test_get_super_key
-    columns = {'user_timelines' => {@uuids[4] => '4', @uuids[5] => '5'}}
-    @twitter.insert(:StatusRelationships, key, columns)
-    assert_equal(columns, @twitter.get(:StatusRelationships, key))
+  def test_get_field_set
+    fields = {'user_timelines' => {@uuids[4] => '4', @uuids[5] => '5'}}
+    @twitter.insert(:StatusRelationships, key, fields)
+    assert_equal(fields, @twitter.get(:StatusRelationships, key))
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus'))
   end
 
-  def test_get_several_super_keys
-    columns = {
+  def test_get_several_field_sets
+    fields = {
       'user_timelines' => {@uuids[1]  => 'v1'},
       'mentions_timelines' => {@uuids[2]  => 'v2'}}
-    @twitter.insert(:StatusRelationships, key, columns)
+    @twitter.insert(:StatusRelationships, key, fields)
 
-    assert_equal(columns, @twitter.get(:StatusRelationships, key))
+    assert_equal(fields, @twitter.get(:StatusRelationships, key))
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus'))
   end
 
-  def test_get_super_sub_keys_with_count
+  def test_get_field_set_fields_with_count
     @twitter.insert(:StatusRelationships, key, 
       {'user_timelines' => {@uuids[1]  => 'v1', @uuids[2]  => 'v2', @uuids[3]  => 'v3'}})
     assert_equal({@uuids[1]  => 'v1'}, 
@@ -95,7 +95,7 @@ class CassandraTest < Test::Unit::TestCase
       @twitter.get(:StatusRelationships, key, "user_timelines", :count => 1, :reversed => true))
   end
 
-  def test_get_super_sub_keys_with_ranges              
+  def test_get_field_set_fields_with_ranges              
     @twitter.insert(:StatusRelationships, key, 
       {'user_timelines' => {
         @uuids[1] => 'v1', 
@@ -111,18 +111,18 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal 4, @twitter.get(:StatusRelationships, key, "user_timelines", :start => @uuids[2], :finish => @uuids[5]).size
   end
 
-  def test_get_super_sub_key
-    columns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
-    assert_equal(columns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
+  def test_get_field_set_field
+    fields = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => fields})
+    assert_equal(fields, @twitter.get(:StatusRelationships, key, 'user_timelines'))
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus', 'user_timelines'))
   end
 
-  def test_get_super_value
-    columns = {@uuids[1] => 'v1'}
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
-    assert_equal('v1', @twitter.get(:StatusRelationships, key, 'user_timelines', columns.keys.first))
-    assert_nil @twitter.get(:StatusRelationships, 'bogus', 'user_timelines', columns.keys.first)
+  def test_get_field_set
+    fields = {@uuids[1] => 'v1'}
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => fields})
+    assert_equal('v1', @twitter.get(:StatusRelationships, key, 'user_timelines', fields.keys.first))
+    assert_nil @twitter.get(:StatusRelationships, 'bogus', 'user_timelines', fields.keys.first)
   end
 
   def test_get_range
@@ -145,7 +145,7 @@ class CassandraTest < Test::Unit::TestCase
       @twitter.multi_get(:Users, [key + '2', 'bogus', key + '1']))
   end
 
-  def test_remove_key
+  def test_remove_row
     @twitter.insert(:Statuses, key, {'body' => 'v'})
     assert_equal({'body' => 'v'}, @twitter.get(:Statuses, key))
 
@@ -154,116 +154,107 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal 0, @twitter.count_range(:Statuses)
   end
 
-  def test_remove_value
+  def test_remove_field
     @twitter.insert(:Statuses, key, {'body' => 'v'})
     @twitter.remove(:Statuses, key, 'body')
     assert_nil @twitter.get(:Statuses, key, 'body')
   end
 
-  def test_remove_super_key
+  def test_remove_field_set
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => {@uuids[1] => 'v1'}})
     @twitter.remove(:StatusRelationships, key)
     assert_equal({}, @twitter.get(:StatusRelationships, key))
   end
 
-  def test_remove_super_sub_key
+  def test_remove_field_set_field
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => {@uuids[1] => 'v1'}})
     @twitter.remove(:StatusRelationships, key, 'user_timelines')
     assert_equal({}, @twitter.get(:StatusRelationships, key, 'user_timelines'))
   end
 
-  def test_remove_super_value
-    columns = {@uuids[1] => 'v1'}
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
-    @twitter.remove(:StatusRelationships, key, 'user_timelines', columns.keys.first)
-    assert_nil @twitter.get(:StatusRelationships, key, 'user_timelines', columns.keys.first)
+  def test_remove_field_set
+    fields = {@uuids[1] => 'v1'}
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => fields})
+    @twitter.remove(:StatusRelationships, key, 'user_timelines', fields.keys.first)
+    assert_nil @twitter.get(:StatusRelationships, key, 'user_timelines', fields.keys.first)
   end
 
-  def test_clear_column_family
+  def test_clear_row_set
     @twitter.insert(:Statuses, key + "1", {'body' => '1'})
     @twitter.insert(:Statuses, key + "2", {'body' => '2'})
     @twitter.insert(:Statuses, key + "3", {'body' => '3'})
-    @twitter.clear_column_family!(:Statuses)
+    @twitter.clear_row_set!(:Statuses)
     assert_equal 0, @twitter.count_range(:Statuses)
   end
 
-  def test_insert_key
+  def test_insert_row
     @twitter.insert(:Statuses, key, {'body' => 'v', 'user' => 'v'})
     assert_equal({'body' => 'v', 'user' => 'v'}, @twitter.get(:Statuses, key))
   end
 
-  def test_insert_super_key
-    columns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
-    @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
-    assert_equal(columns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
+  def test_insert_field_set
+    fields = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => fields})
+    assert_equal(fields, @twitter.get(:StatusRelationships, key, 'user_timelines'))
   end
 
-  def test_get_columns
+  def test_get_fields
     @twitter.insert(:Statuses, key, {'body' => 'v1', 'user' => 'v2'})
-    assert_equal(['v1' , 'v2'], @twitter.get_columns(:Statuses, key, ['body', 'user']))
+    assert_equal(['v1' , 'v2'], @twitter.get_fields(:Statuses, key, ['body', 'user']))
   end
 
-  def test_get_column_values_super
-    user_columns, mentions_columns = {@uuids[1] => 'v1'}, {@uuids[2] => 'v2'}
+  def test_get_field_set_values
+    user_fields, mentions_fields = {@uuids[1] => 'v1'}, {@uuids[2] => 'v2'}
     @twitter.insert(:StatusRelationships, key,
-      {'user_timelines' => user_columns, 'mentions_timelines' => mentions_columns})
-    assert_equal [user_columns, mentions_columns],
-      @twitter.get_columns(:StatusRelationships, key, ['user_timelines', 'mentions_timelines'])
+      {'user_timelines' => user_fields, 'mentions_timelines' => mentions_fields})
+    assert_equal [user_fields, mentions_fields],
+      @twitter.get_fields(:StatusRelationships, key, ['user_timelines', 'mentions_timelines'])
   end
 
-  def test_multi_get_columns
+  def test_multi_get_fields
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
     @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
     assert_equal(
       OrderedHash[key + '1', ['v1', 'v1'], key + '2', ['v2', 'v2'], 'bogus', [nil, nil]],
-      @twitter.multi_get_columns(:Users, [key + '1', key + '2', 'bogus'], ['body', 'user']))
+      @twitter.multi_get_fields(:Users, [key + '1', key + '2', 'bogus'], ['body', 'user']))
     assert_equal(
       OrderedHash[key + '2', ['v2', 'v2'], 'bogus', [nil, nil], key + '1', ['v1', 'v1']],
-      @twitter.multi_get_columns(:Users, [key + '2', 'bogus', key + '1'], ['body', 'user']))
+      @twitter.multi_get_fields(:Users, [key + '2', 'bogus', key + '1'], ['body', 'user']))
   end
 
-  # Not supported
-  #  def test_get_columns_super_sub
-  #    @twitter.insert(:StatusRelationships, key, {
-  #      'user_timelines' => {@uuids[1] => 'v1'},
-  #      'mentions_timelines' => {@uuids[2] => 'v2'}})
-  #    assert_equal ['v1', 'v2'],
-  #      @twitter.get_columns(:StatusRelationships, key, 'user_timelines', ['1', key])
-  #  end
-
-  def test_count_keys
+  def test_count_rows
     @twitter.insert(:Statuses, key + "1", {'body' => '1'})
     @twitter.insert(:Statuses, key + "2", {'body' => '2'})
     @twitter.insert(:Statuses, key + "3", {'body' => '3'})
     assert_equal 3, @twitter.count_range(:Statuses)
   end
 
-  def test_count_columns
+  def test_count_fields
     @twitter.insert(:Statuses, key, {'body' => 'v1', 'user' => 'v2'})
-    assert_equal 2, @twitter.count_columns(:Statuses, key)
+    assert_equal 2, @twitter.count_fields(:Statuses, key)
   end
 
-  def test_count_super_columns
+  def test_count_field_sets
     @twitter.insert(:StatusRelationships, key, {
       'user_timelines' => {@uuids[1] => 'v1'},
       'mentions_timelines' => {@uuids[2] => 'v2'}})
-    assert_equal 2, @twitter.count_columns(:StatusRelationships, key)
+    assert_equal 2, @twitter.count_fields(:StatusRelationships, key)
   end
 
-  def test_count_super_sub_columns
+  def test_count_field_set_fields
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => {@uuids[1] => 'v1', @uuids[2] => 'v2'}})
-    assert_equal 2, @twitter.count_columns(:StatusRelationships, key, 'user_timelines')
+    assert_equal 2, @twitter.count_fields(:StatusRelationships, key, 'user_timelines')
   end
 
-  def test_multi_count_columns
+  def test_multi_count_fields
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
     @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
     assert_equal(
       OrderedHash[key + '1', 2, key + '2', 2, 'bogus', 0],
-      @twitter.multi_count_columns(:Users, [key + '1', key + '2', 'bogus']))
+      @twitter.multi_count_fields(:Users, [key + '1', key + '2', 'bogus']))
     assert_equal(
       OrderedHash[key + '2', 2, 'bogus', 0, key + '1', 2],
-      @twitter.multi_count_columns(:Users, [key + '2', 'bogus', key + '1']))
+      @twitter.multi_count_fields(:Users, [key + '2', 'bogus', key + '1']))
   end
 
   def test_batch_insert
