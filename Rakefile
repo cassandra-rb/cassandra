@@ -54,7 +54,7 @@ task :checkout do
   end
 end
 
-desc "Apply patches to Cassandra checkout"
+desc "Apply patches to Cassandra checkout; use RESET=1 to force"
 task :patch do
   if ENV["RESET"]
     system("rm -rf #{CASSANDRA_TEST}/data")
