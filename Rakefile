@@ -29,7 +29,7 @@ CASSANDRA_HOME = "#{ENV['HOME']}/cassandra/r#{REVISION[0, 8]}"
 CASSANDRA_TEST = "#{ENV['HOME']}/cassandra/test"
 
 desc "Start Cassandra"
-task :cassandra => [:checkout, :patch, :build] do
+task :cassandra => [:java, :checkout, :patch, :build] do
   # Construct environment
   env = ""
   if !ENV["CASSANDRA_INCLUDE"]
@@ -42,6 +42,18 @@ task :cassandra => [:checkout, :patch, :build] do
   # Start server
   Dir.chdir(CASSANDRA_TEST) do
     exec("env #{env} #{CASSANDRA_HOME}/bin/cassandra -f")
+  end
+end
+
+desc "Check Java version"
+task :java do
+  unless `java -version 2>&1`.split("\n").first =~ /java version "1.6/ #"
+    puts "You need to configure your environment for Java version 1.6."
+    puts ""
+    puts "If you're on OS X, just export the following environment variables:"
+    puts '  JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home"'
+    puts '  PATH="/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home/bin:$PATH"'
+    exit(1)
   end
 end
 
