@@ -48,8 +48,7 @@ end
 desc "Check Java version"
 task :java do
   unless `java -version 2>&1`.split("\n").first =~ /java version "1.6/ #"
-    puts "You need to configure your environment for Java version 1.6."
-    puts ""
+    puts "You need to configure your environment for Java 1.6."
     puts "If you're on OS X, just export the following environment variables:"
     puts '  JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home"'
     puts '  PATH="/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home/bin:$PATH"'
@@ -59,9 +58,13 @@ end
 
 desc "Checkout Cassandra from git"
 task :checkout do
-  # Like a git submodule, but all in one obvious place
+  # Like a git submodule, but all in one more obvious place
   unless File.exist?(CASSANDRA_HOME)
-    system("git clone git://git.apache.org/cassandra.git #{CASSANDRA_HOME}")
+    cmd = "git clone git://git.apache.org/cassandra.git #{CASSANDRA_HOME}"
+    if !system(cmd)
+      put "Checkout failed. Try:\n  #{cmd}"
+      exit(1)
+    end
     ENV["RESET"] = "true"
   end
 end
@@ -87,12 +90,22 @@ end
 
 desc "Rebuild Cassandra"
 task :build do
-  Dir.chdir(CASSANDRA_HOME) { system("ant") } unless File.exist?("#{CASSANDRA_HOME}/build")
+  unless File.exist?("#{CASSANDRA_HOME}/build")
+    cmd = "cd #{CASSANDRA_HOME} && ant"
+    if !system(cmd)
+      puts "Could not build Casssandra. Try:\n  #{cmd}"
+      exit(1)
+    end
+  end
 end
 
 desc "Clean Cassandra build"
 task :clean do
-  Dir.chdir(CASSANDRA_HOME) { system("ant clean") } if File.exist?(CASSANDRA_HOME)
+  if File.exist?(CASSANDRA_HOME)
+    Dir.chdir(CASSANDRA_HOME) do
+      system("ant clean")
+    end
+  end      
 end
 
 namespace :data do
@@ -102,7 +115,7 @@ namespace :data do
   end
 end
 
-desc "Regenerate thrift bindings for Cassandra"
+# desc "Regenerate thrift bindings for Cassandra" # Dev only
 task :thrift do
   system(
     "cd vendor &&
