@@ -28,6 +28,9 @@ for jar in $CASSANDRA_HOME/lib/*.jar; do
     CLASSPATH=$CLASSPATH:$jar
 done
 
+echo "CASSANDRA_HOME: $CASSANDRA_HOME"
+echo "CASSANDRA_CONF: $CASSANDRA_CONF"
+
 # Arguments to pass to the JVM
 JVM_OPTS=" \
         -ea \
