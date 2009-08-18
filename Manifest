@@ -1,3 +1,4 @@
+bin/cassandra_helper
 CHANGELOG
 conf/cassandra.in.sh
 conf/log4j.properties

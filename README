@@ -25,12 +25,14 @@ You need Ruby 1.8 or 1.9. If you have those, just run:
 
   sudo gem install cassandra
   
+Cassandra is a rapidly moving target. In order to get a working server, use the <tt>bin/cassandra_helper</tt> script (requires <tt>git</tt>):
+
+  cassandra_helper cassandra
+  
+A server will be installed in <tt>$HOME/cassandra/r$REVISION</tt>, and started in debug mode.
+
 == Usage
-
-Cassandra is a rapidly moving target. In order to get a working server, change to the checkout or gem directory, and run:
-
-  rake cassandra 
-
+  
 Now, start IRb and require the library:
   
   require 'cassandra'

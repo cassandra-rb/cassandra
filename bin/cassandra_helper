@@ -1,0 +1,16 @@
+#!/usr/bin/env ruby
+
+require 'rubygems'
+require 'rake'
+require 'cassandra'
+
+gem_path = $LOAD_PATH.last.sub(/lib$/, "")
+
+Dir.chdir(gem_path) do
+  if !ENV["CASSANDRA_INCLUDE"]
+    puts "Set the CASSANDRA_INCLUDE environment variable to use a non-default cassandra.in.sh and friends."
+  end
+
+  ARGV << "-T" if ARGV.empty?
+  exec("env FROM_BIN_CASSANDRA_HELPER=1 rake #{ARGV.join(' ')}")
+end

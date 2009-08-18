@@ -14,26 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
-cassandra_home=`pwd`/cassandra
-
 # The directory where Cassandra's configs live (required)
-CASSANDRA_CONF=`pwd`/conf
+CASSANDRA_CONF=$CASSANDRA_CONF
 
 # This can be the path to a jar file, or a directory containing the 
-# compiled classes. NOTE: This isn't needed by the startup script,
-# it's just used here in constructing the classpath.
-cassandra_bin=$cassandra_home/build/classes
-#cassandra_bin=$cassandra_home/build/cassandra.jar
+# compiled classes.
+cassandra_bin=$CASSANDRA_HOME/build/classes
 
 # The java classpath (required)
 CLASSPATH=$CASSANDRA_CONF:$cassandra_bin
 
-for jar in $cassandra_home/lib/*.jar; do
+for jar in $CASSANDRA_HOME/lib/*.jar; do
     CLASSPATH=$CLASSPATH:$jar
 done
-
-echo $cassandra_home
 
 # Arguments to pass to the JVM
 JVM_OPTS=" \
