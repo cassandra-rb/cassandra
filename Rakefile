@@ -58,6 +58,11 @@ end
 
 desc "Checkout Cassandra from git"
 task :checkout do
+  # Check git version
+  unless `git --version 2>&1` =~ /git version 1.6/
+    puts "You need to install git 1.6."
+    exit(1)
+  end
   # Like a git submodule, but all in one more obvious place
   unless File.exist?(CASSANDRA_HOME)
     cmd = "git clone git://git.apache.org/cassandra.git #{CASSANDRA_HOME}"
