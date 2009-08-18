@@ -15,8 +15,6 @@ The public certificate for this gem is here[http://rubyforge.org/frs/download.ph
 * compatible UUID and Long classes, for GUID generation
 * Ruby 1.9 compatibility
 
-This is an alpha release and may not yet support the full set of Cassandra features.
-
 The Github source repository is {here}[http://github.com/fauna/cassandra/]. Patches and contributions are very welcome.
 
 == Installation
@@ -25,7 +23,7 @@ You need Ruby 1.8 or 1.9. If you have those, just run:
 
   sudo gem install cassandra
   
-Cassandra is a rapidly moving target. In order to get a working server, use the <tt>bin/cassandra_helper</tt> script (requires <tt>git</tt>):
+Cassandra itself is a rapidly moving target. In order to get a working server, use the <tt>bin/cassandra_helper</tt> script:
 
   cassandra_helper cassandra
   
