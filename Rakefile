@@ -18,7 +18,8 @@ end
 
 REVISION = "007df950fc9e9fad255167db74517095a8326f25"
 
-PATCHES = []
+PATCHES = [
+  "http://issues.apache.org/jira/secure/attachment/12417025/CASSANDRA-377.diff"]
 
 CASSANDRA_HOME = "#{ENV['HOME']}/cassandra/r#{REVISION[0, 8]}"
 
