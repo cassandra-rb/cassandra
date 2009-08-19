@@ -49,9 +49,8 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_key_time_sorted
-    columns = {UUID.new => 'I like this cat'}
-    @blogs.insert(:Blogs, key, columns)     
-    assert_equal(columns, @blogs.get(:Blogs, key))
+    @blogs.insert(:Blogs, key, {@uuids[0] => 'I like this cat'})     
+    assert_equal({@uuids[0] => 'I like this cat'}, @blogs.get(:Blogs, key))
     assert_equal({}, @blogs.get(:Blogs, 'bogus'))
   end
 

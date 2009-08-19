@@ -60,11 +60,13 @@ class Cassandra
 
       # Slices
       else
-        options = {:reversed => reversed, :count => count}
         # FIXME Comparable types in range are not enforced
-        options.merge!(:start => start.to_s) if start
-        options.merge!(:finish => finish.to_s) if finish
-        predicate = CassandraThrift::SlicePredicate.new(:slice_range => CassandraThrift::SliceRange.new(options))
+        predicate = CassandraThrift::SlicePredicate.new(:slice_range => 
+          CassandraThrift::SliceRange.new(
+            :reversed => reversed, 
+            :count => count, 
+            :start => start.to_s, 
+            :finish => finish.to_s))
         
         if is_super(column_family) and column
           column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column)
