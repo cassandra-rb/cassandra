@@ -16,13 +16,9 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
   end
 end
 
-REVISION = "15354b4906fd654d58fe50fd01ebf95b69434ba9"
+REVISION = "007df950fc9e9fad255167db74517095a8326f25"
 
-PATCHES = [
-  "http://issues.apache.org/jira/secure/attachment/12416014/0001-CASSANDRA-356-rename-clean-up-collectColumns-methods.txt",
-  "http://issues.apache.org/jira/secure/attachment/12416073/0002-v3.patch",
-  "http://issues.apache.org/jira/secure/attachment/12416074/357-v2.patch",
-  "http://issues.apache.org/jira/secure/attachment/12416086/357-3.patch"]
+PATCHES = []
 
 CASSANDRA_HOME = "#{ENV['HOME']}/cassandra/r#{REVISION[0, 8]}"
 

@@ -1,4 +1,6 @@
 
+v0.5.2. Update server.
+
 v0.5.1. Add bin/cassandra_helper script, to build and start the server for you. Improve build error reporting.
 
 v0.5. More API changes. Working temporal comparators.
