@@ -49,9 +49,10 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_key_time_sorted
-    @twitter.insert(:Statuses, key, {'body' => 'v', 'user' => 'v'})
-    assert_equal({'body' => 'v', 'user' => 'v'}, @twitter.get(:Statuses, key))
-    assert_equal({}, @twitter.get(:Statuses, 'bogus'))
+    columns = {UUID.new => 'I like this cat'}
+    @blogs.insert(:Blogs, key, columns)     
+    assert_equal(columns, @blogs.get(:Blogs, key))
+    assert_equal({}, @blogs.get(:Blogs, 'bogus'))
   end
 
   def test_get_with_count
