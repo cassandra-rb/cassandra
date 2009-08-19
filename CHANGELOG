@@ -1,4 +1,6 @@
 
+v0.5.4. Use wget instead of curl.
+
 v0.5.3. Update Multiblog sample schema.
 
 v0.5.2. Update server version so CommitLog replay is fixed.

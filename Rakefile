@@ -83,7 +83,7 @@ task :patch do
       end
       # Patch, with a handy commit for each one
       PATCHES.each do |url|
-        raise "#{url} failed" unless system("curl #{url} | patch -p1")
+        raise "#{url} failed" unless system("wget -O - #{url} | patch -p1")
         system("git commit -a -m 'Applied patch: #{url.inspect}'")
       end
     end
