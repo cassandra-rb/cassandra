@@ -42,8 +42,8 @@
 
       <Keyspace Name="Multiblog">      
         <KeysCachedFraction>0.01</KeysCachedFraction>
-        <ColumnFamily CompareWith="UTF8Type" Name="Blogs"/>
-        <ColumnFamily CompareWith="UTF8Type" Name="Comments"/>
+        <ColumnFamily CompareWith="TimeUUIDType" Name="Blogs"/>
+        <ColumnFamily CompareWith="TimeUUIDType" Name="Comments"/>
       </Keyspace>
     </Keyspaces>
 
