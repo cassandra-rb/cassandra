@@ -89,26 +89,6 @@ module CassandraThrift
 
     end
 
-    class CqlResult
-      include ::Thrift::Struct
-      ERROR_CODE = 1
-      ERROR_TXT = 2
-      RESULT_SET = 3
-
-      ::Thrift::Struct.field_accessor self, :error_code, :error_txt, :result_set
-      FIELDS = {
-        ERROR_CODE => {:type => ::Thrift::Types::I32, :name => 'error_code'},
-        ERROR_TXT => {:type => ::Thrift::Types::STRING, :name => 'error_txt'},
-        RESULT_SET => {:type => ::Thrift::Types::LIST, :name => 'result_set', :element => {:type => ::Thrift::Types::MAP, :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}}}
-      }
-
-      def struct_fields; FIELDS; end
-
-      def validate
-      end
-
-    end
-
     class NotFoundException < ::Thrift::Exception
       include ::Thrift::Struct
 
@@ -202,14 +182,14 @@ module CassandraThrift
       include ::Thrift::Struct
       START = 1
       FINISH = 2
-      IS_ASCENDING = 3
+      REVERSED = 3
       COUNT = 4
 
-      ::Thrift::Struct.field_accessor self, :start, :finish, :is_ascending, :count
+      ::Thrift::Struct.field_accessor self, :start, :finish, :reversed, :count
       FIELDS = {
         START => {:type => ::Thrift::Types::STRING, :name => 'start'},
         FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
-        IS_ASCENDING => {:type => ::Thrift::Types::BOOL, :name => 'is_ascending', :default => true},
+        REVERSED => {:type => ::Thrift::Types::BOOL, :name => 'reversed', :default => false},
         COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
       }
 

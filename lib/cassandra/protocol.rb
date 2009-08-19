@@ -63,7 +63,7 @@ class Cassandra
         # FIXME Comparable types in range are not enforced
         predicate = CassandraThrift::SlicePredicate.new(:slice_range => 
           CassandraThrift::SliceRange.new(
-            :is_ascending => !reversed, 
+            :reversed => reversed, 
             :count => count, 
             :start => start.to_s, 
             :finish => finish.to_s))

@@ -1,5 +1,5 @@
 
-v0.5.2. Update server.
+v0.5.2. Update server version so CommitLog replay is fixed.
 
 v0.5.1. Add bin/cassandra_helper script, to build and start the server for you. Improve build error reporting.
 

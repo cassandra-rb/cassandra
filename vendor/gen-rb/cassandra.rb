@@ -12,7 +12,7 @@ require 'cassandra_types'
         class Client
           include ::Thrift::Client
 
-          def get_slice(keyspace, key, column_parent, predicate, consistency_level)          
+          def get_slice(keyspace, key, column_parent, predicate, consistency_level)
             send_get_slice(keyspace, key, column_parent, predicate, consistency_level)
             return recv_get_slice()
           end
@@ -188,21 +188,6 @@ require 'cassandra_types'
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_keyspace failed: unknown result')
           end
 
-          def execute_query(query)
-            send_execute_query(query)
-            return recv_execute_query()
-          end
-
-          def send_execute_query(query)
-            send_message('execute_query', Execute_query_args, :query => query)
-          end
-
-          def recv_execute_query()
-            result = receive_message(Execute_query_result)
-            return result.success unless result.success.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'execute_query failed: unknown result')
-          end
-
         end
 
         class Processor
@@ -331,13 +316,6 @@ require 'cassandra_types'
               result.nfe = nfe
             end
             write_result(result, oprot, 'describe_keyspace', seqid)
-          end
-
-          def process_execute_query(seqid, iprot, oprot)
-            args = read_args(iprot, Execute_query_args)
-            result = Execute_query_result.new()
-            result.success = @handler.execute_query(args.query)
-            write_result(result, oprot, 'execute_query', seqid)
           end
 
         end
@@ -784,38 +762,6 @@ require 'cassandra_types'
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::MAP, :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}}},
             NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
-        end
-
-        class Execute_query_args
-          include ::Thrift::Struct
-          QUERY = 1
-
-          ::Thrift::Struct.field_accessor self, :query
-          FIELDS = {
-            QUERY => {:type => ::Thrift::Types::STRING, :name => 'query'}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
-        end
-
-        class Execute_query_result
-          include ::Thrift::Struct
-          SUCCESS = 0
-
-          ::Thrift::Struct.field_accessor self, :success
-          FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CassandraThrift::CqlResult}
           }
 
           def struct_fields; FIELDS; end
