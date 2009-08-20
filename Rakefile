@@ -16,10 +16,9 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
   end
 end
 
-REVISION = "007df950fc9e9fad255167db74517095a8326f25"
+REVISION = "e959b2c7f6d78b51492c5e7b19beb30c36e75987"
 
-PATCHES = [
-  "http://issues.apache.org/jira/secure/attachment/12417025/CASSANDRA-377.diff"]
+PATCHES = []
 
 CASSANDRA_HOME = "#{ENV['HOME']}/cassandra/r#{REVISION[0, 8]}"
 

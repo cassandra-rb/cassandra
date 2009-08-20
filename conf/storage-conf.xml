@@ -45,6 +45,12 @@
         <ColumnFamily CompareWith="TimeUUIDType" Name="Blogs"/>
         <ColumnFamily CompareWith="TimeUUIDType" Name="Comments"/>
       </Keyspace>
+
+      <Keyspace Name="MultiblogLong">      
+        <KeysCachedFraction>0.01</KeysCachedFraction>
+        <ColumnFamily CompareWith="LongType" Name="Blogs"/>
+        <ColumnFamily CompareWith="LongType" Name="Comments"/>
+      </Keyspace>
     </Keyspaces>
 
     <!-- Partitioner: any IPartitioner may be used, including your own

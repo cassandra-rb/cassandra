@@ -8,7 +8,10 @@ class CassandraTest < Test::Unit::TestCase
     @twitter.clear_keyspace!
     @blogs = Cassandra.new('Multiblog', '127.0.0.1')
     @blogs.clear_keyspace!
-    @uuids = (0..6).map {|i| UUID.new(Time.at(2**(24+i))) }    
+    @blogs_long = Cassandra.new('MultiblogLong', '127.0.0.1')
+    @blogs_long.clear_keyspace!
+    @uuids = (0..6).map {|i| UUID.new(Time.at(2**(24+i))) }
+    @longs = (0..6).map {|i| Long.new(Time.at(2**(24+i))) }
   end
 
   def test_inspect
@@ -48,17 +51,23 @@ class CassandraTest < Test::Unit::TestCase
     assert_not_equal(hash.keys, @twitter.get(:Users, key).keys)
   end
 
-  def test_get_key_time_sorted
-    @blogs.insert(:Blogs, key, {@uuids[0] => 'I like this cat'})     
+  def test_get_key_time_uuid_sorted
+    @blogs.insert(:Blogs, key, {@uuids[0] => 'I like this cat'})
     assert_equal({@uuids[0] => 'I like this cat'}, @blogs.get(:Blogs, key))
     assert_equal({}, @blogs.get(:Blogs, 'bogus'))
+  end
+
+  def test_get_key_long_sorted
+    @blogs_long.insert(:Blogs, key, {@longs[0] => 'I like this cat'})
+    assert_equal({@longs[0] => 'I like this cat'}, @blogs_long.get(:Blogs, key))
+    assert_equal({}, @blogs_long.get(:Blogs, 'bogus'))
   end
 
   def test_get_with_count
     @twitter.insert(:Statuses, key, {'1' => 'v', '2' => 'v', '3' => 'v'})
     assert_equal 1, @twitter.get(:Statuses, key, :count => 1).size
     assert_equal 2, @twitter.get(:Statuses, key, :count => 2).size
-  end  
+  end
 
   def test_get_value
     @twitter.insert(:Statuses, key, {'body' => 'v'})
@@ -68,7 +77,7 @@ class CassandraTest < Test::Unit::TestCase
     assert @twitter.exists?(:Statuses, key, 'body')
     assert_nil @twitter.exists?(:Statuses, 'bogus', 'body')
   end
-  
+
   def test_get_super_key
     columns = {'user_timelines' => {@uuids[4] => '4', @uuids[5] => '5'}}
     @twitter.insert(:StatusRelationships, key, columns)
@@ -87,25 +96,25 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_super_sub_keys_with_count
-    @twitter.insert(:StatusRelationships, key, 
+    @twitter.insert(:StatusRelationships, key,
       {'user_timelines' => {@uuids[1]  => 'v1', @uuids[2]  => 'v2', @uuids[3]  => 'v3'}})
-    assert_equal({@uuids[1]  => 'v1'}, 
+    assert_equal({@uuids[1]  => 'v1'},
       @twitter.get(:StatusRelationships, key, "user_timelines", :count => 1))
-    assert_equal({@uuids[3]  => 'v3'}, 
+    assert_equal({@uuids[3]  => 'v3'},
       @twitter.get(:StatusRelationships, key, "user_timelines", :count => 1, :reversed => true))
   end
 
-  def test_get_super_sub_keys_with_ranges              
-    @twitter.insert(:StatusRelationships, key, 
+  def test_get_super_sub_keys_with_ranges
+    @twitter.insert(:StatusRelationships, key,
       {'user_timelines' => {
-        @uuids[1] => 'v1', 
-        @uuids[2] => 'v2', 
+        @uuids[1] => 'v1',
+        @uuids[2] => 'v2',
         @uuids[3] => 'v3',
-        @uuids[4] => 'v4', 
+        @uuids[4] => 'v4',
         @uuids[5] => 'v5'}})
 
     keys = @twitter.get(:StatusRelationships, key, "user_timelines").keys
-    assert_equal keys.sort, keys    
+    assert_equal keys.sort, keys
     assert_equal({@uuids[1] => 'v1'}, @twitter.get(:StatusRelationships, key, "user_timelines", :finish => @uuids[2], :count => 1))
     assert_equal({@uuids[2] => 'v2'}, @twitter.get(:StatusRelationships, key, "user_timelines", :start => @uuids[2], :count => 1))
     assert_equal 4, @twitter.get(:StatusRelationships, key, "user_timelines", :start => @uuids[2], :finish => @uuids[5]).size

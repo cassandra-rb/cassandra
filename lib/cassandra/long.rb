@@ -11,9 +11,9 @@ class Cassandra
       when Integer
         raise TypeError, "Integer must be between 0 and 2**64" if bytes < 0 or bytes > 2**64
         @bytes = [bytes >> 32, bytes % 2**32].pack("NN")
-      when NilClass
+      when NilClass, Time
         # Time.stamp is 52 bytes, so we have 12 bytes of entropy left over
-        int = (Time.stamp << 12) + rand(2**12)
+        int = ((bytes || Time).stamp << 12) + rand(2**12)
         @bytes = [int >> 32, int % 2**32].pack("NN")
       else
         raise TypeError, "Can't convert from #{bytes.class}"
