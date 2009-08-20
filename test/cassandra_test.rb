@@ -71,6 +71,15 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({@longs[2] => 'I disagree'}, @blogs_long.get(:Blogs, key, :count => 1, :reversed => true))
     assert_equal({}, @blogs_long.get(:Blogs, 'bogus'))
   end
+  
+  def test_long_remove_bug
+    @blogs_long.insert(:Blogs, key, {@longs[0] => 'I like this cat'})
+    @blogs_long.remove(:Blogs, key)
+    assert_equal({}, @blogs_long.get(:Blogs, key, :count => 1))
+
+    @blogs_long.insert(:Blogs, key, {@longs[0] => 'I like this cat'})
+    assert_equal({@longs[0] => 'I like this cat'}, @blogs_long.get(:Blogs, key, :count => 1))
+  end
 
   def test_get_with_count
     @twitter.insert(:Statuses, key, {'1' => 'v', '2' => 'v', '3' => 'v'})
