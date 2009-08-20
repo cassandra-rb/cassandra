@@ -6,10 +6,13 @@ class CassandraTest < Test::Unit::TestCase
   def setup
     @twitter = Cassandra.new('Twitter', '127.0.0.1')
     @twitter.clear_keyspace!
+
     @blogs = Cassandra.new('Multiblog', '127.0.0.1')
     @blogs.clear_keyspace!
+
     @blogs_long = Cassandra.new('MultiblogLong', '127.0.0.1')
     @blogs_long.clear_keyspace!
+
     @uuids = (0..6).map {|i| UUID.new(Time.at(2**(24+i))) }
     @longs = (0..6).map {|i| Long.new(Time.at(2**(24+i))) }
   end
@@ -30,13 +33,13 @@ class CassandraTest < Test::Unit::TestCase
     end
   end
 
-  def test_get_key_name_sorted
+  def test_get_key
     @twitter.insert(:Users, key, {'body' => 'v', 'user' => 'v'})
     assert_equal({'body' => 'v', 'user' => 'v'}, @twitter.get(:Users, key))
     assert_equal({}, @twitter.get(:Users, 'bogus'))
   end
 
-  def test_get_key_name_sorted_preserving_order
+  def test_get_key_preserving_order
     # In-order hash is preserved
     hash = OrderedHash['a', '', 'b', '', 'c', '', 'd', '',]
     @twitter.insert(:Users, key, hash)
@@ -51,15 +54,21 @@ class CassandraTest < Test::Unit::TestCase
     assert_not_equal(hash.keys, @twitter.get(:Users, key).keys)
   end
 
-  def test_get_key_time_uuid_sorted
-    @blogs.insert(:Blogs, key, {@uuids[0] => 'I like this cat'})
-    assert_equal({@uuids[0] => 'I like this cat'}, @blogs.get(:Blogs, key))
+  def test_get_first_time_uuid_column
+    @blogs.insert(:Blogs, key, 
+      {@uuids[0] => 'I like this cat', @uuids[1] => 'Buttons is cuter', @uuids[2] => 'I disagree'})
+    
+    assert_equal({@uuids[0] => 'I like this cat'}, @blogs.get(:Blogs, key, :count => 1))
+    assert_equal({@uuids[2] => 'I disagree'}, @blogs.get(:Blogs, key, :count => 1, :reversed => true))
     assert_equal({}, @blogs.get(:Blogs, 'bogus'))
   end
 
-  def test_get_key_long_sorted
-    @blogs_long.insert(:Blogs, key, {@longs[0] => 'I like this cat'})
-    assert_equal({@longs[0] => 'I like this cat'}, @blogs_long.get(:Blogs, key))
+  def test_get_first_long_column
+    @blogs_long.insert(:Blogs, key, 
+      {@longs[0] => 'I like this cat', @longs[1] => 'Buttons is cuter', @longs[2] => 'I disagree'})
+    
+    assert_equal({@longs[0] => 'I like this cat'}, @blogs_long.get(:Blogs, key, :count => 1))
+    assert_equal({@longs[2] => 'I disagree'}, @blogs_long.get(:Blogs, key, :count => 1, :reversed => true))
     assert_equal({}, @blogs_long.get(:Blogs, 'bogus'))
   end
 
@@ -230,15 +239,6 @@ class CassandraTest < Test::Unit::TestCase
       OrderedHash[key + '2', ['v2', 'v2'], 'bogus', [nil, nil], key + '1', ['v1', 'v1']],
       @twitter.multi_get_columns(:Users, [key + '2', 'bogus', key + '1'], ['body', 'user']))
   end
-
-  # Not supported
-  #  def test_get_columns_super_sub
-  #    @twitter.insert(:StatusRelationships, key, {
-  #      'user_timelines' => {@uuids[1] => 'v1'},
-  #      'mentions_timelines' => {@uuids[2] => 'v2'}})
-  #    assert_equal ['v1', 'v2'],
-  #      @twitter.get_columns(:StatusRelationships, key, 'user_timelines', ['1', key])
-  #  end
 
   def test_count_keys
     @twitter.insert(:Statuses, key + "1", {'body' => '1'})
