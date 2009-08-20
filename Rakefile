@@ -24,17 +24,17 @@ CASSANDRA_HOME = "#{ENV['HOME']}/cassandra/r#{REVISION[0, 8]}"
 
 CASSANDRA_TEST = "#{ENV['HOME']}/cassandra/test"
 
+directory CASSANDRA_TEST
+
 desc "Start Cassandra"
-task :cassandra => [:java, :checkout, :patch, :build] do
+task :cassandra => [:java, :checkout, :patch, :build, CASSANDRA_TEST] do
   # Construct environment
   env = ""
   if !ENV["CASSANDRA_INCLUDE"]
     env << "CASSANDRA_INCLUDE=#{Dir.pwd}/conf/cassandra.in.sh "
     env << "CASSANDRA_HOME=#{CASSANDRA_HOME} "
-    env << "CASSANDRA_CONF=#{File.expand_path(File.dirname(__FILE__))}/conf" 
-  end  
-  # Create data dir
-  Dir.mkdir(CASSANDRA_TEST) if !File.exist?(CASSANDRA_TEST)
+    env << "CASSANDRA_CONF=#{File.expand_path(File.dirname(__FILE__))}/conf"
+  end
   # Start server
   Dir.chdir(CASSANDRA_TEST) do
     exec("env #{env} #{CASSANDRA_HOME}/bin/cassandra -f")
@@ -106,7 +106,7 @@ task :clean do
     Dir.chdir(CASSANDRA_HOME) do
       system("ant clean")
     end
-  end      
+  end
 end
 
 namespace :data do
@@ -123,4 +123,3 @@ task :thrift do
     rm -rf gen-rb &&
     thrift -gen rb #{CASSANDRA_HOME}/interface/cassandra.thrift")
 end
-
