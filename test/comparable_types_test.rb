@@ -13,6 +13,7 @@ class ComparableTypesTest < Test::Unit::TestCase
     long = Long.new
     assert_equal long, Long.new(long.to_s)  
     assert_equal long, Long.new(long.to_i)  
+    assert_equal long, Long.new(long.to_guid)  
   end
   
   def test_long_error
