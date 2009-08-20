@@ -19,7 +19,8 @@ end
 REVISION = "e959b2c7f6d78b51492c5e7b19beb30c36e75987"
 
 PATCHES = [
-  "http://issues.apache.org/jira/secure/attachment/12417091/CASSANDRA-384.diff"]
+  "http://issues.apache.org/jira/secure/attachment/12417091/CASSANDRA-384.diff",
+  "http://issues.apache.org/jira/secure/attachment/12417064/376.patch"]
 
 CASSANDRA_HOME = "#{ENV['HOME']}/cassandra/r#{REVISION[0, 8]}"
 
