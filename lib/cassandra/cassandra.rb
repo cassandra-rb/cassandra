@@ -92,19 +92,19 @@ class Cassandra
   # and <tt>:timestamp</tt> options.
   def insert(column_family, key, hash, options = {})
     column_family, _, _, options = params(column_family, [options], WRITE_DEFAULTS)
-
+    timestamp = options[:timestamp] || Time.stamp
+    
     mutation = if is_super(column_family)
       CassandraThrift::BatchMutationSuper.new(
         :key => key, 
-        :cfmap => {column_family => 
-          hash_to_super_columns(column_family, hash, options[:timestamp] || Time.stamp)})
+        :cfmap => {column_family => hash_to_super_columns(column_family, hash, timestamp)})
     else
       CassandraThrift::BatchMutation.new(
         :key => key, 
-        :cfmap => {column_family => 
-          hash_to_columns(column_family, hash, options[:timestamp] || Time.stamp)})
-    end
-    
+        :cfmap => {column_family => hash_to_columns(column_family, hash, timestamp)})
+    end    
+
+    # puts "insert() at #{timestamp}"    
     args = [mutation, options[:consistency]]
     @batch ? @batch << args : _insert(*args)
   end
@@ -116,7 +116,9 @@ class Cassandra
   # options.
   def remove(column_family, key, *columns_and_options)
     column_family, column, sub_column, options = params(column_family, columns_and_options, WRITE_DEFAULTS)    
-    args = [column_family, key, column, sub_column, options[:consistency], options[:timestamp] || Time.stamp]
+    timestamp = options[:timestamp] || Time.stamp
+    args = [column_family, key, column, sub_column, options[:consistency], timestamp]
+    # puts "remove() at #{timestamp}"
     @batch ? @batch << args : _remove(*args)
   end
 
