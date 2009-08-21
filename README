@@ -27,7 +27,7 @@ Cassandra itself is a rapidly moving target. In order to get a working server, u
 
   cassandra_helper cassandra
   
-A server will be installed in <tt>$HOME/cassandra/r$REVISION</tt>, and started in debug mode.
+A server will be installed in <tt>$HOME/cassandra/server</tt>, and started in debug mode.
 
 == Usage
   

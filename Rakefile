@@ -22,14 +22,14 @@ PATCHES = [
   "http://issues.apache.org/jira/secure/attachment/12417091/CASSANDRA-384.diff",
   "http://issues.apache.org/jira/secure/attachment/12417064/376.patch"]
 
-CASSANDRA_HOME = "#{ENV['HOME']}/cassandra/r#{REVISION[0, 8]}"
+CASSANDRA_HOME = "#{ENV['HOME']}/cassandra/server"
 
 CASSANDRA_TEST = "#{ENV['HOME']}/cassandra/test"
 
 directory CASSANDRA_TEST
 
 desc "Start Cassandra"
-task :cassandra => [:java, :checkout, :patch, :build, CASSANDRA_TEST] do
+task :cassandra => [:build, CASSANDRA_TEST] do
   # Construct environment
   env = ""
   if !ENV["CASSANDRA_INCLUDE"]
@@ -54,29 +54,35 @@ task :java do
   end
 end
 
-desc "Checkout Cassandra from git"
-task :checkout do
-  # Check git version
+desc "Check Git version"
+task :git do
   unless `git --version 2>&1` =~ /git version 1.6/
     puts "You need to install git 1.6."
     exit(1)
   end
+end
+
+desc "Checkout Cassandra from git"
+task :checkout => [:java, :git] do
   # Like a git submodule, but all in one more obvious place
   unless File.exist?(CASSANDRA_HOME)
+    puts "Checking Cassandra out from git"
     cmd = "git clone git://git.apache.org/cassandra.git #{CASSANDRA_HOME}"
     if !system(cmd)
       put "Checkout failed. Try:\n  #{cmd}"
       exit(1)
     end
-    ENV["RESET"] = "true"
-  end
+  end  
 end
 
 desc "Apply patches to Cassandra checkout; use RESET=1 to force"
-task :patch do
-  if ENV["RESET"]
-    system("rm -rf #{CASSANDRA_TEST}/data")
-    Dir.chdir(CASSANDRA_HOME) do
+task :patch => [:checkout] do
+  # Verify checkout revision and patchset
+  Dir.chdir(CASSANDRA_HOME) do  
+    current_checkout = `git show HEAD~#{PATCHES.size} | head -n1`
+    if !current_checkout.include?(REVISION)
+      puts "Updating Cassandra and applying patches"
+      system("rm -rf #{CASSANDRA_TEST}/data")
       system("ant clean && git fetch && git reset #{REVISION} --hard")
       # Delete untracked files, so that the patchs can apply again
       Array(`git status`[/Untracked files:(.*)$/m, 1].to_s.split("\n")[3..-1]).each do |file|
@@ -92,8 +98,9 @@ task :patch do
 end
 
 desc "Rebuild Cassandra"
-task :build do
+task :build => [:patch] do
   unless File.exist?("#{CASSANDRA_HOME}/build")
+    puts "Building Cassandra"
     cmd = "cd #{CASSANDRA_HOME} && ant"
     if !system(cmd)
       puts "Could not build Casssandra. Try:\n  #{cmd}"
@@ -104,6 +111,7 @@ end
 
 desc "Clean Cassandra build"
 task :clean do
+  puts "Cleaning Cassandra"
   if File.exist?(CASSANDRA_HOME)
     Dir.chdir(CASSANDRA_HOME) do
       system("ant clean")
@@ -114,12 +122,14 @@ end
 namespace :data do
   desc "Reset test data"
   task :reset do
+    puts "Resetting test data"
     system("rm -rf #{CASSANDRA_TEST}/data")
   end
 end
 
 # desc "Regenerate thrift bindings for Cassandra" # Dev only
 task :thrift do
+  puts "Generating Thrift bindings"
   system(
     "cd vendor &&
     rm -rf gen-rb &&
