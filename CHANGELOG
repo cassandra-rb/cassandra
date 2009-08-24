@@ -1,5 +1,5 @@
 
-v0.5.5. to_guid for Long. Don't continually re-checkout the Git mirror. 
+v0.5.5. to_guid for Long. Don't continually re-checkout the Git mirror. Use curl instead of wget, sigh.
 
 v0.5.4. Use wget instead of curl.
 
