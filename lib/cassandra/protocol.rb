@@ -5,10 +5,7 @@ class Cassandra
     private
 
     def _insert(mutation, consistency)
-      case mutation
-      when CassandraThrift::BatchMutationSuper then @client.batch_insert_super_column(@keyspace, mutation, consistency)
-      when CassandraThrift::BatchMutation then @client.batch_insert(@keyspace, mutation, consistency)
-      end
+      @client.batch_insert(@keyspace, mutation, consistency)
     end
 
     def _remove(column_family, key, column, sub_column, consistency, timestamp)

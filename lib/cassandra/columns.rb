@@ -63,23 +63,24 @@ class Cassandra
       end
       hash    
     end
-    
+        
     def hash_to_columns(column_family, hash, timestamp)
       assert_column_name_classes(column_family, hash.keys)
-      hash_to_columns_without_assertion(column_family, hash, timestamp)
-    end
-    
-    def hash_to_columns_without_assertion(column_family, hash, timestamp)
       hash.map do |column, value|
-        CassandraThrift::Column.new(:name => column.to_s, :value => value, :timestamp => timestamp)
+        CassandraThrift::ColumnOrSuperColumn.new(:column => 
+          CassandraThrift::Column.new(:name => column.to_s, :value => value, :timestamp => timestamp))
       end    
-    end    
+    end
     
     def hash_to_super_columns(column_family, hash, timestamp)
       assert_column_name_classes(column_family, hash.keys)      
       hash.map do |column, sub_hash|
         assert_column_name_classes(column_family, nil, sub_hash.keys)
-        CassandraThrift::SuperColumn.new(:name => column.to_s, :columns => hash_to_columns_without_assertion(column_family, sub_hash, timestamp))
+        sub_columns = sub_hash.map do |sub_column, value|
+          CassandraThrift::Column.new(:name => sub_column.to_s, :value => value, :timestamp => timestamp)
+        end    
+        CassandraThrift::ColumnOrSuperColumn.new(:super_column => 
+          CassandraThrift::SuperColumn.new(:name => column.to_s, :columns => sub_columns))
       end
     end    
   end
