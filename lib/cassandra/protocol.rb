@@ -4,17 +4,8 @@ class Cassandra
   module Protocol #:nodoc:
     private
 
-    def _insert(mutation, consistency)
-      @client.batch_insert(@keyspace, mutation, consistency)
-    end
-
-    def _remove(column_family, key, column, sub_column, consistency, timestamp)
-      column_path = if is_super(column_family)
-        CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column)
-      else
-        CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column)
-      end
-      @client.remove(@keyspace, key, column_path, timestamp, consistency)
+    def _mutate(mutation, consistency)
+      @client.batch_mutate(@keyspace, mutation, consistency)
     end
 
     def _count_columns(column_family, key, super_column, consistency)

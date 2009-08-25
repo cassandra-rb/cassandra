@@ -284,7 +284,7 @@ class CassandraTest < Test::Unit::TestCase
       @twitter.multi_count_columns(:Users, [key + '2', 'bogus', key + '1']))
   end
 
-  def test_batch_insert
+  def test_batch_mutate
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
 
     @twitter.batch do

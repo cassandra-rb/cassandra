@@ -78,17 +78,17 @@ require 'cassandra_types'
             return
           end
 
-          def batch_insert(keyspace, batch_mutation, consistency_level)
-            send_batch_insert(keyspace, batch_mutation, consistency_level)
-            recv_batch_insert()
+          def batch_mutate(keyspace, batch_mutation, consistency_level)
+            send_batch_mutate(keyspace, batch_mutation, consistency_level)
+            recv_batch_mutate()
           end
 
-          def send_batch_insert(keyspace, batch_mutation, consistency_level)
-            send_message('batch_insert', Batch_insert_args, :keyspace => keyspace, :batch_mutation => batch_mutation, :consistency_level => consistency_level)
+          def send_batch_mutate(keyspace, batch_mutation, consistency_level)
+            send_message('batch_mutate', Batch_mutate_args, :keyspace => keyspace, :batch_mutation => batch_mutation, :consistency_level => consistency_level)
           end
 
-          def recv_batch_insert()
-            result = receive_message(Batch_insert_result)
+          def recv_batch_mutate()
+            result = receive_message(Batch_mutate_result)
             raise result.ire unless result.ire.nil?
             raise result.ue unless result.ue.nil?
             return
@@ -227,17 +227,17 @@ require 'cassandra_types'
             write_result(result, oprot, 'insert', seqid)
           end
 
-          def process_batch_insert(seqid, iprot, oprot)
-            args = read_args(iprot, Batch_insert_args)
-            result = Batch_insert_result.new()
+          def process_batch_mutate(seqid, iprot, oprot)
+            args = read_args(iprot, Batch_mutate_args)
+            result = Batch_mutate_result.new()
             begin
-              @handler.batch_insert(args.keyspace, args.batch_mutation, args.consistency_level)
+              @handler.batch_mutate(args.keyspace, args.batch_mutation, args.consistency_level)
             rescue CassandraThrift::InvalidRequestException => ire
               result.ire = ire
             rescue CassandraThrift::UnavailableException => ue
               result.ue = ue
             end
-            write_result(result, oprot, 'batch_insert', seqid)
+            write_result(result, oprot, 'batch_mutate', seqid)
           end
 
           def process_remove(seqid, iprot, oprot)
@@ -475,7 +475,7 @@ require 'cassandra_types'
 
         end
 
-        class Batch_insert_args
+        class Batch_mutate_args
           include ::Thrift::Struct
           KEYSPACE = 1
           BATCH_MUTATION = 2
@@ -498,7 +498,7 @@ require 'cassandra_types'
 
         end
 
-        class Batch_insert_result
+        class Batch_mutate_result
           include ::Thrift::Struct
           IRE = 1
           UE = 2

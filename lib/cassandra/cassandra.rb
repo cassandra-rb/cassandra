@@ -95,12 +95,12 @@ class Cassandra
 
     args = [column_family, hash, options[:timestamp] || Time.stamp]    
     columns = is_super(column_family) ? hash_to_super_columns(*args) : hash_to_columns(*args)
-    
-    args = [CassandraThrift::BatchMutation.new(
+    mutation = CassandraThrift::BatchMutation.new(
       :key => key, 
-      :cfmap => {column_family => columns}),
-      options[:consistency]]
-    @batch ? @batch << args : _insert(*args)
+      :cfmap => {column_family => columns}, 
+      :column_paths => [])
+    
+    @batch ? @batch << mutation : _mutate(mutation, options[:consistency])
   end
 
   ## Delete
@@ -110,9 +110,15 @@ class Cassandra
   # options.
   def remove(column_family, key, *columns_and_options)
     column_family, column, sub_column, options = params(column_family, columns_and_options, WRITE_DEFAULTS)    
-    timestamp = options[:timestamp] || Time.stamp
-    args = [column_family, key, column, sub_column, options[:consistency], timestamp]
-    @batch ? @batch << args : _remove(*args)
+
+    args = {:column_family => column_family, :timestamp => options[:timestamp] || Time.stamp}
+    columns = is_super(column_family) ? {:super_column => column, :column => sub_column} : {:column => column}
+    mutation = CassandraThrift::BatchMutation.new(
+      :key => key, 
+      :cfmap => {}, 
+      :column_paths => [CassandraThrift::ColumnPath.new(args.merge(columns))])
+      
+    @batch ? @batch << mutation : _mutate(mutation, options[:consistency])
   end
 
   # Remove all rows in the column family you request. Supports options 
@@ -205,13 +211,18 @@ class Cassandra
   end
 
   # Open a batch operation and yield. Inserts and deletes will be queued until
-  # the block closes, and then sent atomically to the server.
-  # FIXME Make deletes truly atomic.
-  def batch
+  # the block closes, and then sent atomically to the server.  Supports the 
+  # <tt>:consistency</tt> option, which overrides the consistency set in
+  # the individual commands.
+  def batch(options = {})
+    _, _, _, options = params(@schema.keys.first, [options], WRITE_DEFAULTS)
+
     @batch = []
-    yield
-    compact_mutations
-    dispatch_mutations
+    yield        
+    compact_mutations!    
+
+    # Send the queued mutations to the server.
+    @batch.each { |mutation| _mutate(mutation, options[:consistency]) }
     @batch = nil
   end
   
@@ -228,7 +239,7 @@ class Cassandra
     end    
 
     column_family, column, sub_column = column_family.to_s, args[0], args[1]
-    assert_column_name_classes(column_family, column, sub_column)    
+    assert_column_name_classes(column_family, column, sub_column)  
     [column_family, map_to_s(column), map_to_s(sub_column), options]
   end
   
@@ -243,51 +254,27 @@ class Cassandra
     end
   end
   
-  # Roll up queued mutations as much as possible, to improve atomicity.
-  def compact_mutations
-    compact_batch = []
+  # Roll up queued mutations, to improve atomicity.
+  def compact_mutations!
     mutations = {}
-
-    @batch << nil # Close it
-    @batch.each do |m|
-      case m
-      when Array, nil
-        # Flush compacted mutations
-        compact_batch.concat(mutations.values.map {|x| x.values}.flatten)
-        mutations = {}
-        # Insert delete operation
-        compact_batch << m
-      else # BatchMutation
-        # Do a nested hash merge
-        if mutation_class = mutations[m.class]
-          if mutation = mutation_class[m.key]
-            if columns = mutation.cfmap[m.cfmap.keys.first]
-              columns.concat(m.cfmap.values.first)
-            else
-              mutation.cfmap.merge!(m.cfmap)
-            end
-          else
-            mutation_class[m.key] = m
-          end
+    
+    # Nested hash merge
+    @batch.each do |m|      
+      if mutation = mutations[m.key]
+        # Inserts
+        if columns = mutation.cfmap[m.cfmap.keys.first]
+          columns.concat(m.cfmap.values.first)
         else
-          mutations[m.class] = {m.key => m}
+          mutation.cfmap.merge!(m.cfmap)
         end
-      end
-    end
-
-    @batch = compact_batch
-  end
-
-  # Send all the queued mutations to the server.
-  def dispatch_mutations
-    @batch.compact!
-    @batch.each do |args|
-      case args.first
-      when CassandraThrift::BatchMutation
-        _insert(*args)
+        # Deletes
+        mutation.column_paths.concat(m.column_paths)
       else
-        _remove(*args)
+        mutations[m.key] = m
       end
     end
+    
+    # FIXME Return atomic thrift thingy
+    @batch = mutations.values 
   end  
 end

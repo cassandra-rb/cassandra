@@ -19,7 +19,9 @@ end
 REVISION = "c4992f48ce9c26ce4fd028240447b4cbe85ecf26"
 
 PATCHES = [
-  "http://issues.apache.org/jira/secure/attachment/12417533/388.patch"]
+  "http://issues.apache.org/jira/secure/attachment/12417533/388.patch",
+  "http://issues.apache.org/jira/secure/attachment/12417679/CASSANDRA-336-deletes-in-BatchMutation-2-code.diff",
+  "http://issues.apache.org/jira/secure/attachment/12417680/CASSANDRA-336-deletes-in-BatchMutation-2-gen-java.diff"]
 
 CASSANDRA_HOME = "#{ENV['HOME']}/cassandra/server"
 
