@@ -9,12 +9,12 @@ class Cassandra
     end
 
     def _remove(column_family, key, column, sub_column, consistency, timestamp)
-      column_path_or_parent = if is_super(column_family)
+      column_path = if is_super(column_family)
         CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column)
       else
         CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column)
       end
-      @client.remove(@keyspace, key, column_path_or_parent, timestamp, consistency)
+      @client.remove(@keyspace, key, column_path, timestamp, consistency)
     end
 
     def _count_columns(column_family, key, super_column, consistency)
