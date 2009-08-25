@@ -20,3 +20,4 @@ require 'cassandra/columns'
 require 'cassandra/protocol'
 require 'cassandra/cassandra'
 require 'cassandra/constants'
+require 'cassandra/debug' if ENV['DEBUG']
