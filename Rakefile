@@ -16,10 +16,10 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
   end
 end
 
-REVISION = "dcabc0e3431ccff56b20caef7f7805e49a6aac13"
+REVISION = "c4992f48ce9c26ce4fd028240447b4cbe85ecf26"
 
 PATCHES = [
-  "http://issues.apache.org/jira/secure/attachment/12417274/386-v2.patch"]
+  "http://issues.apache.org/jira/secure/attachment/12417533/388.patch"]
 
 CASSANDRA_HOME = "#{ENV['HOME']}/cassandra/server"
 

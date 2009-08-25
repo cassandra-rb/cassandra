@@ -35,24 +35,6 @@ module CassandraThrift
 
     end
 
-    class BatchMutation
-      include ::Thrift::Struct
-      KEY = 1
-      CFMAP = 2
-
-      ::Thrift::Struct.field_accessor self, :key, :cfmap
-      FIELDS = {
-        KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-        CFMAP => {:type => ::Thrift::Types::MAP, :name => 'cfmap', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::Column}}}
-      }
-
-      def struct_fields; FIELDS; end
-
-      def validate
-      end
-
-    end
-
     class SuperColumn
       include ::Thrift::Struct
       NAME = 1
@@ -71,15 +53,15 @@ module CassandraThrift
 
     end
 
-    class BatchMutationSuper
+    class ColumnOrSuperColumn
       include ::Thrift::Struct
-      KEY = 1
-      CFMAP = 2
+      COLUMN = 1
+      SUPER_COLUMN = 2
 
-      ::Thrift::Struct.field_accessor self, :key, :cfmap
+      ::Thrift::Struct.field_accessor self, :column, :super_column
       FIELDS = {
-        KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-        CFMAP => {:type => ::Thrift::Types::MAP, :name => 'cfmap', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::SuperColumn}}}
+        COLUMN => {:type => ::Thrift::Types::STRUCT, :name => 'column', :class => CassandraThrift::Column, :optional => true},
+        SUPER_COLUMN => {:type => ::Thrift::Types::STRUCT, :name => 'super_column', :class => CassandraThrift::SuperColumn, :optional => true}
       }
 
       def struct_fields; FIELDS; end
@@ -218,15 +200,15 @@ module CassandraThrift
 
     end
 
-    class ColumnOrSuperColumn
+    class BatchMutation
       include ::Thrift::Struct
-      COLUMN = 1
-      SUPER_COLUMN = 2
+      KEY = 1
+      CFMAP = 2
 
-      ::Thrift::Struct.field_accessor self, :column, :super_column
+      ::Thrift::Struct.field_accessor self, :key, :cfmap
       FIELDS = {
-        COLUMN => {:type => ::Thrift::Types::STRUCT, :name => 'column', :class => CassandraThrift::Column, :optional => true},
-        SUPER_COLUMN => {:type => ::Thrift::Types::STRUCT, :name => 'super_column', :class => CassandraThrift::SuperColumn, :optional => true}
+        KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+        CFMAP => {:type => ::Thrift::Types::MAP, :name => 'cfmap', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}}}
       }
 
       def struct_fields; FIELDS; end

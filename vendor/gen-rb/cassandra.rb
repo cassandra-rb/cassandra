@@ -110,22 +110,6 @@ require 'cassandra_types'
             return
           end
 
-          def batch_insert_super_column(keyspace, batch_mutation_super, consistency_level)
-            send_batch_insert_super_column(keyspace, batch_mutation_super, consistency_level)
-            recv_batch_insert_super_column()
-          end
-
-          def send_batch_insert_super_column(keyspace, batch_mutation_super, consistency_level)
-            send_message('batch_insert_super_column', Batch_insert_super_column_args, :keyspace => keyspace, :batch_mutation_super => batch_mutation_super, :consistency_level => consistency_level)
-          end
-
-          def recv_batch_insert_super_column()
-            result = receive_message(Batch_insert_super_column_result)
-            raise result.ire unless result.ire.nil?
-            raise result.ue unless result.ue.nil?
-            return
-          end
-
           def get_key_range(keyspace, column_family, start, finish, count)
             send_get_key_range(keyspace, column_family, start, finish, count)
             return recv_get_key_range()
@@ -267,19 +251,6 @@ require 'cassandra_types'
               result.ue = ue
             end
             write_result(result, oprot, 'remove', seqid)
-          end
-
-          def process_batch_insert_super_column(seqid, iprot, oprot)
-            args = read_args(iprot, Batch_insert_super_column_args)
-            result = Batch_insert_super_column_result.new()
-            begin
-              @handler.batch_insert_super_column(args.keyspace, args.batch_mutation_super, args.consistency_level)
-            rescue CassandraThrift::InvalidRequestException => ire
-              result.ire = ire
-            rescue CassandraThrift::UnavailableException => ue
-              result.ue = ue
-            end
-            write_result(result, oprot, 'batch_insert_super_column', seqid)
           end
 
           def process_get_key_range(seqid, iprot, oprot)
@@ -573,47 +544,6 @@ require 'cassandra_types'
         end
 
         class Remove_result
-          include ::Thrift::Struct
-          IRE = 1
-          UE = 2
-
-          ::Thrift::Struct.field_accessor self, :ire, :ue
-          FIELDS = {
-            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
-            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
-        end
-
-        class Batch_insert_super_column_args
-          include ::Thrift::Struct
-          KEYSPACE = 1
-          BATCH_MUTATION_SUPER = 2
-          CONSISTENCY_LEVEL = 3
-
-          ::Thrift::Struct.field_accessor self, :keyspace, :batch_mutation_super, :consistency_level
-          FIELDS = {
-            KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
-            BATCH_MUTATION_SUPER => {:type => ::Thrift::Types::STRUCT, :name => 'batch_mutation_super', :class => CassandraThrift::BatchMutationSuper},
-            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             0, :enum_class => CassandraThrift::ConsistencyLevel}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
-              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
-            end
-          end
-
-        end
-
-        class Batch_insert_super_column_result
           include ::Thrift::Struct
           IRE = 1
           UE = 2
