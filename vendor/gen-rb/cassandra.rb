@@ -78,13 +78,13 @@ require 'cassandra_types'
             return
           end
 
-          def batch_mutate(keyspace, batch_mutation, consistency_level)
-            send_batch_mutate(keyspace, batch_mutation, consistency_level)
+          def batch_mutate(keyspace, batch_mutations, consistency_level)
+            send_batch_mutate(keyspace, batch_mutations, consistency_level)
             recv_batch_mutate()
           end
 
-          def send_batch_mutate(keyspace, batch_mutation, consistency_level)
-            send_message('batch_mutate', Batch_mutate_args, :keyspace => keyspace, :batch_mutation => batch_mutation, :consistency_level => consistency_level)
+          def send_batch_mutate(keyspace, batch_mutations, consistency_level)
+            send_message('batch_mutate', Batch_mutate_args, :keyspace => keyspace, :batch_mutations => batch_mutations, :consistency_level => consistency_level)
           end
 
           def recv_batch_mutate()
@@ -231,7 +231,7 @@ require 'cassandra_types'
             args = read_args(iprot, Batch_mutate_args)
             result = Batch_mutate_result.new()
             begin
-              @handler.batch_mutate(args.keyspace, args.batch_mutation, args.consistency_level)
+              @handler.batch_mutate(args.keyspace, args.batch_mutations, args.consistency_level)
             rescue CassandraThrift::InvalidRequestException => ire
               result.ire = ire
             rescue CassandraThrift::UnavailableException => ue
@@ -478,13 +478,13 @@ require 'cassandra_types'
         class Batch_mutate_args
           include ::Thrift::Struct
           KEYSPACE = 1
-          BATCH_MUTATION = 2
+          BATCH_MUTATIONS = 2
           CONSISTENCY_LEVEL = 3
 
-          ::Thrift::Struct.field_accessor self, :keyspace, :batch_mutation, :consistency_level
+          ::Thrift::Struct.field_accessor self, :keyspace, :batch_mutations, :consistency_level
           FIELDS = {
             KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
-            BATCH_MUTATION => {:type => ::Thrift::Types::STRUCT, :name => 'batch_mutation', :class => CassandraThrift::BatchMutation},
+            BATCH_MUTATIONS => {:type => ::Thrift::Types::LIST, :name => 'batch_mutations', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::BatchMutation}},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             0, :enum_class => CassandraThrift::ConsistencyLevel}
           }
 
