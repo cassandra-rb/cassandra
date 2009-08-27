@@ -8,6 +8,7 @@ lib/cassandra/cassandra.rb
 lib/cassandra/columns.rb
 lib/cassandra/comparable.rb
 lib/cassandra/constants.rb
+lib/cassandra/debug.rb
 lib/cassandra/long.rb
 lib/cassandra/ordered_hash.rb
 lib/cassandra/protocol.rb
