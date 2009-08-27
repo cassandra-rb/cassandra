@@ -91,7 +91,8 @@ class Cassandra
   # a nested hash for a super column family. Supports the <tt>:consistency</tt>
   # and <tt>:timestamp</tt> options.
   def insert(column_family, key, hash, options = {})
-    column_family, _, _, options = params(column_family, [options], WRITE_DEFAULTS)
+    column_family, _, _, options = 
+      validate_params(column_family, key, [options], WRITE_DEFAULTS)
 
     args = [column_family, hash, options[:timestamp] || Time.stamp]
     columns = is_super(column_family) ? hash_to_super_columns(*args) : hash_to_columns(*args)
@@ -109,7 +110,8 @@ class Cassandra
   # path you request. Supports the <tt>:consistency</tt> and <tt>:timestamp</tt>
   # options.
   def remove(column_family, key, *columns_and_options)
-    column_family, column, sub_column, options = params(column_family, columns_and_options, WRITE_DEFAULTS)
+    column_family, column, sub_column, options = 
+      validate_params(column_family, key, columns_and_options, WRITE_DEFAULTS)
 
     args = {:column_family => column_family, :timestamp => options[:timestamp] || Time.stamp}
     columns = is_super(column_family) ? {:super_column => column, :column => sub_column} : {:column => column}
@@ -143,7 +145,8 @@ class Cassandra
   # request. Supports options <tt>:count</tt>, <tt>:start</tt>, <tt>:finish</tt>,
   # <tt>:reversed</tt>, and <tt>:consistency</tt>.
   def count_columns(column_family, key, *columns_and_options)
-    column_family, super_column, _, options = params(column_family, columns_and_options, READ_DEFAULTS)
+    column_family, super_column, _, options = 
+      validate_params(column_family, key, columns_and_options, READ_DEFAULTS)      
     _count_columns(column_family, key, super_column, options[:consistency])
   end
 
@@ -157,7 +160,8 @@ class Cassandra
   # column_family:key:column[s]:[sub_columns] path you request. Supports the
   # <tt>:consistency</tt> option.
   def get_columns(column_family, key, *columns_and_options)
-    column_family, columns, sub_columns, options = params(column_family, columns_and_options, READ_DEFAULTS)
+    column_family, columns, sub_columns, options = 
+      validate_params(column_family, key, columns_and_options, READ_DEFAULTS)      
     _get_columns(column_family, key, columns, sub_columns, options[:consistency])
   end
 
@@ -172,7 +176,8 @@ class Cassandra
   # path you request. Supports options <tt>:count</tt>, <tt>:start</tt>,
   # <tt>:finish</tt>, <tt>:reversed</tt>, and <tt>:consistency</tt>.
   def get(column_family, key, *columns_and_options)
-    column_family, column, sub_column, options = params(column_family, columns_and_options, READ_DEFAULTS)
+    column_family, column, sub_column, options = 
+      validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
     _get(column_family, key, column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency])
   rescue CassandraThrift::NotFoundException
     is_super(column_family) && !sub_column ? OrderedHash.new : nil
@@ -187,7 +192,8 @@ class Cassandra
   # Return true if the column_family:key:[column]:[sub_column] path you
   # request exists. Supports the <tt>:consistency</tt> option.
   def exists?(column_family, key, *columns_and_options)
-    column_family, column, sub_column, options = params(column_family, columns_and_options, READ_DEFAULTS)
+    column_family, column, sub_column, options = 
+      validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
     _get(column_family, key, column, sub_column, 1, nil, nil, nil, options[:consistency])
     true
   rescue CassandraThrift::NotFoundException
@@ -198,7 +204,8 @@ class Cassandra
   # <tt>:count</tt>, <tt>:start</tt>, <tt>:finish</tt>, and <tt>:consistency</tt>
   # options.
   def get_range(column_family, options = {})
-    column_family, _, _, options = params(column_family, [options], READ_DEFAULTS)
+    column_family, _, _, options = 
+      validate_params(column_family, "", [options], READ_DEFAULTS)
     _get_range(column_family, options[:start], options[:finish], options[:count], options[:consistency])
   end
 
@@ -215,7 +222,8 @@ class Cassandra
   # <tt>:consistency</tt> option, which overrides the consistency set in
   # the individual commands.
   def batch(options = {})
-    _, _, _, options = params(@schema.keys.first, [options], WRITE_DEFAULTS)
+    _, _, _, options = 
+      validate_params(@schema.keys.first, "", [options], WRITE_DEFAULTS)
 
     @batch = []
     yield
@@ -227,18 +235,23 @@ class Cassandra
   private
 
   # Extract and validate options.
-  def params(column_family, args, options)
-    if args.last.is_a?(Hash)
-      if (extras = args.last.keys - options.keys).any?
-        this = "#{self.class}##{caller[0].split('`').last[0..-2]}"
-        raise ArgumentError, "Invalid options #{extras.inspect[1..-2]} for #{this}"
-      end
+  # FIXME Should be done as a decorator
+  def validate_params(column_family, key, args, options)
+    if !key.is_a?(String)
+      raise ArgumentError, "Key #{key.inspect} must be a String for #{calling_method}"
+    elsif args.last.is_a?(Hash)
+      extras = args.last.keys - options.keys
+      raise ArgumentError, "Invalid options #{extras.inspect[1..-2]} for #{calling_method}" if extras.any?
       options = options.merge(args.pop)
     end
 
     column_family, column, sub_column = column_family.to_s, args[0], args[1]
     assert_column_name_classes(column_family, column, sub_column)
     [column_family, map_to_s(column), map_to_s(sub_column), options]
+  end
+  
+  def calling_method
+     "#{self.class}##{caller[0].split('`').last[0..-3]}"
   end
 
   # Convert stuff to strings.

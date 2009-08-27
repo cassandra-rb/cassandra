@@ -25,8 +25,8 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_connection_reopens
-    assert_raises(NoMethodError) do
-      @twitter.insert(:Statuses, 1, {'body' => 'v'})
+    assert_raises(Thrift::ProtocolException) do
+      @twitter.send("_mutate", [], -5)
     end
     assert_nothing_raised do
       @twitter.insert(:Statuses, key, {'body' => 'v'})
