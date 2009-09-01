@@ -2,29 +2,32 @@
 class Cassandra
   # A temporally-ordered Long class for use in Cassandra column names
   class Long < Comparable
-
+  
+    # FIXME Should unify with or subclass Cassandra::UUID
     def initialize(bytes = nil)
       case bytes
+      when self.class # Long
+        @bytes = bytes.to_s
       when String
         case bytes.size
         when 8 # Raw byte array
           @bytes = bytes
         when 18 # Human-readable UUID-like representation; inverse of #to_guid
           elements = bytes.split("-")
-          raise TypeError, "Malformed UUID-like representation" if elements.size != 3
+          raise TypeError, "Expected #{bytes.inspect} to cast to a #{self.class} (malformed UUID-like representation)" if elements.size != 3
           @bytes = elements.join.to_a.pack('H32')
         else
-          raise TypeError, "8 bytes required for byte array, or 18 characters required for UUID-like representation"
+          raise TypeError, "Expected #{bytes.inspect} to cast to a #{self.class} (invalid bytecount)"
         end
       when Integer
-        raise TypeError, "Integer must be between 0 and 2**64" if bytes < 0 or bytes > 2**64
+        raise TypeError, "Expected #{bytes.inspect} to cast to a #{self.class} (integer out of range)" if bytes < 0 or bytes > 2**64
         @bytes = [bytes >> 32, bytes % 2**32].pack("NN")
       when NilClass, Time
         # Time.stamp is 52 bytes, so we have 12 bytes of entropy left over
         int = ((bytes || Time).stamp << 12) + rand(2**12)
         @bytes = [int >> 32, int % 2**32].pack("NN")
       else
-        raise TypeError, "Can't convert from #{bytes.class}"
+        raise TypeError, "Expected #{bytes.inspect} to cast to a #{self.class} (unknown source class)"
       end
     end
 

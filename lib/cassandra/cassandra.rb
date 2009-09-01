@@ -142,8 +142,7 @@ class Cassandra
 ### Read
 
   # Count the elements at the column_family:key:[super_column] path you
-  # request. Supports options <tt>:count</tt>, <tt>:start</tt>, <tt>:finish</tt>,
-  # <tt>:reversed</tt>, and <tt>:consistency</tt>.
+  # request. Supports the <tt>:consistency</tt> option.
   def count_columns(column_family, key, *columns_and_options)
     column_family, super_column, _, options = 
       validate_params(column_family, key, columns_and_options, READ_DEFAULTS)      
@@ -206,7 +205,7 @@ class Cassandra
   def get_range(column_family, options = {})
     column_family, _, _, options = 
       validate_params(column_family, "", [options], READ_DEFAULTS)
-    _get_range(column_family, options[:start], options[:finish], options[:count], options[:consistency])
+    _get_range(column_family, options[:start].to_s, options[:finish].to_s, options[:count], options[:consistency])
   end
 
   # Count all rows in the column_family you request. Requires the table
@@ -237,17 +236,25 @@ class Cassandra
   # Extract and validate options.
   # FIXME Should be done as a decorator
   def validate_params(column_family, key, args, options)
+    options = options.dup
+    column_family = column_family.to_s
+
     if !key.is_a?(String)
       raise ArgumentError, "Key #{key.inspect} must be a String for #{calling_method}"
     elsif args.last.is_a?(Hash)
       extras = args.last.keys - options.keys
       raise ArgumentError, "Invalid options #{extras.inspect[1..-2]} for #{calling_method}" if extras.any?
-      options = options.merge(args.pop)
+      options.merge!(args.pop)      
     end
-
-    column_family, column, sub_column = column_family.to_s, args[0], args[1]
-    assert_column_name_classes(column_family, column, sub_column)
-    [column_family, map_to_s(column), map_to_s(sub_column), options]
+    
+    range_class = args[0] ? sub_column_name_class(column_family) : column_name_class(column_family)
+    options[:start] = options[:start] ? range_class.new(options[:start]).to_s : ""
+    options[:finish] = options[:finish] ? range_class.new(options[:finish]).to_s : ""
+    
+    [ column_family, 
+      s_map(args[0], column_name_class(column_family)), 
+      s_map(args[1], sub_column_name_class(column_family)), 
+      options]
   end
   
   def calling_method
@@ -255,13 +262,12 @@ class Cassandra
   end
 
   # Convert stuff to strings.
-  def map_to_s(el)
+  def s_map(el, klass)
     case el
-    when NilClass # nil
-    when Array then el.map { |i| map_to_s(i) }
-    when Comparable, String, Symbol then el.to_s
+    when Array then el.map { |i| s_map(i, klass) }
+    when NilClass then nil
     else
-      raise Comparable::TypeError, "Can't map #{el.inspect}"
+      klass.new(el).to_s
     end
   end
 

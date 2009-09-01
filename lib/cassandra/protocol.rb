@@ -48,13 +48,12 @@ class Cassandra
 
       # Slices
       else
-        # FIXME Comparable types in range are not enforced
         predicate = CassandraThrift::SlicePredicate.new(:slice_range => 
           CassandraThrift::SliceRange.new(
             :reversed => reversed, 
             :count => count, 
-            :start => start.to_s, 
-            :finish => finish.to_s))
+            :start => start, 
+            :finish => finish))
         
         if is_super(column_family) and column
           column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column)
@@ -68,7 +67,7 @@ class Cassandra
 
     def _get_range(column_family, start, finish, count, consistency)
       # FIXME Consistency is ignored
-      @client.get_key_range(@keyspace, column_family, start.to_s, finish.to_s, count)
+      @client.get_key_range(@keyspace, column_family, start, finish, count)
     end
   end
 end

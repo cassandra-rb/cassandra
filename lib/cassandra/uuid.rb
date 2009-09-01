@@ -13,20 +13,22 @@ class Cassandra
 
     def initialize(bytes = nil)
       case bytes
+      when self.class # UUID
+        @bytes = bytes.to_s
       when String
         case bytes.size
         when 16 # Raw byte array
           @bytes = bytes
         when 36 # Human-readable UUID representation; inverse of #to_guid
           elements = bytes.split("-")
-          raise TypeError, "Malformed UUID representation" if elements.size != 5
+          raise TypeError, "Expected #{bytes.inspect} to cast to a #{self.class} (malformed UUID representation)" if elements.size != 5
           @bytes = elements.join.to_a.pack('H32')
         else
-          raise TypeError, "16 bytes required for byte array, or 36 characters required for UUID representation"
+          raise TypeError, "Expected #{bytes.inspect} to cast to a #{self.class} (invalid bytecount)"
         end
 
       when Integer
-        raise TypeError, "Integer must be between 0 and 2**128" if bytes < 0 or bytes > 2**128
+        raise TypeError, "Expected #{bytes.inspect} to cast to a #{self.class} (integer out of range)" if bytes < 0 or bytes > 2**128
         @bytes = [
           (bytes >> 96) & 0xFFFF_FFFF,
           (bytes >> 64) & 0xFFFF_FFFF,
@@ -48,7 +50,7 @@ class Cassandra
         ].pack("NnnnnN")
 
       else
-        raise TypeError, "Can't convert from #{bytes.class}"
+        raise TypeError, "Expected #{bytes.inspect} to cast to a #{self.class} (unknown source class)"
       end
     end
 
