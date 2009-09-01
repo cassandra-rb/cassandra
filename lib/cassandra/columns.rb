@@ -33,10 +33,28 @@ class Cassandra
       raise AccessError, "Invalid column family \"#{column_family}\""    
     end
     
+    def multi_column_to_hash!(hash)
+      hash.each do |key, column_or_supercolumn|
+        hash[key] = (column_or_supercolumn.column.value if column_or_supercolumn.column)
+      end
+    end
+    
+    def multi_columns_to_hash!(column_family, hash)
+      hash.each do |key, columns| 
+        hash[key] = columns_to_hash(column_family, columns)
+      end
+    end
+
+    def multi_sub_columns_to_hash!(column_family, hash)
+      hash.each do |key, sub_columns| 
+        hash[key] = sub_columns_to_hash(column_family, sub_columns)
+      end
+    end
+    
     def columns_to_hash(column_family, columns)
       columns_to_hash_for_classes(columns, column_name_class(column_family), sub_column_name_class(column_family))
     end
-    
+
     def sub_columns_to_hash(column_family, columns)
       columns_to_hash_for_classes(columns, sub_column_name_class(column_family))
     end

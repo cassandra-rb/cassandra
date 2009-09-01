@@ -168,6 +168,7 @@ class Cassandra
 
   # Multi-key version of Cassandra#get_columns. Supports the <tt>:consistency</tt>
   # option.
+  # FIXME Not real multiget
   def multi_get_columns(column_family, keys, *options)
     OrderedHash[*keys.map { |key| [key, get_columns(column_family, key, *options)] }._flatten_once]
   end
@@ -179,9 +180,8 @@ class Cassandra
   def get(column_family, key, *columns_and_options)
     column_family, column, sub_column, options = 
       validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
-    _get(column_family, key, column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency])
-  rescue CassandraThrift::NotFoundException
-    is_super(column_family) && !sub_column ? OrderedHash.new : nil
+    value = _multiget(column_family, [key], column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency])[key]
+    value or is_super(column_family) && !sub_column ? OrderedHash.new : nil
   end
 
   # Multi-key version of Cassandra#get. Supports options <tt>:count</tt>,
@@ -195,9 +195,7 @@ class Cassandra
   def exists?(column_family, key, *columns_and_options)
     column_family, column, sub_column, options = 
       validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
-    _get(column_family, key, column, sub_column, 1, nil, nil, nil, options[:consistency])
-    true
-  rescue CassandraThrift::NotFoundException
+    _multiget(column_family, [key], column, sub_column, 1, nil, nil, nil, options[:consistency])[key]
   end
 
   # Return a list of keys in the column_family you request. Requires the

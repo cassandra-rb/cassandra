@@ -37,14 +37,14 @@ class Cassandra
       sub_columns || columns.map { |name| result[name] }
     end
 
-    def _get(column_family, key, column, sub_column, count, start, finish, reversed, consistency)
+    def _multiget(column_family, keys, column, sub_column, count, start, finish, reversed, consistency)
       # Single values; count and range parameters have no effect
       if is_super(column_family) and sub_column
         column_path = CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column)
-        @client.get(@keyspace, key, column_path, consistency).column.value
+        multi_column_to_hash!(@client.multiget(@keyspace, keys, column_path, consistency))
       elsif !is_super(column_family) and column
         column_path = CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column)
-        @client.get(@keyspace, key, column_path, consistency).column.value
+        multi_column_to_hash!(@client.multiget(@keyspace, keys, column_path, consistency))
 
       # Slices
       else
@@ -57,10 +57,10 @@ class Cassandra
         
         if is_super(column_family) and column
           column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column)
-          sub_columns_to_hash(column_family, @client.get_slice(@keyspace, key, column_parent, predicate, consistency))
+          multi_sub_columns_to_hash!(column_family, @client.multiget_slice(@keyspace, keys, column_parent, predicate, consistency))
         else
           column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family)
-          columns_to_hash(column_family, @client.get_slice(@keyspace, key, column_parent, predicate, consistency))
+          multi_columns_to_hash!(column_family, @client.multiget_slice(@keyspace, keys, column_parent, predicate, consistency))
         end
       end
     end
