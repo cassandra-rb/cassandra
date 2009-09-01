@@ -153,6 +153,7 @@ class Cassandra
 
   # Multi-key version of Cassandra#count_columns. Supports options <tt>:count</tt>,
   # <tt>:start</tt>, <tt>:finish</tt>, <tt>:reversed</tt>, and <tt>:consistency</tt>.
+  # FIXME Not real multi; needs server support
   def multi_count_columns(column_family, keys, *options)
     OrderedHash[*keys.map { |key| [key, count_columns(column_family, key, *options)] }._flatten_once]
   end
@@ -168,7 +169,7 @@ class Cassandra
 
   # Multi-key version of Cassandra#get_columns. Supports the <tt>:consistency</tt>
   # option.
-  # FIXME Not real multiget
+  # FIXME Not real multi; needs to use a Column predicate
   def multi_get_columns(column_family, keys, *options)
     OrderedHash[*keys.map { |key| [key, get_columns(column_family, key, *options)] }._flatten_once]
   end
@@ -178,16 +179,20 @@ class Cassandra
   # path you request. Supports options <tt>:count</tt>, <tt>:start</tt>,
   # <tt>:finish</tt>, <tt>:reversed</tt>, and <tt>:consistency</tt>.
   def get(column_family, key, *columns_and_options)
-    column_family, column, sub_column, options = 
-      validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
-    value = _multiget(column_family, [key], column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency])[key]
-    value or is_super(column_family) && !sub_column ? OrderedHash.new : nil
+    multi_get(column_family, [key], *columns_and_options)[key]
   end
 
   # Multi-key version of Cassandra#get. Supports options <tt>:count</tt>,
   # <tt>:start</tt>, <tt>:finish</tt>, <tt>:reversed</tt>, and <tt>:consistency</tt>.
-  def multi_get(column_family, keys, *options)
-    OrderedHash[*keys.map { |key| [key, get(column_family, key, *options)] }._flatten_once]
+  def multi_get(column_family, keys, *columns_and_options)
+    column_family, column, sub_column, options = 
+      validate_params(column_family, keys, columns_and_options, READ_DEFAULTS)
+
+    hash = _multiget(column_family, keys, column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency])
+    # Restore order
+    ordered_hash = OrderedHash.new
+    keys.each { |key| ordered_hash[key] = hash[key] || (OrderedHash.new if is_super(column_family) and !sub_column) }
+    ordered_hash
   end
 
   # Return true if the column_family:key:[column]:[sub_column] path you
@@ -235,21 +240,25 @@ class Cassandra
 
   # Extract and validate options.
   # FIXME Should be done as a decorator
-  def validate_params(column_family, key, args, options)
+  def validate_params(column_family, keys, args, options)
     options = options.dup
     column_family = column_family.to_s
 
-    if !key.is_a?(String)
-      raise ArgumentError, "Key #{key.inspect} must be a String for #{calling_method}"
-    elsif args.last.is_a?(Hash)
+    # Keys
+    Array(keys).each do |key|      
+      raise ArgumentError, "Key #{key.inspect} must be a String for #{calling_method}" unless key.is_a?(String)
+    end
+    
+    # Options
+    if args.last.is_a?(Hash)
       extras = args.last.keys - options.keys
       raise ArgumentError, "Invalid options #{extras.inspect[1..-2]} for #{calling_method}" if extras.any?
       options.merge!(args.pop)      
     end
 
+    # Ranges
     column, sub_column = args[0], args[1]
-    klass, sub_klass = column_name_class(column_family), sub_column_name_class(column_family)
-        
+    klass, sub_klass = column_name_class(column_family), sub_column_name_class(column_family)        
     range_class = column ? sub_klass : klass
     options[:start] = options[:start] ? range_class.new(options[:start]).to_s : ""
     options[:finish] = options[:finish] ? range_class.new(options[:finish]).to_s : ""

@@ -164,12 +164,16 @@ class CassandraTest < Test::Unit::TestCase
   def test_multi_get
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
     @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
-    assert_equal(
-      OrderedHash[key + '1', {'body' => 'v1', 'user' => 'v1'}, key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}],
-      @twitter.multi_get(:Users, [key + '1', key + '2', 'bogus']))
-    assert_equal(
-      OrderedHash[key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}, key + '1', {'body' => 'v1', 'user' => 'v1'}],
-      @twitter.multi_get(:Users, [key + '2', 'bogus', key + '1']))
+    
+    expected = OrderedHash[key + '1', {'body' => 'v1', 'user' => 'v1'}, key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}]
+    result = @twitter.multi_get(:Users, [key + '1', key + '2', 'bogus'])
+    assert_equal expected, result
+    assert_equal expected.keys, result.keys
+
+    expected = OrderedHash[key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}, key + '1', {'body' => 'v1', 'user' => 'v1'}]
+    result = @twitter.multi_get(:Users, [key + '2', 'bogus', key + '1'])
+    assert_equal expected, result
+    assert_equal expected.keys, result.keys
   end
 
   def test_remove_key
