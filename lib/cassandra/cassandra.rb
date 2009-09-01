@@ -56,7 +56,7 @@ class Cassandra
   attr_reader :keyspace, :host, :port, :serializer, :transport, :client, :schema
 
   # Instantiate a new Cassandra and open the connection.
-  def initialize(keyspace, host = '127.0.0.1', port = 9160)
+  def initialize(keyspace, host = '127.0.0.1', port = 9160, buffer = true)
     @is_super = {}
     @column_name_class = {}
     @sub_column_name_class = {}
@@ -65,11 +65,13 @@ class Cassandra
     @host = host
     @port = port
 
-    @transport = Thrift::BufferedTransport.new(Thrift::Socket.new(@host, @port))
-    @transport.open
+    transport = Thrift::BufferedTransport.new(Thrift::Socket.new(@host, @port))
+    transport.open
+    
     @client = CassandraThrift::Cassandra::SafeClient.new(
-      CassandraThrift::Cassandra::Client.new(Thrift::BinaryProtocol.new(@transport)),
-      @transport)
+      CassandraThrift::Cassandra::Client.new(Thrift::BinaryProtocol.new(transport)),
+      transport,
+      buffer)
 
     keyspaces = @client.get_string_list_property("keyspaces")
     unless keyspaces.include?(@keyspace)
