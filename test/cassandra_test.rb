@@ -143,6 +143,8 @@ class CassandraTest < Test::Unit::TestCase
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
     assert_equal(columns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus', 'user_timelines'))
+    # FIXME Not sure if this is valid
+    # assert_nil @twitter.exists?(:StatusRelationships, 'bogus', 'user_timelines')
   end
 
   def test_get_super_value
