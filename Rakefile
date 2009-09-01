@@ -29,7 +29,7 @@ CASSANDRA_TEST = "#{ENV['HOME']}/cassandra/test"
 directory CASSANDRA_TEST
 
 desc "Start Cassandra"
-task :cassandra => [:build, CASSANDRA_TEST] do
+task :cassandra => [:build_cassandra, CASSANDRA_TEST] do
   # Construct environment
   env = ""
   if !ENV["CASSANDRA_INCLUDE"]
@@ -63,7 +63,7 @@ task :git do
 end
 
 desc "Checkout Cassandra from git"
-task :checkout => [:java, :git] do
+task :checkout_cassandra => [:java, :git] do
   # Like a git submodule, but all in one more obvious place
   unless File.exist?(CASSANDRA_HOME)
     puts "Checking Cassandra out from git"
@@ -76,7 +76,7 @@ task :checkout => [:java, :git] do
 end
 
 desc "Apply patches to Cassandra checkout; use RESET=1 to force"
-task :patch => [:checkout] do
+task :patch_cassandra => [:checkout_cassandra] do
   # Verify checkout revision and patchset
   Dir.chdir(CASSANDRA_HOME) do  
     current_checkout = `git show HEAD~#{PATCHES.size} | head -n1`
@@ -98,7 +98,7 @@ task :patch => [:checkout] do
 end
 
 desc "Rebuild Cassandra"
-task :build => [:patch] do
+task :build_cassandra => [:patch_cassandra] do
   unless File.exist?("#{CASSANDRA_HOME}/build")
     puts "Building Cassandra"
     cmd = "cd #{CASSANDRA_HOME} && ant"
@@ -110,7 +110,7 @@ task :build => [:patch] do
 end
 
 desc "Clean Cassandra build"
-task :clean do
+task :clean_cassandra do
   puts "Cleaning Cassandra"
   if File.exist?(CASSANDRA_HOME)
     Dir.chdir(CASSANDRA_HOME) do
