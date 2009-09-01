@@ -3,10 +3,10 @@ module CassandraThrift #:nodoc: all
   module Cassandra
   
     class SafeClient  
-      def initialize(client, transport, buffer)
+      def initialize(client, transport, reset = false)
         @client = client 
         @transport = transport
-        @buffer = buffer
+        @reset = reset
       end
       
       def reset_transport
@@ -15,7 +15,7 @@ module CassandraThrift #:nodoc: all
       end
       
       def method_missing(*args)
-        reset_transport unless @buffer
+        reset_transport if @reset
         @client.send(*args)
       rescue IOError, UnavailableException, Thrift::ProtocolException
         reset_transport

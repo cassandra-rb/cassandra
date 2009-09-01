@@ -71,7 +71,7 @@ class Cassandra
     @client = CassandraThrift::Cassandra::SafeClient.new(
       CassandraThrift::Cassandra::Client.new(Thrift::BinaryProtocol.new(transport)),
       transport,
-      buffer)
+      !buffer)
 
     keyspaces = @client.get_string_list_property("keyspaces")
     unless keyspaces.include?(@keyspace)
