@@ -17,7 +17,7 @@ module CassandraThrift #:nodoc: all
       def method_missing(*args)
         reset_transport unless @buffer
         @client.send(*args)
-      rescue IOError, UnavailableException
+      rescue IOError, UnavailableException, Thrift::ProtocolException
         reset_transport
         raise if defined?(once)
         once = true and retry
