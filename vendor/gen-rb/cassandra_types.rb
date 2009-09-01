@@ -31,6 +31,9 @@ module CassandraThrift
       def struct_fields; FIELDS; end
 
       def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field name is unset!') unless @name
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field value is unset!') unless @value
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field timestamp is unset!') unless @timestamp
       end
 
     end
@@ -49,6 +52,8 @@ module CassandraThrift
       def struct_fields; FIELDS; end
 
       def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field name is unset!') unless @name
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field columns is unset!') unless @columns
       end
 
     end
@@ -104,6 +109,7 @@ module CassandraThrift
       def struct_fields; FIELDS; end
 
       def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field why is unset!') unless @why
       end
 
     end
@@ -136,6 +142,7 @@ module CassandraThrift
       def struct_fields; FIELDS; end
 
       def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field column_family is unset!') unless @column_family
       end
 
     end
@@ -158,6 +165,7 @@ module CassandraThrift
       def struct_fields; FIELDS; end
 
       def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field column_family is unset!') unless @column_family
       end
 
     end
@@ -180,6 +188,10 @@ module CassandraThrift
       def struct_fields; FIELDS; end
 
       def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field start is unset!') unless @start
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field finish is unset!') unless @finish
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field reversed is unset!') if @reversed.nil?
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field count is unset!') unless @count
       end
 
     end
@@ -211,13 +223,14 @@ module CassandraThrift
       ::Thrift::Struct.field_accessor self, :key, :cfmap, :column_paths
       FIELDS = {
         KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-        CFMAP => {:type => ::Thrift::Types::MAP, :name => 'cfmap', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}}},
-        COLUMN_PATHS => {:type => ::Thrift::Types::LIST, :name => 'column_paths', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnPath}}
+        CFMAP => {:type => ::Thrift::Types::MAP, :name => 'cfmap', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}}, :optional => true},
+        COLUMN_PATHS => {:type => ::Thrift::Types::LIST, :name => 'column_paths', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnPath}, :optional => true}
       }
 
       def struct_fields; FIELDS; end
 
       def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field key is unset!') unless @key
       end
 
     end

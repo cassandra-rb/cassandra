@@ -66,8 +66,7 @@ class Cassandra
     end
 
     def _get_range(column_family, start, finish, count, consistency)
-      # FIXME Consistency is ignored
-      @client.get_key_range(@keyspace, column_family, start, finish, count)
+      @client.get_key_range(@keyspace, column_family, start, finish, count, consistency)
     end
   end
 end

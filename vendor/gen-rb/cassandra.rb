@@ -12,23 +12,6 @@ require 'cassandra_types'
         class Client
           include ::Thrift::Client
 
-          def get_slice(keyspace, key, column_parent, predicate, consistency_level)
-            send_get_slice(keyspace, key, column_parent, predicate, consistency_level)
-            return recv_get_slice()
-          end
-
-          def send_get_slice(keyspace, key, column_parent, predicate, consistency_level)
-            send_message('get_slice', Get_slice_args, :keyspace => keyspace, :key => key, :column_parent => column_parent, :predicate => predicate, :consistency_level => consistency_level)
-          end
-
-          def recv_get_slice()
-            result = receive_message(Get_slice_result)
-            return result.success unless result.success.nil?
-            raise result.ire unless result.ire.nil?
-            raise result.nfe unless result.nfe.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice failed: unknown result')
-          end
-
           def get(keyspace, key, column_path, consistency_level)
             send_get(keyspace, key, column_path, consistency_level)
             return recv_get()
@@ -46,6 +29,55 @@ require 'cassandra_types'
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get failed: unknown result')
           end
 
+          def get_slice(keyspace, key, column_parent, predicate, consistency_level)
+            send_get_slice(keyspace, key, column_parent, predicate, consistency_level)
+            return recv_get_slice()
+          end
+
+          def send_get_slice(keyspace, key, column_parent, predicate, consistency_level)
+            send_message('get_slice', Get_slice_args, :keyspace => keyspace, :key => key, :column_parent => column_parent, :predicate => predicate, :consistency_level => consistency_level)
+          end
+
+          def recv_get_slice()
+            result = receive_message(Get_slice_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise result.nfe unless result.nfe.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice failed: unknown result')
+          end
+
+          def multiget(keyspace, keys, column_path, consistency_level)
+            send_multiget(keyspace, keys, column_path, consistency_level)
+            return recv_multiget()
+          end
+
+          def send_multiget(keyspace, keys, column_path, consistency_level)
+            send_message('multiget', Multiget_args, :keyspace => keyspace, :keys => keys, :column_path => column_path, :consistency_level => consistency_level)
+          end
+
+          def recv_multiget()
+            result = receive_message(Multiget_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'multiget failed: unknown result')
+          end
+
+          def multiget_slice(keyspace, keys, column_parent, predicate, consistency_level)
+            send_multiget_slice(keyspace, keys, column_parent, predicate, consistency_level)
+            return recv_multiget_slice()
+          end
+
+          def send_multiget_slice(keyspace, keys, column_parent, predicate, consistency_level)
+            send_message('multiget_slice', Multiget_slice_args, :keyspace => keyspace, :keys => keys, :column_parent => column_parent, :predicate => predicate, :consistency_level => consistency_level)
+          end
+
+          def recv_multiget_slice()
+            result = receive_message(Multiget_slice_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'multiget_slice failed: unknown result')
+          end
+
           def get_count(keyspace, key, column_parent, consistency_level)
             send_get_count(keyspace, key, column_parent, consistency_level)
             return recv_get_count()
@@ -60,6 +92,22 @@ require 'cassandra_types'
             return result.success unless result.success.nil?
             raise result.ire unless result.ire.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_count failed: unknown result')
+          end
+
+          def get_key_range(keyspace, column_family, start, finish, count, consistency_level)
+            send_get_key_range(keyspace, column_family, start, finish, count, consistency_level)
+            return recv_get_key_range()
+          end
+
+          def send_get_key_range(keyspace, column_family, start, finish, count, consistency_level)
+            send_message('get_key_range', Get_key_range_args, :keyspace => keyspace, :column_family => column_family, :start => start, :finish => finish, :count => count, :consistency_level => consistency_level)
+          end
+
+          def recv_get_key_range()
+            result = receive_message(Get_key_range_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_key_range failed: unknown result')
           end
 
           def insert(keyspace, key, column_path, value, timestamp, consistency_level)
@@ -108,22 +156,6 @@ require 'cassandra_types'
             raise result.ire unless result.ire.nil?
             raise result.ue unless result.ue.nil?
             return
-          end
-
-          def get_key_range(keyspace, column_family, start, finish, count)
-            send_get_key_range(keyspace, column_family, start, finish, count)
-            return recv_get_key_range()
-          end
-
-          def send_get_key_range(keyspace, column_family, start, finish, count)
-            send_message('get_key_range', Get_key_range_args, :keyspace => keyspace, :column_family => column_family, :start => start, :finish => finish, :count => count)
-          end
-
-          def recv_get_key_range()
-            result = receive_message(Get_key_range_result)
-            return result.success unless result.success.nil?
-            raise result.ire unless result.ire.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_key_range failed: unknown result')
           end
 
           def get_string_property(property)
@@ -177,19 +209,6 @@ require 'cassandra_types'
         class Processor
           include ::Thrift::Processor
 
-          def process_get_slice(seqid, iprot, oprot)
-            args = read_args(iprot, Get_slice_args)
-            result = Get_slice_result.new()
-            begin
-              result.success = @handler.get_slice(args.keyspace, args.key, args.column_parent, args.predicate, args.consistency_level)
-            rescue CassandraThrift::InvalidRequestException => ire
-              result.ire = ire
-            rescue CassandraThrift::NotFoundException => nfe
-              result.nfe = nfe
-            end
-            write_result(result, oprot, 'get_slice', seqid)
-          end
-
           def process_get(seqid, iprot, oprot)
             args = read_args(iprot, Get_args)
             result = Get_result.new()
@@ -203,6 +222,41 @@ require 'cassandra_types'
             write_result(result, oprot, 'get', seqid)
           end
 
+          def process_get_slice(seqid, iprot, oprot)
+            args = read_args(iprot, Get_slice_args)
+            result = Get_slice_result.new()
+            begin
+              result.success = @handler.get_slice(args.keyspace, args.key, args.column_parent, args.predicate, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            rescue CassandraThrift::NotFoundException => nfe
+              result.nfe = nfe
+            end
+            write_result(result, oprot, 'get_slice', seqid)
+          end
+
+          def process_multiget(seqid, iprot, oprot)
+            args = read_args(iprot, Multiget_args)
+            result = Multiget_result.new()
+            begin
+              result.success = @handler.multiget(args.keyspace, args.keys, args.column_path, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            end
+            write_result(result, oprot, 'multiget', seqid)
+          end
+
+          def process_multiget_slice(seqid, iprot, oprot)
+            args = read_args(iprot, Multiget_slice_args)
+            result = Multiget_slice_result.new()
+            begin
+              result.success = @handler.multiget_slice(args.keyspace, args.keys, args.column_parent, args.predicate, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            end
+            write_result(result, oprot, 'multiget_slice', seqid)
+          end
+
           def process_get_count(seqid, iprot, oprot)
             args = read_args(iprot, Get_count_args)
             result = Get_count_result.new()
@@ -212,6 +266,17 @@ require 'cassandra_types'
               result.ire = ire
             end
             write_result(result, oprot, 'get_count', seqid)
+          end
+
+          def process_get_key_range(seqid, iprot, oprot)
+            args = read_args(iprot, Get_key_range_args)
+            result = Get_key_range_result.new()
+            begin
+              result.success = @handler.get_key_range(args.keyspace, args.column_family, args.start, args.finish, args.count, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            end
+            write_result(result, oprot, 'get_key_range', seqid)
           end
 
           def process_insert(seqid, iprot, oprot)
@@ -253,17 +318,6 @@ require 'cassandra_types'
             write_result(result, oprot, 'remove', seqid)
           end
 
-          def process_get_key_range(seqid, iprot, oprot)
-            args = read_args(iprot, Get_key_range_args)
-            result = Get_key_range_result.new()
-            begin
-              result.success = @handler.get_key_range(args.keyspace, args.column_family, args.start, args.finish, args.count)
-            rescue CassandraThrift::InvalidRequestException => ire
-              result.ire = ire
-            end
-            write_result(result, oprot, 'get_key_range', seqid)
-          end
-
           def process_get_string_property(seqid, iprot, oprot)
             args = read_args(iprot, Get_string_property_args)
             result = Get_string_property_result.new()
@@ -292,6 +346,51 @@ require 'cassandra_types'
         end
 
         # HELPER FUNCTIONS AND STRUCTURES
+
+        class Get_args
+          include ::Thrift::Struct
+          KEYSPACE = 1
+          KEY = 2
+          COLUMN_PATH = 3
+          CONSISTENCY_LEVEL = 4
+
+          ::Thrift::Struct.field_accessor self, :keyspace, :key, :column_path, :consistency_level
+          FIELDS = {
+            KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => CassandraThrift::ColumnPath},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Get_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+          NFE = 2
+
+          ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CassandraThrift::ColumnOrSuperColumn},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
+            NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
 
         class Get_slice_args
           include ::Thrift::Struct
@@ -340,17 +439,17 @@ require 'cassandra_types'
 
         end
 
-        class Get_args
+        class Multiget_args
           include ::Thrift::Struct
           KEYSPACE = 1
-          KEY = 2
+          KEYS = 2
           COLUMN_PATH = 3
           CONSISTENCY_LEVEL = 4
 
-          ::Thrift::Struct.field_accessor self, :keyspace, :key, :column_path, :consistency_level
+          ::Thrift::Struct.field_accessor self, :keyspace, :keys, :column_path, :consistency_level
           FIELDS = {
             KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
-            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            KEYS => {:type => ::Thrift::Types::LIST, :name => 'keys', :element => {:type => ::Thrift::Types::STRING}},
             COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => CassandraThrift::ColumnPath},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
           }
@@ -365,17 +464,60 @@ require 'cassandra_types'
 
         end
 
-        class Get_result
+        class Multiget_result
           include ::Thrift::Struct
           SUCCESS = 0
           IRE = 1
-          NFE = 2
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :nfe
+          ::Thrift::Struct.field_accessor self, :success, :ire
           FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CassandraThrift::ColumnOrSuperColumn},
-            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
-            NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException}
+            SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Multiget_slice_args
+          include ::Thrift::Struct
+          KEYSPACE = 1
+          KEYS = 2
+          COLUMN_PARENT = 3
+          PREDICATE = 4
+          CONSISTENCY_LEVEL = 5
+
+          ::Thrift::Struct.field_accessor self, :keyspace, :keys, :column_parent, :predicate, :consistency_level
+          FIELDS = {
+            KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
+            KEYS => {:type => ::Thrift::Types::LIST, :name => 'keys', :element => {:type => ::Thrift::Types::STRING}},
+            COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
+            PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Multiget_slice_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+
+          ::Thrift::Struct.field_accessor self, :success, :ire
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}}},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
           }
 
           def struct_fields; FIELDS; end
@@ -418,6 +560,53 @@ require 'cassandra_types'
           ::Thrift::Struct.field_accessor self, :success, :ire
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::I32, :name => 'success'},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_key_range_args
+          include ::Thrift::Struct
+          KEYSPACE = 1
+          COLUMN_FAMILY = 2
+          START = 3
+          FINISH = 4
+          COUNT = 5
+          CONSISTENCY_LEVEL = 6
+
+          ::Thrift::Struct.field_accessor self, :keyspace, :column_family, :start, :finish, :count, :consistency_level
+          FIELDS = {
+            KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
+            COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
+            START => {:type => ::Thrift::Types::STRING, :name => 'start', :default => %q""},
+            FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish', :default => %q""},
+            COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Get_key_range_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+
+          ::Thrift::Struct.field_accessor self, :success, :ire
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRING}},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
           }
 
@@ -552,48 +741,6 @@ require 'cassandra_types'
           FIELDS = {
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
             UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
-        end
-
-        class Get_key_range_args
-          include ::Thrift::Struct
-          KEYSPACE = 1
-          COLUMN_FAMILY = 2
-          START = 3
-          FINISH = 4
-          COUNT = 5
-
-          ::Thrift::Struct.field_accessor self, :keyspace, :column_family, :start, :finish, :count
-          FIELDS = {
-            KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
-            COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
-            START => {:type => ::Thrift::Types::STRING, :name => 'start', :default => %q""},
-            FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish', :default => %q""},
-            COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
-        end
-
-        class Get_key_range_result
-          include ::Thrift::Struct
-          SUCCESS = 0
-          IRE = 1
-
-          ::Thrift::Struct.field_accessor self, :success, :ire
-          FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRING}},
-            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
           }
 
           def struct_fields; FIELDS; end
