@@ -16,12 +16,11 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
   end
 end
 
-REVISION = "c4992f48ce9c26ce4fd028240447b4cbe85ecf26"
+REVISION = "33ac4dddb02c4b99dda34eefe842b2fcf4e81c6b"
 
 PATCHES = [
-  "http://issues.apache.org/jira/secure/attachment/12417533/388.patch",
-  "http://issues.apache.org/jira/secure/attachment/12417682/CASSANDRA-336-code.diff",
-  "http://issues.apache.org/jira/secure/attachment/12417683/CASSANDRA-336-thrift.diff"]
+  "http://issues.apache.org/jira/secure/attachment/12418212/CASSANDRA-336-code.diff",
+  "http://issues.apache.org/jira/secure/attachment/12418213/CASSANDRA-336-thrift.diff"]
 
 CASSANDRA_HOME = "#{ENV['HOME']}/cassandra/server"
 
