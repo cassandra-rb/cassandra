@@ -19,8 +19,7 @@ module CassandraThrift #:nodoc: all
         @client.send(*args)
       rescue IOError, UnavailableException, Thrift::ProtocolException
         reset_transport
-        raise if defined?(once)
-        once = true and retry
+        @client.send(*args)
       end
     end
   end
