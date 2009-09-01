@@ -246,15 +246,15 @@ class Cassandra
       raise ArgumentError, "Invalid options #{extras.inspect[1..-2]} for #{calling_method}" if extras.any?
       options.merge!(args.pop)      
     end
-    
-    range_class = args[0] ? sub_column_name_class(column_family) : column_name_class(column_family)
+
+    column, sub_column = args[0], args[1]
+    klass, sub_klass = column_name_class(column_family), sub_column_name_class(column_family)
+        
+    range_class = column ? sub_klass : klass
     options[:start] = options[:start] ? range_class.new(options[:start]).to_s : ""
     options[:finish] = options[:finish] ? range_class.new(options[:finish]).to_s : ""
     
-    [ column_family, 
-      s_map(args[0], column_name_class(column_family)), 
-      s_map(args[1], sub_column_name_class(column_family)), 
-      options]
+    [column_family, s_map(column, klass), s_map(sub_column, sub_klass), options]
   end
   
   def calling_method
