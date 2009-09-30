@@ -36,7 +36,7 @@ JVM_OPTS=" \
         -ea \
         -Xdebug \
         -Xrunjdwp:transport=dt_socket,server=y,address=8888,suspend=n \
-        -Xms128M \
+        -Xms512M \
         -Xmx1G \
         -XX:SurvivorRatio=8 \
         -XX:TargetSurvivorRatio=90 \
