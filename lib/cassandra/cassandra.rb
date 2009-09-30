@@ -233,6 +233,7 @@ class Cassandra
     yield
     compact_mutations!
     _mutate(@batch, options[:consistency])
+  ensure
     @batch = nil
   end
 

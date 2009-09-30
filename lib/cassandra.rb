@@ -1,5 +1,4 @@
 
-require 'zlib'
 require 'rubygems'
 require 'thrift'
 
