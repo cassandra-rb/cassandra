@@ -51,6 +51,16 @@
         <ColumnFamily CompareWith="LongType" Name="Blogs"/>
         <ColumnFamily CompareWith="LongType" Name="Comments"/>
       </Keyspace>
+      <Keyspace Name="CassandraObject">
+        <KeysCachedFraction>0.01</KeysCachedFraction>
+        <ColumnFamily CompareWith="UTF8Type" Name="Customers" />
+        <ColumnFamily CompareWith="UTF8Type" CompareSubcolumnsWith="TimeUUIDType" ColumnType="Super" Name="CustomerRelationships" />
+        <ColumnFamily CompareWith="UTF8Type" CompareSubcolumnsWith="TimeUUIDType" ColumnType="Super" Name="CustomersByLastName" />
+        <ColumnFamily CompareWith="UTF8Type" Name="Invoices" />
+        <ColumnFamily CompareWith="UTF8Type" CompareSubcolumnsWith="TimeUUIDType" ColumnType="Super" Name="InvoiceRelationships" />
+        <ColumnFamily CompareWith="UTF8Type" Name="InvoicesByNumber" />
+        <ColumnFamily CompareWith="UTF8Type" Name="Payments" />
+      </Keyspace>
     </Keyspaces>
 
     <!-- Partitioner: any IPartitioner may be used, including your own
