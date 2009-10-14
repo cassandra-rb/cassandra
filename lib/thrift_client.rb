@@ -3,6 +3,7 @@ require 'rubygems'
 require 'thrift'
 
 class ThriftClient  
+
   DEFAULTS = { 
     :protocol => Thrift::BinaryProtocol,
     :transport => Thrift::FramedTransport,
@@ -13,8 +14,10 @@ class ThriftClient
       Thrift::Exception, 
       Thrift::ProtocolException, 
       Thrift::ApplicationException, 
-      Thrift::TransportException]
-  }
+      Thrift::TransportException],
+    :fail_open => false,
+    :retries => nil
+  }.freeze
   
   attr_reader :client, :client_class, :server_list, :options
 
@@ -22,6 +25,7 @@ class ThriftClient
     @options = DEFAULTS.merge(options)
     @client_class = client_class        
     @server_list = Array(servers)
+    @retries = options[:retries] || @server_list.size
     @server_list = @server_list.sort_by { rand } if @options[:randomize_server_list]
     
     @attempts = 0
@@ -31,13 +35,13 @@ class ThriftClient
   private
   
   def method_missing(*args)
-    attempts ||= 0
+    tries ||= @retries
     connect! unless @client
     @client.send(*args)    
   rescue *@options[:exception_classes]
-    raise if attempts > @server_list.size
+    raise if tries.zero?
     disconnect!
-    attempts += 1
+    tries -= 1
     retry
   end  
   
@@ -52,7 +56,7 @@ class ThriftClient
   end
   
   def disconnect!
-    @transport.close
+    @transport.close rescue nil
     @client = nil
   end
   
