@@ -11,16 +11,15 @@ class ThriftClient
     :randomize_server_list => true
   }
   
-  attr_reader :server_list, :options
+  attr_reader :client, :client_class, :server_list, :port, :options
 
-  def initialize(client_class, port, servers, options = {})
+  def initialize(client_class, servers, port, options = {})
+    @options = DEFAULTS.merge(options)
     @client_class = client_class        
     @server_list = Array(servers)
-    @server_list.sort_by! { rand } if @options[:randomize_server_list]
+    @server_list = @server_list.sort_by { rand } if @options[:randomize_server_list]
     @port = port
-    @options = DEFAULTS.merge(options)
-    @last_retry = Time.now.to_i
-
+    
     @attempts = 0
     @live_server_list = []    
     reconnect!    
