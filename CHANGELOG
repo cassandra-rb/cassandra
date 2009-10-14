@@ -1,4 +1,6 @@
 
+v0.6. Use thrift_client gem.
+
 v0.5.6.2. Release process was busted.
 
 v0.5.6. Real multiget.

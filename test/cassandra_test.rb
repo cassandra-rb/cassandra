@@ -4,13 +4,13 @@ class CassandraTest < Test::Unit::TestCase
   include Cassandra::Constants
 
   def setup
-    @twitter = Cassandra.new('Twitter', '127.0.0.1')
+    @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2)
     @twitter.clear_keyspace!
 
-    @blogs = Cassandra.new('Multiblog', '127.0.0.1')
+    @blogs = Cassandra.new('Multiblog')
     @blogs.clear_keyspace!
 
-    @blogs_long = Cassandra.new('MultiblogLong', '127.0.0.1')
+    @blogs_long = Cassandra.new('MultiblogLong')
     @blogs_long.clear_keyspace!
 
     @uuids = (0..6).map {|i| UUID.new(Time.at(2**(24+i))) }

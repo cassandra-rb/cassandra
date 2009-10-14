@@ -52,26 +52,23 @@ class Cassandra
     :reversed => false,
     :consistency => Consistency::ONE
   }.freeze
+  
+  THRIFT_DEFAULTS = {
+    :transport => Thrift::BufferedTransport
+  }.freeze
 
-  attr_reader :keyspace, :host, :port, :serializer, :transport, :client, :schema
+  attr_reader :keyspace, :servers, :client, :schema, :thrift_client_options
 
-  # Instantiate a new Cassandra and open the connection.
-  def initialize(keyspace, host = '127.0.0.1', port = 9160, buffer = true)
+  # Create a new Cassandra instance and open the connection.
+  def initialize(keyspace, servers = "127.0.0.1:9160", thrift_client_options = {})
     @is_super = {}
     @column_name_class = {}
     @sub_column_name_class = {}
+    @thrift_client_options = THRIFT_DEFAULTS.merge(thrift_client_options)
 
     @keyspace = keyspace
-    @host = host
-    @port = port
-
-    transport = Thrift::BufferedTransport.new(Thrift::Socket.new(@host, @port))
-    transport.open
-    
-    @client = CassandraThrift::Cassandra::SafeClient.new(
-      CassandraThrift::Cassandra::Client.new(Thrift::BinaryProtocol.new(transport)),
-      transport,
-      !buffer)
+    @servers = Array(servers)
+    @client = ThriftClient.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
 
     keyspaces = @client.get_string_list_property("keyspaces")
     unless keyspaces.include?(@keyspace)
@@ -84,7 +81,7 @@ class Cassandra
   def inspect
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       schema.map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
-    }}, @host=#{host.inspect}, @port=#{port}>"
+    }}, @servers=#{servers.inspect}>"
   end
 
 ### Write
