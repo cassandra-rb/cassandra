@@ -18,6 +18,12 @@ class ThriftClientTest < Test::Unit::TestCase
     end
   end
   
+  def test_dont_raise
+    assert_nothing_raised do
+      ThriftClient.new(ScribeThrift::Client, @servers.first, :raise => false).Log(@entry)
+    end    
+  end
+  
   def test_random_server_list
     @lists = []
     @lists << ThriftClient.new(ScribeThrift::Client, @servers).server_list while @lists.size < 10

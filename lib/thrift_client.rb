@@ -15,7 +15,7 @@ class ThriftClient
       Thrift::ProtocolException, 
       Thrift::ApplicationException, 
       Thrift::TransportException],
-    :fail_open => false,
+    :raise => true,
     :retries => nil
   }.freeze
   
@@ -39,10 +39,13 @@ class ThriftClient
     connect! unless @client
     @client.send(*args)    
   rescue *@options[:exception_classes]
-    raise if tries.zero?
-    disconnect!
-    tries -= 1
-    retry
+    if tries == 0
+      raise if @options[:raise]
+    else
+      disconnect!
+      tries -= 1
+      retry
+    end
   end  
   
   def connect!
