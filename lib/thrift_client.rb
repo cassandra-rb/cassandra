@@ -26,24 +26,22 @@ class ThriftClient
     
     @attempts = 0
     @live_server_list = []    
-    reconnect!    
   end
   
   private
   
   def method_missing(*args)
     attempts ||= 0
+    connect! unless @client
     @client.send(*args)    
   rescue *@options[:exception_classes]
     raise if attempts > @server_list.size
-    reconnect!
+    disconnect!
     attempts += 1
     retry
   end  
   
-  def reconnect!
-    @transport.close rescue nil
-    
+  def connect!
     server = next_server.to_s.split(":")
     raise ArgumentError, 'Servers must be in the form "host:port"' if server.size != 2
 
@@ -51,6 +49,11 @@ class ThriftClient
       Thrift::Socket.new(server.first, server.last.to_i, @options[:socket_timeout]))
     @transport.open
     @client = @client_class.new(@options[:protocol].new(@transport, false))
+  end
+  
+  def disconnect!
+    @transport.close
+    @client = nil
   end
   
   def next_server
