@@ -318,6 +318,12 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({}, @twitter.get(:Users, key + '1')) # Removed
   end
 
+  def test_complain_about_nil_key
+    assert_raises(Thrift::ProtocolException) do
+      @twitter.insert(:Statuses, nil, {'text' => 'crap'})
+    end
+  end
+
   private
 
   def key

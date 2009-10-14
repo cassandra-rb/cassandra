@@ -135,7 +135,7 @@ class Cassandra
   # FIXME May not currently delete all records without multiple calls. Waiting
   # for ranged remove support in Cassandra.
   def clear_keyspace!(options = {})
-    @schema.keys.each { |column_family| clear_column_family!(column_family, options) }
+    schema.keys.each { |column_family| clear_column_family!(column_family, options) }
   end
 
 ### Read
@@ -224,7 +224,7 @@ class Cassandra
   # the individual commands.
   def batch(options = {})
     _, _, _, options = 
-      validate_params(@schema.keys.first, "", [options], WRITE_DEFAULTS)
+      validate_params(schema.keys.first, "", [options], WRITE_DEFAULTS)
 
     @batch = []
     yield
@@ -300,5 +300,28 @@ class Cassandra
 
     # FIXME Return atomic thrift thingy
     @batch = mutations.values
+  end
+
+  def schema
+    @schema ||= client.describe_keyspace(@keyspace)
+  end
+
+  def client
+    @client ||= begin
+      transport = Thrift::BufferedTransport.new(Thrift::Socket.new(@host, @port))
+      transport.open
+    
+      client = CassandraThrift::Cassandra::SafeClient.new(
+        CassandraThrift::Cassandra::Client.new(Thrift::BinaryProtocol.new(transport)),
+        transport,
+        !@buffer)
+
+      keyspaces = client.get_string_list_property("keyspaces")
+      unless keyspaces.include?(@keyspace)
+        raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
+      end
+
+      client
+    end
   end
 end
