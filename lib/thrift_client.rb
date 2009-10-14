@@ -6,8 +6,7 @@ class ThriftClient
   DEFAULTS = { 
     :protocol => Thrift::BinaryProtocol,
     :transport => Thrift::FramedTransport,
-    :timeout => 0.2, 
-    :server_retry_delay => 15, 
+    :socket_timeout => 1, 
     :randomize_server_list => true
   }
   
@@ -27,7 +26,7 @@ class ThriftClient
   
   def reconnect!
     @transport.close rescue nil
-    @transport = @options[:transport].new(Thrift::Socket.new(next_server, @port))
+    @transport = @options[:transport].new(Thrift::Socket.new(next_server, @port, @options[:socket_timeout]))
     @transport.open
     @client = @client_class.new(@options[:protocol].new(@transport, false))
   end
