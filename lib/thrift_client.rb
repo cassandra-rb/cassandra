@@ -17,7 +17,8 @@ class ThriftClient
       Thrift::TransportException],
     :raise => true,
     :retries => nil,
-    :server_retry_period => nil
+    :server_retry_period => nil,
+    :defaults => {}
   }.freeze
 
   attr_reader :client, :client_class, :server_list, :options
@@ -36,6 +37,8 @@ Valid optional parameters are:
 <tt>:raise</tt>:: Whether to reraise errors if no responsive servers are found. Defaults to <tt>true</tt>.
 <tt>:retries</tt>:: How many times to retry a request. Defaults to the number of servers defined.
 <tt>:server_retry_period</tt>:: How long to wait before trying to reconnect after marking all servers as down. Defaults to <tt>nil</tt> (do not wait).
+<tt>:defaults</tt>:: Specify defaults to return on a per-method basis, if <tt>:raise</tt> is set to false.
+<tt>:defaults</tt>:: Specify defaults to return on a per-method basis, if <tt>:raise</tt> is set to false.
 
 =end rdoc
 
@@ -58,31 +61,37 @@ Valid optional parameters are:
 
   private
 
-  def method_missing(*args)
+  def method_missing(method_name, *args)
     connect! unless @client
-    @client.send(*args)
-  rescue *@options[:exception_classes]
+    @client.send(method_name, *args)
+  rescue *@options[:exception_classes] => e
     tries ||= @retries
     tries -= 1
     if tries.zero?
       raise if @options[:raise]
+      default(method_name)
     else
       disconnect!
       retry
     end
-  rescue NoServersAvailable
+  rescue NoServersAvailable => e
     raise if @options[:raise]
+    default(method_name)
+  end
+  
+  def default(method_name, *args)
+    @options[:defaults][method_name.to_sym]
   end
   
   def connect!
     server = next_server.to_s.split(":")
     raise ArgumentError, 'Servers must be in the form "host:port"' if server.size != 2
-    
+
     @transport = @options[:transport].new(
       Thrift::Socket.new(server.first, server.last.to_i, @options[:socket_timeout]))
     @transport.open
     @client = @client_class.new(@options[:protocol].new(@transport, false))
-  end  
+  end
 
   def next_server
     if @live_server_list.empty?

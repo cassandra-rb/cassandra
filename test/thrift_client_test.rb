@@ -23,13 +23,23 @@ class ThriftClientTest < Test::Unit::TestCase
       ThriftClient.new(ScribeThrift::Client, @servers.first, :raise => false).Log(@entry)
     end
   end
+  
+  def test_dont_raise_with_defaults
+    client = ThriftClient.new(ScribeThrift::Client, @servers.first, :raise => false,  :defaults => {:Log => 1})
+    assert_equal 1, client.Log(@entry)
+  end
+  
+  def test_defaults_dont_override_no_method_error
+    client = ThriftClient.new(ScribeThrift::Client, @servers, :raise => false,  :defaults => {:Missing => 2})
+    assert_raises(NoMethodError) { client.Missing(@entry) }  
+  end
 
   def test_random_server_list
     @lists = []
     @lists << ThriftClient.new(ScribeThrift::Client, @servers).server_list while @lists.size < 10
     assert @lists.uniq.size > 1
   end
-
+  
   def test_random_fall_through
     assert_nothing_raised do
       10.times { ThriftClient.new(ScribeThrift::Client, @servers).Log(@entry) }
