@@ -11,10 +11,23 @@ The public certificate for this gem is here[http://rubyforge.org/frs/download.ph
 
 == Features
 
-* clean encapsulation of the Thrift API
+* Transparent connection management
+* Configurable failover and retry backoff
 * Ruby 1.9 compatibility
 
 The Github source repository is {here}[http://github.com/fauna/thrift_client/]. Patches and contributions are very welcome.
+
+== Usage
+
+Instantiate a client:
+
+  client = ThriftClient.new(CassandraRb::Client, '127.0.0.1:9160', :retries => 2)
+
+You can then make calls to the server via the <tt>client</tt> instance as if was your internal Thrift client. The connection will be opened lazily and methods will be proxied through.
+
+  client.get_string_list_property("keyspaces")
+  
+On failures, the client will try the remaining servers in the list before giving up. See ThriftClient for more.
 
 == Installation
 

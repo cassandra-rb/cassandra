@@ -24,6 +24,21 @@ class ThriftClient
 
   class NoServersAvailable < StandardError; end
 
+=begin rdoc
+Create a new ThriftClient instance. Accepts an internal Thrift client class (such as CassandraRb::Client), a list of servers with ports, and optional parameters.
+
+Valid optional parameters are:
+
+<tt>:protocol</tt>:: Which Thrift protocol to use. Defaults to <tt>Thrift::BinaryProtocol</tt>.
+<tt>:transport</tt>:: Which Thrift transport to use. Defaults to <tt>Thrift::FramedTransport</tt>.
+<tt>:socket_timeout</tt>:: Timeout to set on the socket connection. Defaults to 1 second.
+<tt>:randomize_server_list</tt>:: Whether to connect to the servers randomly, instead of in order. Defaults to <tt>true</tt>.
+<tt>:raise</tt>:: Whether to reraise errors if no responsive servers are found. Defaults to <tt>true</tt>.
+<tt>:retries</tt>:: How many times to retry a request. Defaults to the number of servers defined.
+<tt>:server_retry_period</tt>:: How long to wait before trying to reconnect after marking all servers as down. Defaults to <tt>nil</tt> (do not wait).
+
+=end rdoc
+
   def initialize(client_class, servers, options = {})
     @options = DEFAULTS.merge(options)
     @client_class = client_class
@@ -35,6 +50,7 @@ class ThriftClient
     @last_retry = Time.now
   end
 
+  # Force the client to disconnect from the server.
   def disconnect!
     @transport.close rescue nil
     @client = nil
