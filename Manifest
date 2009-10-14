@@ -17,7 +17,6 @@ lib/cassandra/debug.rb
 lib/cassandra/long.rb
 lib/cassandra/ordered_hash.rb
 lib/cassandra/protocol.rb
-lib/cassandra/safe_client.rb
 lib/cassandra/time.rb
 lib/cassandra/uuid.rb
 test/cassandra_test.rb

@@ -1,6 +1,6 @@
 
 require 'rubygems'
-require 'thrift'
+require 'thrift_client'
 
 HERE = File.expand_path(File.dirname(__FILE__))
 
@@ -13,7 +13,6 @@ require 'cassandra/time'
 require 'cassandra/comparable'
 require 'cassandra/uuid'
 require 'cassandra/long'
-require 'cassandra/safe_client'
 require 'cassandra/ordered_hash'
 require 'cassandra/columns'
 require 'cassandra/protocol'
