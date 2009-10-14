@@ -1,9 +1,10 @@
 
+require 'rubygems'
 require 'thrift'
 
 class ThriftClient  
   DEFAULTS = { 
-    :protocol => Thrift::BinaryProtocol.new
+    :protocol => Thrift::BinaryProtocol,
     :transport => Thrift::FramedTransport,
     :timeout => 0.2, 
     :server_retry_delay => 15, 
