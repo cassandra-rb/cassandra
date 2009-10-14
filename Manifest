@@ -1,0 +1,8 @@
+CHANGELOG
+LICENSE
+Manifest
+README
+Rakefile
+lib/thrift_client.rb
+test/test_helper.rb
+test/thrift_client_test.rb
