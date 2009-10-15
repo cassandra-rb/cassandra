@@ -5,26 +5,27 @@ require 'thrift_client/thrift'
 
 class ThriftClient
 
+  class NoServersAvailable < StandardError; end
+
   DEFAULTS = {
     :protocol => Thrift::BinaryProtocol,
     :transport => Thrift::FramedTransport,
-    :timeouts => Hash.new(1),
     :randomize_server_list => true,
     :exception_classes => [
       IOError,
       Thrift::Exception,
       Thrift::ProtocolException,
       Thrift::ApplicationException,
-      Thrift::TransportException],
+      Thrift::TransportException,
+      NoServersAvailable],
     :raise => true,
     :retries => nil,
     :server_retry_period => nil,
+    :timeouts => Hash.new(1),
     :defaults => {}
   }.freeze
 
   attr_reader :client, :client_class, :server_list, :options
-
-  class NoServersAvailable < StandardError; end
 
 =begin rdoc
 Create a new ThriftClient instance. Accepts an internal Thrift client class (such as CassandraRb::Client), a list of servers with ports, and optional parameters.
@@ -33,11 +34,11 @@ Valid optional parameters are:
 
 <tt>:protocol</tt>:: Which Thrift protocol to use. Defaults to <tt>Thrift::BinaryProtocol</tt>.
 <tt>:transport</tt>:: Which Thrift transport to use. Defaults to <tt>Thrift::FramedTransport</tt>.
-<tt>:timeouts</tt>:: Specify timeouts on a per-method basis. Defaults to 1 second for everything.
 <tt>:randomize_server_list</tt>:: Whether to connect to the servers randomly, instead of in order. Defaults to <tt>true</tt>.
 <tt>:raise</tt>:: Whether to reraise errors if no responsive servers are found. Defaults to <tt>true</tt>.
 <tt>:retries</tt>:: How many times to retry a request. Defaults to the number of servers defined.
 <tt>:server_retry_period</tt>:: How long to wait before trying to reconnect after marking all servers as down. Defaults to <tt>nil</tt> (do not wait).
+<tt>:timeouts</tt>:: Specify timeouts on a per-method basis. Defaults to 1 second for everything. (Per-method values only work with <tt>Thrift::BufferedTransport</tt>.)
 <tt>:defaults</tt>:: Specify defaults to return on a per-method basis, if <tt>:raise</tt> is set to false.
 
 =end rdoc
@@ -69,29 +70,23 @@ Valid optional parameters are:
   rescue *@options[:exception_classes] => e
     tries ||= @retries
     tries -= 1
-    if tries.zero?
-      respond_to_exception(e, method_name, args)
+    if tries.zero? or e.is_a?(NoServersAvailable)
+      handle_exception(e, method_name, args)
     else
       disconnect!
       retry
     end
-  rescue NoServersAvailable => e
-    respond_to_exception(e, method_name, args)
   end
   
   def set_timeout!(method_name)
     @client.timeout = @options[:timeouts][:method_name.to_sym]
   end
   
-  def respond_to_exception(e, method_name, args)
+  def handle_exception(e, method_name, args)
     raise e if @options[:raise]
-    default(method_name)    
-  end
-
-  def default(method_name, *args)
     @options[:defaults][method_name.to_sym]
   end
-    
+
   def connect!
     server = next_server.to_s.split(":")
     raise ArgumentError, 'Servers must be in the form "host:port"' if server.size != 2
