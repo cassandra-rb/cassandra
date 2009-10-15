@@ -49,6 +49,7 @@ Valid optional parameters are:
     @retries = options[:retries] || @server_list.size
     @server_list = @server_list.sort_by { rand } if @options[:randomize_server_list]
 
+    @set_timeout = @options[:transport].instance_methods.include?("timeout=")
     @live_server_list = @server_list.dup
     @last_retry = Time.now
   end
@@ -63,6 +64,7 @@ Valid optional parameters are:
 
   def method_missing(method_name, *args)
     connect! unless @client
+    set_timeout!(method_name) if @set_timeout
     @client.send(method_name, *args)
   rescue *@options[:exception_classes] => e
     tries ||= @retries
@@ -77,21 +79,25 @@ Valid optional parameters are:
     respond_to_exception(e, method_name, args)
   end
   
-  def default(method_name, *args)
-    @options[:defaults][method_name.to_sym]
+  def set_timeout!(method_name)
+    @client.timeout = @options[:timeouts][:method_name.to_sym]
   end
   
   def respond_to_exception(e, method_name, args)
     raise e if @options[:raise]
     default(method_name)    
   end
-  
+
+  def default(method_name, *args)
+    @options[:defaults][method_name.to_sym]
+  end
+    
   def connect!
     server = next_server.to_s.split(":")
     raise ArgumentError, 'Servers must be in the form "host:port"' if server.size != 2
 
     @transport = @options[:transport].new(
-      Thrift::Socket.new(server.first, server.last.to_i, @options[:timeout]))
+      Thrift::Socket.new(server.first, server.last.to_i, @options[:timeouts].default))
     @transport.open
     @client = @client_class.new(@options[:protocol].new(@transport, false))
   end
