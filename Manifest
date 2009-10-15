@@ -4,5 +4,6 @@ Manifest
 README
 Rakefile
 lib/thrift_client.rb
+lib/thrift_client/thrift.rb
 test/test_helper.rb
 test/thrift_client_test.rb
