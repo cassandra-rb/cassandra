@@ -1,13 +1,14 @@
 
 require 'rubygems'
 require 'thrift'
+require 'thrift_client/thrift'
 
 class ThriftClient
 
   DEFAULTS = {
     :protocol => Thrift::BinaryProtocol,
     :transport => Thrift::FramedTransport,
-    :socket_timeout => 1,
+    :timeouts => Hash.new(1),
     :randomize_server_list => true,
     :exception_classes => [
       IOError,
@@ -32,12 +33,11 @@ Valid optional parameters are:
 
 <tt>:protocol</tt>:: Which Thrift protocol to use. Defaults to <tt>Thrift::BinaryProtocol</tt>.
 <tt>:transport</tt>:: Which Thrift transport to use. Defaults to <tt>Thrift::FramedTransport</tt>.
-<tt>:socket_timeout</tt>:: Timeout to set on the socket connection. Defaults to 1 second.
+<tt>:timeouts</tt>:: Specify timeouts on a per-method basis. Defaults to 1 second for everything.
 <tt>:randomize_server_list</tt>:: Whether to connect to the servers randomly, instead of in order. Defaults to <tt>true</tt>.
 <tt>:raise</tt>:: Whether to reraise errors if no responsive servers are found. Defaults to <tt>true</tt>.
 <tt>:retries</tt>:: How many times to retry a request. Defaults to the number of servers defined.
 <tt>:server_retry_period</tt>:: How long to wait before trying to reconnect after marking all servers as down. Defaults to <tt>nil</tt> (do not wait).
-<tt>:defaults</tt>:: Specify defaults to return on a per-method basis, if <tt>:raise</tt> is set to false.
 <tt>:defaults</tt>:: Specify defaults to return on a per-method basis, if <tt>:raise</tt> is set to false.
 
 =end rdoc
@@ -68,19 +68,22 @@ Valid optional parameters are:
     tries ||= @retries
     tries -= 1
     if tries.zero?
-      raise if @options[:raise]
-      default(method_name)
+      respond_to_exception(e, method_name, args)
     else
       disconnect!
       retry
     end
   rescue NoServersAvailable => e
-    raise if @options[:raise]
-    default(method_name)
+    respond_to_exception(e, method_name, args)
   end
   
   def default(method_name, *args)
     @options[:defaults][method_name.to_sym]
+  end
+  
+  def respond_to_exception(e, method_name, args)
+    raise e if @options[:raise]
+    default(method_name)    
   end
   
   def connect!
@@ -88,7 +91,7 @@ Valid optional parameters are:
     raise ArgumentError, 'Servers must be in the form "host:port"' if server.size != 2
 
     @transport = @options[:transport].new(
-      Thrift::Socket.new(server.first, server.last.to_i, @options[:socket_timeout]))
+      Thrift::Socket.new(server.first, server.last.to_i, @options[:timeout]))
     @transport.open
     @client = @client_class.new(@options[:protocol].new(@transport, false))
   end
