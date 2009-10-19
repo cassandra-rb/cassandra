@@ -152,14 +152,12 @@ module CassandraThrift
       COLUMN_FAMILY = 3
       SUPER_COLUMN = 4
       COLUMN = 5
-      TIMESTAMP = 6
 
-      ::Thrift::Struct.field_accessor self, :column_family, :super_column, :column, :timestamp
+      ::Thrift::Struct.field_accessor self, :column_family, :super_column, :column
       FIELDS = {
         COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
         SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :optional => true},
-        COLUMN => {:type => ::Thrift::Types::STRING, :name => 'column', :optional => true},
-        TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp', :optional => true}
+        COLUMN => {:type => ::Thrift::Types::STRING, :name => 'column', :optional => true}
       }
 
       def struct_fields; FIELDS; end
@@ -210,27 +208,6 @@ module CassandraThrift
       def struct_fields; FIELDS; end
 
       def validate
-      end
-
-    end
-
-    class BatchMutation
-      include ::Thrift::Struct
-      KEY = 1
-      CFMAP = 2
-      COLUMN_PATHS = 3
-
-      ::Thrift::Struct.field_accessor self, :key, :cfmap, :column_paths
-      FIELDS = {
-        KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
-        CFMAP => {:type => ::Thrift::Types::MAP, :name => 'cfmap', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}}, :optional => true},
-        COLUMN_PATHS => {:type => ::Thrift::Types::LIST, :name => 'column_paths', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnPath}, :optional => true}
-      }
-
-      def struct_fields; FIELDS; end
-
-      def validate
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field key is unset!') unless @key
       end
 
     end
