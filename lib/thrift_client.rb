@@ -61,6 +61,17 @@ Valid optional parameters are:
     end
   end
 
+  # Force the client to connect to the server.
+  def connect!
+    server = next_server.to_s.split(":")
+    raise ArgumentError, 'Servers must be in the form "host:port"' if server.size != 2
+
+    @transport = @options[:transport].new(
+      Thrift::Socket.new(server.first, server.last.to_i, @options[:timeouts].default))
+    @transport.open
+    @client = @client_class.new(@options[:protocol].new(@transport, false))
+  end
+
   # Force the client to disconnect from the server.
   def disconnect!
     @transport.close rescue nil
@@ -91,16 +102,6 @@ Valid optional parameters are:
   def handle_exception(e, method_name, args)
     raise e if @options[:raise]
     @options[:defaults][method_name.to_sym]
-  end
-
-  def connect!
-    server = next_server.to_s.split(":")
-    raise ArgumentError, 'Servers must be in the form "host:port"' if server.size != 2
-
-    @transport = @options[:transport].new(
-      Thrift::Socket.new(server.first, server.last.to_i, @options[:timeouts].default))
-    @transport.open
-    @client = @client_class.new(@options[:protocol].new(@transport, false))
   end
 
   def next_server
