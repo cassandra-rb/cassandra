@@ -56,7 +56,7 @@ Valid optional parameters are:
 
     @client_class.instance_methods.each do |method_name|
       if method_name =~ /^recv_(.*)$/
-        instance_eval("undef :#{$1}") if respond_to?($1)
+        instance_eval("def #{$1}(*args); proxy(:'#{$1}', *args); end")
       end
     end
   end
@@ -69,7 +69,7 @@ Valid optional parameters are:
 
   private
 
-  def method_missing(method_name, *args)
+  def proxy(method_name, *args)
     connect! unless @client
     set_timeout!(method_name) if @set_timeout
     @client.send(method_name, *args)

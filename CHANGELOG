@@ -1,5 +1,5 @@
 
-v0.1.3. Clear out methods that mask the proxy.
+v0.1.3. Define methods explicitly.
 
 v0.1.2. Support default responses.
 
