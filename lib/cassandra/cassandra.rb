@@ -90,17 +90,13 @@ class Cassandra
   # a nested hash for a super column family. Supports the <tt>:consistency</tt>
   # and <tt>:timestamp</tt> options.
   def insert(column_family, key, hash, options = {})
-    column_family, _, _, options = 
-      validate_params(column_family, key, [options], WRITE_DEFAULTS)
+    column_family, _, _, options = validate_params(column_family, key, [options], WRITE_DEFAULTS)
 
-    args = [column_family, hash, options[:timestamp] || Time.stamp]
-    columns = is_super(column_family) ? hash_to_super_columns(*args) : hash_to_columns(*args)
-    mutation = CassandraThrift::BatchMutation.new(
-      :key => key,
-      :cfmap => {column_family => columns},
-      :column_paths => [])
+    timestamp = options[:timestamp] || Time.stamp
+    cfmap = hash_to_cfmap(column_family, hash, timestamp)
+    mutation = [:insert, [key, cfmap, options[:consistency]]]
 
-    @batch ? @batch << mutation : _mutate([mutation], options[:consistency])
+    @batch ? @batch << mutation : _insert(*mutation[1])
   end
 
   ## Delete
@@ -109,17 +105,15 @@ class Cassandra
   # path you request. Supports the <tt>:consistency</tt> and <tt>:timestamp</tt>
   # options.
   def remove(column_family, key, *columns_and_options)
-    column_family, column, sub_column, options = 
-      validate_params(column_family, key, columns_and_options, WRITE_DEFAULTS)
+    column_family, column, sub_column, options = validate_params(column_family, key, columns_and_options, WRITE_DEFAULTS)
 
-    args = {:column_family => column_family, :timestamp => options[:timestamp] || Time.stamp}
+    args = {:column_family => column_family}
     columns = is_super(column_family) ? {:super_column => column, :column => sub_column} : {:column => column}
-    mutation = CassandraThrift::BatchMutation.new(
-      :key => key,
-      :cfmap => {},
-      :column_paths => [CassandraThrift::ColumnPath.new(args.merge(columns))])
-
-    @batch ? @batch << mutation : _mutate([mutation], options[:consistency])
+    column_path = CassandraThrift::ColumnPath.new(args.merge(columns))
+    
+    mutation = [:remove, [key, column_path, options[:timestamp] || Time.stamp, options[:consistency]]]
+    
+    @batch ? @batch << mutation : _remove(*mutation[1])
   end
 
   # Remove all rows in the column family you request. Supports options
@@ -229,7 +223,15 @@ class Cassandra
     @batch = []
     yield
     compact_mutations!
-    _mutate(@batch, options[:consistency])
+
+    @batch.each do |mutation|
+      case mutation.first
+      when :insert
+        _insert(*mutation[1])
+      when :remove
+        _remove(*mutation[1])
+      end
+    end
   ensure
     @batch = nil
   end
@@ -241,9 +243,8 @@ class Cassandra
   def validate_params(column_family, keys, args, options)
     options = options.dup
     column_family = column_family.to_s
-
     # Keys
-    Array(keys).each do |key|      
+    [keys].flatten.each do |key|
       raise ArgumentError, "Key #{key.inspect} must be a String for #{calling_method}" unless key.is_a?(String)
     end
     
@@ -280,26 +281,7 @@ class Cassandra
 
   # Roll up queued mutations, to improve atomicity.
   def compact_mutations!
-    mutations = {}
-
-    # Nested hash merge
-    @batch.each do |m|
-      if mutation = mutations[m.key]
-        # Inserts
-        if columns = mutation.cfmap[m.cfmap.keys.first]
-          columns.concat(m.cfmap.values.first)
-        else
-          mutation.cfmap.merge!(m.cfmap)
-        end
-        # Deletes
-        mutation.column_paths.concat(m.column_paths)
-      else
-        mutations[m.key] = m
-      end
-    end
-
-    # FIXME Return atomic thrift thingy
-    @batch = mutations.values
+    #TODO re-do this rollup
   end
 
   def schema

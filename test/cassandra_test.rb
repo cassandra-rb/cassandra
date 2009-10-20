@@ -26,7 +26,7 @@ class CassandraTest < Test::Unit::TestCase
 
   def test_connection_reopens
     assert_raises(Thrift::ProtocolException) do
-      @twitter.send("_mutate", [], -5)
+      @twitter.send("_insert", [], -5, '')
     end
     assert_nothing_raised do
       @twitter.insert(:Statuses, key, {'body' => 'v'})
@@ -319,7 +319,7 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_complain_about_nil_key
-    assert_raises(Thrift::ProtocolException) do
+    assert_raises(ArgumentError) do
       @twitter.insert(:Statuses, nil, {'text' => 'crap'})
     end
   end
