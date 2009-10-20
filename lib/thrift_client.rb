@@ -52,7 +52,13 @@ Valid optional parameters are:
 
     @set_timeout = @options[:transport].instance_methods.include?("timeout=")
     @live_server_list = @server_list.dup
-    @last_retry = Time.now
+    @last_retry = Time.now    
+
+    @client_class.instance_methods.each do |method_name|
+      if method_name =~ /^recv_(.*)$/
+        instance_eval("undef :#{$1}") if respond_to?($1)
+      end
+    end
   end
 
   # Force the client to disconnect from the server.
@@ -106,5 +112,5 @@ Valid optional parameters are:
       @live_server_list = @server_list.dup
     end
     @live_server_list.pop
-  end
+  end  
 end
