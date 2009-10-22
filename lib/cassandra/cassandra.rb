@@ -57,7 +57,7 @@ class Cassandra
     :transport => Thrift::BufferedTransport
   }.freeze
 
-  attr_reader :keyspace, :servers, :client, :schema, :thrift_client_options
+  attr_reader :keyspace, :servers, :schema, :thrift_client_options
 
   # Create a new Cassandra instance and open the connection.
   def initialize(keyspace, servers = "127.0.0.1:9160", thrift_client_options = {})
@@ -68,19 +68,26 @@ class Cassandra
 
     @keyspace = keyspace
     @servers = Array(servers)
-    @client = ThriftClient.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
+  end
 
-    keyspaces = @client.get_string_list_property("keyspaces")
-    unless keyspaces.include?(@keyspace)
-      raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
+
+  def client
+    @client ||= begin
+      client = ThriftClient.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
+      unless client.get_string_list_property("keyspaces").include?(@keyspace)
+        raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
+      end
+      client
     end
+  end
 
-    @schema = @client.describe_keyspace(@keyspace)
+  def keyspaces
+    @keyspaces ||= client.get_string_list_property("keyspaces")
   end
 
   def inspect
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
-      schema.map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
+      schema(false).map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
     }}, @servers=#{servers.inspect}>"
   end
 
@@ -284,26 +291,11 @@ class Cassandra
     #TODO re-do this rollup
   end
 
-  def schema
-    @schema ||= client.describe_keyspace(@keyspace)
-  end
-
-  def client
-    @client ||= begin
-      transport = Thrift::BufferedTransport.new(Thrift::Socket.new(@host, @port))
-      transport.open
-    
-      client = CassandraThrift::Cassandra::SafeClient.new(
-        CassandraThrift::Cassandra::Client.new(Thrift::BinaryProtocol.new(transport)),
-        transport,
-        !@buffer)
-
-      keyspaces = client.get_string_list_property("keyspaces")
-      unless keyspaces.include?(@keyspace)
-        raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
-      end
-
-      client
+  def schema(load=true)
+    if !load && !@schema
+      []
+    else
+      @schema ||= client.describe_keyspace(@keyspace)
     end
   end
 end
