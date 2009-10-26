@@ -14,6 +14,7 @@ The public certificate for this gem is here[http://rubyforge.org/frs/download.ph
 * Transparent connection management
 * Configurable failover and retry backoff
 * Ruby 1.9 compatibility
+* ThriftClient::Simple class, for working without generated bindings.
 
 The Github source repository is {here}[http://github.com/fauna/thrift_client/]. Patches and contributions are very welcome.
 
