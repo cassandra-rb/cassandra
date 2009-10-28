@@ -9,6 +9,7 @@ class ThriftClient
 
   DEFAULTS = {
     :protocol => Thrift::BinaryProtocol,
+    :protocol_extra_params => [],
     :transport => Thrift::FramedTransport,
     :randomize_server_list => true,
     :exception_classes => [
@@ -33,6 +34,7 @@ Create a new ThriftClient instance. Accepts an internal Thrift client class (suc
 Valid optional parameters are:
 
 <tt>:protocol</tt>:: Which Thrift protocol to use. Defaults to <tt>Thrift::BinaryProtocol</tt>.
+<tt>:protocol_extra_params</tt>:: An array of additional parameters to pass to the protocol initialization call. Defaults to <tt>[]</tt>.
 <tt>:transport</tt>:: Which Thrift transport to use. Defaults to <tt>Thrift::FramedTransport</tt>.
 <tt>:randomize_server_list</tt>:: Whether to connect to the servers randomly, instead of in order. Defaults to <tt>true</tt>.
 <tt>:raise</tt>:: Whether to reraise errors if no responsive servers are found. Defaults to <tt>true</tt>.
@@ -69,7 +71,7 @@ Valid optional parameters are:
     @transport = @options[:transport].new(
       Thrift::Socket.new(server.first, server.last.to_i, @options[:timeouts].default))
     @transport.open
-    @client = @client_class.new(@options[:protocol].new(@transport, false))
+    @client = @client_class.new(@options[:protocol].new(@transport, *@options[:protocol_extra_params]))
   end
 
   # Force the client to disconnect from the server.
