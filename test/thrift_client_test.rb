@@ -15,7 +15,7 @@ class ThriftClientTest < Test::Unit::TestCase
 
   def test_non_random_fall_through
     assert_nothing_raised do
-      ThriftClient.new(ScribeThrift::Client, @servers, @options).Log(@entry)
+      ThriftClient.new(ScribeThrift::Client, @servers, @options.merge(:randomize_server_list => false)).Log(@entry)
     end
   end
 
