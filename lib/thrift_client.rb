@@ -54,7 +54,7 @@ Valid optional parameters are:
 
     @set_timeout = @options[:transport].instance_methods.include?("timeout=")
     @live_server_list = @server_list.dup
-    @last_retry = Time.now    
+    @last_retry = Time.now
 
     @client_class.instance_methods.each do |method_name|
       if method_name =~ /^recv_(.*)$/
@@ -96,11 +96,11 @@ Valid optional parameters are:
       retry
     end
   end
-  
+
   def set_timeout!(method_name)
     @client.timeout = @options[:timeouts][:method_name.to_sym]
   end
-  
+
   def handle_exception(e, method_name, args)
     raise e if @options[:raise]
     @options[:defaults][method_name.to_sym]
@@ -115,5 +115,5 @@ Valid optional parameters are:
       @live_server_list = @server_list.dup
     end
     @live_server_list.pop
-  end  
+  end
 end
