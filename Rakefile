@@ -16,7 +16,7 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
   end
 end
 
-REVISION = "3582eaf49cacbe79374bec2d52632f68f003db99"
+REVISION = "c1fa17c0e359fa032bdb2d6b5f63120359ff881f"
 
 PATCHES = []
 
@@ -72,7 +72,7 @@ task :clone_cassandra => [:java, :git] do
       put "Checkout failed. Try:\n  #{cmd}"
       exit(1)
     end
-  end  
+  end
 end
 
 desc "Check out the right revision"
