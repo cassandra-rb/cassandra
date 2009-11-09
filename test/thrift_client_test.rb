@@ -61,11 +61,26 @@ class ThriftClientTest < Test::Unit::TestCase
     end
   end
   
-  def test_timeout
+  def test_framed_transport_timeout
     socket = stub_server(@socket)
     measurement = Benchmark.measure do
       assert_raises(Thrift::TransportException) do
-        ThriftClient.new(ScribeThrift::Client, "127.0.0.1:#{@socket}", @options.merge(:timeouts => Hash.new(@timeout))).Log(@entry) 
+        ThriftClient.new(ScribeThrift::Client, "127.0.0.1:#{@socket}", 
+          @options.merge(:timeouts => Hash.new(@timeout))
+        ).Log(@entry) 
+      end
+    end
+    assert(measurement.real < @timeout + 0.01)
+    socket.close
+  end
+
+  def test_buffered_transport_timeout
+    socket = stub_server(@socket)
+    measurement = Benchmark.measure do
+      assert_raises(Thrift::TransportException) do
+        ThriftClient.new(ScribeThrift::Client, "127.0.0.1:#{@socket}",
+          @options.merge(:timeouts => Hash.new(@timeout), :transport => Thrift::BufferedTransport)
+        ).Log(@entry) 
       end
     end
     assert(measurement.real < @timeout + 0.01)
