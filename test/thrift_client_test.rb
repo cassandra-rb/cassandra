@@ -70,7 +70,7 @@ class ThriftClientTest < Test::Unit::TestCase
         ).Log(@entry) 
       end
     end
-    assert(measurement.real < @timeout + 0.01)
+    assert((measurement.real < @timeout + 0.01), "#{measurement.real} > #{@timeout}")
     socket.close
   end
 
@@ -83,7 +83,7 @@ class ThriftClientTest < Test::Unit::TestCase
         ).Log(@entry) 
       end
     end
-    assert(measurement.real < @timeout + 0.01)
+    assert((measurement.real < @timeout + 0.01), "#{measurement.real} > #{@timeout}")
     socket.close
   end
 
