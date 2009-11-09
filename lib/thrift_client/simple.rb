@@ -178,7 +178,7 @@ class ThriftClient
       end
 
       def pack(value)
-        [ type.to_i, fid, ThriftClient::Simple.pack_value(type, value) ].pack("cna*")
+        value.nil? ? "" : [ type.to_i, fid, SimpleThrift.pack_value(type, value) ].pack("cna*")
       end
     end
 
@@ -240,8 +240,8 @@ class ThriftClient
       end
 
       def self.thrift_method(name, rtype, *args)
-        arg_struct = ThriftClient::Simple.make_struct("Args__#{name}", *args)
-        rv_struct = ThriftClient::Simple.make_struct("Retval__#{name}", ThriftClient::Simple::Field.new(:rv, rtype, 0))
+        arg_struct = ThriftClient::Simple.make_struct("Args__#{self.name}__#{name}", *args)
+        rv_struct = ThriftClient::Simple.make_struct("Retval__#{self.name}__#{name}", ThriftClient::Simple::Field.new(:rv, rtype, 0))
         _arg_structs[name.to_sym] = [ arg_struct, rv_struct ]
 
         arg_names = args.map { |a| a.name.to_s }.join(", ")
