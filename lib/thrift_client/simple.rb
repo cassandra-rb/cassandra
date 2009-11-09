@@ -178,7 +178,7 @@ class ThriftClient
       end
 
       def pack(value)
-        value.nil? ? "" : [ type.to_i, fid, SimpleThrift.pack_value(type, value) ].pack("cna*")
+        value.nil? ? "" : [ type.to_i, fid, ThriftClient::Simple.pack_value(type, value) ].pack("cna*")
       end
     end
 
