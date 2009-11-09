@@ -61,7 +61,7 @@ class ThriftClientTest < Test::Unit::TestCase
     end
   end
   
-  def test_connection_timeout
+  def test_timeout
     socket = stub_server(@socket)
     measurement = Benchmark.measure do
       assert_raises(Thrift::TransportException) do
