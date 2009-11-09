@@ -16,13 +16,15 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
   end
 end
 
-REVISION = "574b4e12dde21bfa27709bfce3d591e1e7a2a23f"
+REVISION = "3582eaf49cacbe79374bec2d52632f68f003db99"
 
 PATCHES = []
 
 CASSANDRA_HOME = "#{ENV['HOME']}/cassandra/server"
 
 CASSANDRA_TEST = "#{ENV['HOME']}/cassandra/test"
+
+GIT_REPO = "git://github.com/ryanking/cassandra.git"
 
 directory CASSANDRA_TEST
 
@@ -61,11 +63,11 @@ task :git do
 end
 
 desc "Checkout Cassandra from git"
-task :checkout_cassandra => [:java, :git] do
+task :clone_cassandra => [:java, :git] do
   # Like a git submodule, but all in one more obvious place
   unless File.exist?(CASSANDRA_HOME)
     puts "Checking Cassandra out from git"
-    cmd = "git clone git://git.apache.org/cassandra.git #{CASSANDRA_HOME}"
+    cmd = "git clone #{GIT_REPO} #{CASSANDRA_HOME}"
     if !system(cmd)
       put "Checkout failed. Try:\n  #{cmd}"
       exit(1)
@@ -73,30 +75,24 @@ task :checkout_cassandra => [:java, :git] do
   end  
 end
 
-desc "Apply patches to Cassandra checkout; use RESET=1 to force"
-task :patch_cassandra => [:checkout_cassandra] do
-  # Verify checkout revision and patchset
-  Dir.chdir(CASSANDRA_HOME) do  
-    current_checkout = `git show HEAD~#{PATCHES.size} | head -n1`
+desc "Check out the right revision"
+task :checkout_cassandra => [:clone_cassandra] do
+  Dir.chdir(CASSANDRA_HOME) do
+    current_checkout = `git log | head -n1`
     if !current_checkout.include?(REVISION)
-      puts "Updating Cassandra and applying patches"
+      puts "Updating Cassandra."
       system("rm -rf #{CASSANDRA_TEST}/data")
       system("ant clean && git fetch && git reset #{REVISION} --hard")
-      # Delete untracked files, so that the patchs can apply again
+      # Delete untracked files
       Array(`git status`[/Untracked files:(.*)$/m, 1].to_s.split("\n")[3..-1]).each do |file|
         File.unlink(file.sub(/^.\s+/, "")) rescue nil
-      end
-      # Patch, with a handy commit for each one
-      PATCHES.each do |url|
-        raise "#{url} failed" unless system("curl #{url} | patch -p1")
-        system("git commit -a -m 'Applied patch: #{url.inspect}'")
       end
     end
   end
 end
 
 desc "Rebuild Cassandra"
-task :build_cassandra => [:patch_cassandra] do
+task :build_cassandra => [:checkout_cassandra] do
   unless File.exist?("#{CASSANDRA_HOME}/build")
     puts "Building Cassandra"
     cmd = "cd #{CASSANDRA_HOME} && ant"
