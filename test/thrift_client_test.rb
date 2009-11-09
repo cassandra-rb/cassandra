@@ -4,6 +4,8 @@ class ThriftClientTest < Test::Unit::TestCase
   def setup
     @entry = [ScribeThrift::LogEntry.new(:message => "something", :category => "thrift_client")]
     @servers = ["127.0.0.1:1461", "127.0.0.1:1462", "127.0.0.1:1463"]
+    @socket = 1461
+    @timeout = 0.2
     @options = {:protocol_extra_params => [false]}
   end
 
@@ -58,6 +60,17 @@ class ThriftClientTest < Test::Unit::TestCase
       ThriftClient.new(ScribeThrift::Client, @servers[0,2], @options).Log(@entry)
     end
   end
+  
+  def test_connection_timeout
+    socket = stub_server(@socket)
+    measurement = Benchmark.measure do
+      assert_raises(Thrift::TransportException) do
+        ThriftClient.new(ScribeThrift::Client, "127.0.0.1:#{@socket}", @options.merge(:timeouts => Hash.new(@timeout))).Log(@entry) 
+      end
+    end
+    assert(measurement.real < @timeout + 0.01)
+    socket.close
+  end
 
   def test_retry_period
     client = ThriftClient.new(ScribeThrift::Client, @servers[0,2], @options.merge(:server_retry_period => 1))
@@ -66,4 +79,12 @@ class ThriftClientTest < Test::Unit::TestCase
     sleep 1
     assert_raises(Thrift::TransportException) { client.Log(@entry) }
   end
+  
+  private
+  
+  def stub_server(port)
+    socket = TCPServer.new('127.0.0.1', port)
+    Thread.new { socket.accept }
+    socket
+  end  
 end
