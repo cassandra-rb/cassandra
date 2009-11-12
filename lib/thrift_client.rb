@@ -29,7 +29,7 @@ class ThriftClient
       NoServersAvailable],
     :raise => true,
     :retries => nil,
-    :server_retry_period => nil,
+    :server_retry_period => 1,
     :timeouts => Hash.new(1),
     :defaults => {}
   }.freeze
@@ -47,7 +47,7 @@ Valid optional parameters are:
 <tt>:randomize_server_list</tt>:: Whether to connect to the servers randomly, instead of in order. Defaults to <tt>true</tt>.
 <tt>:raise</tt>:: Whether to reraise errors if no responsive servers are found. Defaults to <tt>true</tt>.
 <tt>:retries</tt>:: How many times to retry a request. Defaults to the number of servers defined.
-<tt>:server_retry_period</tt>:: How long to wait before trying to reconnect after marking all servers as down. Defaults to <tt>nil</tt> (do not wait).
+<tt>:server_retry_period</tt>:: How many seconds to wait before trying to reconnect after marking all servers as down. Defaults to <tt>1</tt>. Set to <tt>nil</tt> to retry endlessly.
 <tt>:timeouts</tt>:: Specify timeouts on a per-method basis. Defaults to 1 second for everything. (Per-method values only work with <tt>Thrift::BufferedTransport</tt>.)
 <tt>:defaults</tt>:: Specify defaults to return on a per-method basis, if <tt>:raise</tt> is set to false.
 
@@ -80,6 +80,8 @@ Valid optional parameters are:
       Thrift::Socket.new(server.first, server.last.to_i, @options[:timeouts].default))
     @transport.open
     @client = @client_class.new(@options[:protocol].new(@transport, *@options[:protocol_extra_params]))
+  rescue Thrift::TransportException
+    retry
   end
 
   # Force the client to disconnect from the server.
@@ -94,10 +96,11 @@ Valid optional parameters are:
     connect! unless @client
     set_timeout!(method_name) if @set_timeout
     @client.send(method_name, *args)
+  rescue NoServersAvailable => e
+    handle_exception(e, method_name, args)
   rescue *@options[:exception_classes] => e
-    tries ||= @retries
-    tries -= 1
-    if tries.zero? or e.is_a?(NoServersAvailable)
+    tries ||= @retries    
+    if (tries -= 1) == 0
       handle_exception(e, method_name, args)
     else
       disconnect!

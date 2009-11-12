@@ -1,3 +1,6 @@
+
+v0.2.2. Fix connect bug.
+
 v0.2.1. Don't turn off strict_read by default; allow override.
 
 v0.2. Add ThriftClient::Simple (Robey).

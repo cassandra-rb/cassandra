@@ -56,8 +56,10 @@ class ThriftClientTest < Test::Unit::TestCase
   end
 
   def test_no_servers_eventually_raise
-    assert_raises(Thrift::TransportException) do
-      ThriftClient.new(ScribeThrift::Client, @servers[0,2], @options).Log(@entry)
+    client = ThriftClient.new(ScribeThrift::Client, @servers[0,2], @options)
+    assert_raises(ThriftClient::NoServersAvailable) do
+      client.Log(@entry)
+      client.disconnect!
     end
   end
   
@@ -89,10 +91,9 @@ class ThriftClientTest < Test::Unit::TestCase
 
   def test_retry_period
     client = ThriftClient.new(ScribeThrift::Client, @servers[0,2], @options.merge(:server_retry_period => 1))
-    assert_raises(Thrift::TransportException) { client.Log(@entry) }
     assert_raises(ThriftClient::NoServersAvailable) { client.Log(@entry) }
-    sleep 1
-    assert_raises(Thrift::TransportException) { client.Log(@entry) }
+    sleep 1.1
+    assert_raises(ThriftClient::NoServersAvailable) { client.Log(@entry) }
   end
   
   private
