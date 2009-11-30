@@ -64,31 +64,47 @@ class ThriftClientTest < Test::Unit::TestCase
   end
   
   def test_framed_transport_timeout
-    socket = stub_server(@socket)
-    measurement = Benchmark.measure do
-      assert_raises(Thrift::TransportException) do
-        ThriftClient.new(ScribeThrift::Client, "127.0.0.1:#{@socket}", 
-          @options.merge(:timeout => @timeout)
-        ).Log(@entry) 
+    stub_server(@socket) do |socket|
+      measurement = Benchmark.measure do
+        assert_raises(Thrift::TransportException) do
+          ThriftClient.new(ScribeThrift::Client, "127.0.0.1:#{@socket}", 
+            @options.merge(:timeout => @timeout)
+          ).Log(@entry) 
+        end
       end
+      assert((measurement.real > @timeout - 0.01), "#{measurement.real} < #{@timeout}")
+      assert((measurement.real < @timeout + 0.01), "#{measurement.real} > #{@timeout}")
     end
-    assert((measurement.real < @timeout + 0.01), "#{measurement.real} > #{@timeout}")
-    socket.close
   end
   
-  def test_buffered_transport_timeout_override
-    log_timeout = @timeout * 4
-    socket = stub_server(@socket)
-    measurement = Benchmark.measure do
-      assert_raises(Thrift::TransportException) do
-        ThriftClient.new(ScribeThrift::Client, "127.0.0.1:#{@socket}",
-          @options.merge(:timeout => @timeout, :timeout_overrides => {:Log => log_timeout}, :transport => Thrift::BufferedTransport)
-        ).Log(@entry) 
+  def test_buffered_transport_timeout
+    stub_server(@socket) do |socket|
+      measurement = Benchmark.measure do
+        assert_raises(Thrift::TransportException) do
+          ThriftClient.new(ScribeThrift::Client, "127.0.0.1:#{@socket}",
+            @options.merge(:timeout => @timeout, :transport => Thrift::BufferedTransport)
+          ).Log(@entry) 
+        end
       end
+      assert((measurement.real > @timeout - 0.01), "#{measurement.real} < #{@timeout}")
+      assert((measurement.real < @timeout + 0.01), "#{measurement.real} > #{@timeout}")
     end
-    assert((measurement.real > log_timeout / 2), "#{measurement.real} > #{log_timeout / 2}")
-    assert((measurement.real < log_timeout + 0.01), "#{measurement.real} < #{log_timeout}")
-    socket.close  
+  end  
+  
+  def test_buffered_transport_timeout_override
+    # FIXME Large timeout values always are applied twice for some bizarre reason
+    log_timeout = @timeout * 4
+    stub_server(@socket) do |socket|
+      measurement = Benchmark.measure do
+        assert_raises(Thrift::TransportException) do
+          ThriftClient.new(ScribeThrift::Client, "127.0.0.1:#{@socket}",
+            @options.merge(:timeout => @timeout, :timeout_overrides => {:Log => log_timeout}, :transport => Thrift::BufferedTransport)
+          ).Log(@entry) 
+        end
+      end
+      assert((measurement.real > log_timeout - 0.01), "#{measurement.real} < #{log_timeout }")
+      assert((measurement.real < log_timeout + 0.01), "#{measurement.real} > #{log_timeout}")
+    end
   end
 
   def test_retry_period
@@ -103,6 +119,8 @@ class ThriftClientTest < Test::Unit::TestCase
   def stub_server(port)
     socket = TCPServer.new('127.0.0.1', port)
     Thread.new { socket.accept }
-    socket
+    yield socket
+  ensure
+    socket.close
   end  
 end
