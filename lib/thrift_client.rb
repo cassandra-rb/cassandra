@@ -51,8 +51,8 @@ Valid optional parameters are:
 <tt>:retries</tt>:: How many times to retry a request. Defaults to the number of servers defined.
 <tt>:server_retry_period</tt>:: How many seconds to wait before trying to reconnect after marking all servers as down. Defaults to <tt>1</tt>. Set to <tt>nil</tt> to retry endlessly.
 <tt>:server_max_requests</tt>:: How many requests to perform before moving on to the next server in the pool, regardless of error status. Defaults to <tt>nil</tt> (no limit).
-<tt>:timeout</tt>:: Specify the default timeout for every call. Defaults to <tt>.
-<tt>:timeout_overrides</tt>:: Specify timeouts on a per-method basis. Only work with <tt>Thrift::BufferedTransport</tt>.
+<tt>:timeout</tt>:: Specify the default timeout in seconds. Defaults to <tt>1</tt>.
+<tt>:timeout_overrides</tt>:: Specify additional timeouts on a per-method basis, in seconds. Only works with <tt>Thrift::BufferedTransport</tt>.
 <tt>:defaults</tt>:: Specify default values to return on a per-method basis, if <tt>:raise</tt> is set to false.
 
 =end rdoc
