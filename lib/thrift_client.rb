@@ -30,7 +30,8 @@ class ThriftClient
     :raise => true,
     :retries => nil,
     :server_retry_period => 1,
-    :timeouts => Hash.new(1),
+    :timeout => 1,
+    :timeout_overrides => {},
     :defaults => {}
   }.freeze
 
@@ -48,8 +49,9 @@ Valid optional parameters are:
 <tt>:raise</tt>:: Whether to reraise errors if no responsive servers are found. Defaults to <tt>true</tt>.
 <tt>:retries</tt>:: How many times to retry a request. Defaults to the number of servers defined.
 <tt>:server_retry_period</tt>:: How many seconds to wait before trying to reconnect after marking all servers as down. Defaults to <tt>1</tt>. Set to <tt>nil</tt> to retry endlessly.
-<tt>:timeouts</tt>:: Specify timeouts on a per-method basis. Defaults to 1 second for everything. (Per-method values only work with <tt>Thrift::BufferedTransport</tt>.)
-<tt>:defaults</tt>:: Specify defaults to return on a per-method basis, if <tt>:raise</tt> is set to false.
+<tt>:timeout</tt>:: Specify the default timeout for every call. Defaults to <tt>.
+<tt>:timeout_overrides</tt>:: Specify timeouts on a per-method basis. Only work with <tt>Thrift::BufferedTransport</tt>.
+<tt>:defaults</tt>:: Specify default values to return on a per-method basis, if <tt>:raise</tt> is set to false.
 
 =end rdoc
 
@@ -60,7 +62,14 @@ Valid optional parameters are:
     @retries = options[:retries] || @server_list.size
     @server_list = @server_list.sort_by { rand } if @options[:randomize_server_list]
 
-    @set_timeout = @options[:transport].instance_methods.include?("timeout=")
+    if @options[:timeout_overrides].any?
+      if @options[:transport].instance_methods.include?("timeout=")
+        @set_timeout = true
+      else
+        warn "ThriftClient: Timeout overrides have no effect with with transport type #{@options[:transport]}"
+      end
+    end
+    
     @live_server_list = @server_list.dup
     @last_retry = Time.now
 
@@ -77,7 +86,7 @@ Valid optional parameters are:
     raise ArgumentError, 'Servers must be in the form "host:port"' if server.size != 2
 
     @transport = @options[:transport].new(
-      Thrift::Socket.new(server.first, server.last.to_i, @options[:timeouts].default))
+      Thrift::Socket.new(server.first, server.last.to_i, @options[:timeout]))
     @transport.open
     @client = @client_class.new(@options[:protocol].new(@transport, *@options[:protocol_extra_params]))
   rescue Thrift::TransportException
@@ -109,7 +118,7 @@ Valid optional parameters are:
   end
 
   def set_timeout!(method_name)
-    @client.timeout = @options[:timeouts][:method_name.to_sym]
+    @client.timeout = @options[:timeout_overrides][method_name.to_sym] || @options[:timeout]
   end
 
   def handle_exception(e, method_name, args)

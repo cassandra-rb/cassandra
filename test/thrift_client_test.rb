@@ -68,25 +68,27 @@ class ThriftClientTest < Test::Unit::TestCase
     measurement = Benchmark.measure do
       assert_raises(Thrift::TransportException) do
         ThriftClient.new(ScribeThrift::Client, "127.0.0.1:#{@socket}", 
-          @options.merge(:timeouts => Hash.new(@timeout))
+          @options.merge(:timeout => @timeout)
         ).Log(@entry) 
       end
     end
     assert((measurement.real < @timeout + 0.01), "#{measurement.real} > #{@timeout}")
     socket.close
   end
-
-  def test_buffered_transport_timeout
+  
+  def test_buffered_transport_timeout_override
+    log_timeout = @timeout * 4
     socket = stub_server(@socket)
     measurement = Benchmark.measure do
       assert_raises(Thrift::TransportException) do
         ThriftClient.new(ScribeThrift::Client, "127.0.0.1:#{@socket}",
-          @options.merge(:timeouts => Hash.new(@timeout), :transport => Thrift::BufferedTransport)
+          @options.merge(:timeout => @timeout, :timeout_overrides => {:Log => log_timeout}, :transport => Thrift::BufferedTransport)
         ).Log(@entry) 
       end
     end
-    assert((measurement.real < @timeout + 0.01), "#{measurement.real} > #{@timeout}")
-    socket.close
+    assert((measurement.real > log_timeout / 2), "#{measurement.real} > #{log_timeout / 2}")
+    assert((measurement.real < log_timeout + 0.01), "#{measurement.real} < #{log_timeout}")
+    socket.close  
   end
 
   def test_retry_period

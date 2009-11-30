@@ -1,4 +1,6 @@
 
+v0.3. Change default timeout semantics; hash default was too sneaky. Fix bug.
+
 v0.2.2. Fix connect bug.
 
 v0.2.1. Don't turn off strict_read by default; allow override.
