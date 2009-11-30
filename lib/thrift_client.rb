@@ -30,6 +30,7 @@ class ThriftClient
     :raise => true,
     :retries => nil,
     :server_retry_period => 1,
+    :server_max_requests => nil,
     :timeout => 1,
     :timeout_overrides => {},
     :defaults => {}
@@ -49,6 +50,7 @@ Valid optional parameters are:
 <tt>:raise</tt>:: Whether to reraise errors if no responsive servers are found. Defaults to <tt>true</tt>.
 <tt>:retries</tt>:: How many times to retry a request. Defaults to the number of servers defined.
 <tt>:server_retry_period</tt>:: How many seconds to wait before trying to reconnect after marking all servers as down. Defaults to <tt>1</tt>. Set to <tt>nil</tt> to retry endlessly.
+<tt>:server_max_requests</tt>:: How many requests to perform before moving on to the next server in the pool, regardless of error status. Defaults to <tt>nil</tt> (no limit).
 <tt>:timeout</tt>:: Specify the default timeout for every call. Defaults to <tt>.
 <tt>:timeout_overrides</tt>:: Specify timeouts on a per-method basis. Only work with <tt>Thrift::BufferedTransport</tt>.
 <tt>:defaults</tt>:: Specify default values to return on a per-method basis, if <tt>:raise</tt> is set to false.
@@ -69,9 +71,11 @@ Valid optional parameters are:
         warn "ThriftClient: Timeout overrides have no effect with with transport type #{@options[:transport]}"
       end
     end
-    
+
     @live_server_list = @server_list.dup
     @last_retry = Time.now
+    @request_count = 0
+    @max_requests = @options[:server_max_requests]
 
     @client_class.instance_methods.each do |method_name|
       if method_name =~ /^recv_(.*)$/
@@ -96,19 +100,23 @@ Valid optional parameters are:
   # Force the client to disconnect from the server.
   def disconnect!
     @transport.close rescue nil
+    @request_count = 0
     @client = nil
   end
 
   private
 
   def proxy(method_name, *args)
+    disconnect! if @max_requests and @request_count >= @max_requests
     connect! unless @client
+
     set_timeout!(method_name) if @set_timeout
+    @request_count += 1
     @client.send(method_name, *args)
   rescue NoServersAvailable => e
     handle_exception(e, method_name, args)
   rescue *@options[:exception_classes] => e
-    tries ||= @retries    
+    tries ||= @retries
     if (tries -= 1) == 0
       handle_exception(e, method_name, args)
     else
