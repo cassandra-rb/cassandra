@@ -36,7 +36,7 @@ class ThriftClient
     :defaults => {}
   }.freeze
 
-  attr_reader :client, :client_class, :server_list, :options
+  attr_reader :client, :client_class, :current_server, :server_list, :options
 
 =begin rdoc
 Create a new ThriftClient instance. Accepts an internal Thrift client class (such as CassandraRb::Client), a list of servers with ports, and optional parameters.
@@ -86,22 +86,27 @@ Valid optional parameters are:
 
   # Force the client to connect to the server.
   def connect!
-    server = next_server.to_s.split(":")
-    raise ArgumentError, 'Servers must be in the form "host:port"' if server.size != 2
+    server = next_server
+    host, port = server.to_s.split(":")
+    raise ArgumentError, 'Servers must be in the form "host:port"' unless host and port
 
     @transport = @options[:transport].new(
-      Thrift::Socket.new(server.first, server.last.to_i, @options[:timeout]))
+      Thrift::Socket.new(host, port.to_i, @options[:timeout]))
     @transport.open
+    @current_server = server
     @client = @client_class.new(@options[:protocol].new(@transport, *@options[:protocol_extra_params]))
   rescue Thrift::TransportException
     retry
   end
 
   # Force the client to disconnect from the server.
-  def disconnect!
+  def disconnect!(keep = true)
     @transport.close rescue nil
+    @live_server_list.unshift(@current_server) if keep and @current_server
+    
     @request_count = 0
     @client = nil
+    @current_server = nil
   end
 
   private
@@ -120,7 +125,7 @@ Valid optional parameters are:
     if (tries -= 1) == 0
       handle_exception(e, method_name, args)
     else
-      disconnect!
+      disconnect!(false)
       retry
     end
   end

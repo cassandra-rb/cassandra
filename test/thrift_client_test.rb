@@ -113,6 +113,16 @@ class ThriftClientTest < Test::Unit::TestCase
     sleep 1.1
     assert_raises(ThriftClient::NoServersAvailable) { client.Log(@entry) }
   end
+  
+  def test_server_max_requests
+    client = ThriftClient.new(ScribeThrift::Client, @servers, @options.merge(:server_max_requests => 2))
+    client.Log(@entry)
+    internal_client = client.client
+    client.Log(@entry)
+    assert_equal internal_client, client.client
+    client.Log(@entry)  
+    assert_not_equal internal_client, client.client
+  end
 
   private
 
