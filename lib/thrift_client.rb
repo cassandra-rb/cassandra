@@ -62,7 +62,6 @@ Valid optional parameters are:
     @client_class = client_class
     @server_list = Array(servers)
     @retries = options[:retries] || @server_list.size
-    @server_list = @server_list.sort_by { rand } if @options[:randomize_server_list]
 
     if @options[:timeout_overrides].any?
       if @options[:transport].instance_methods.include?("timeout=")
@@ -72,10 +71,10 @@ Valid optional parameters are:
       end
     end
 
-    @live_server_list = @server_list.dup
-    @last_retry = Time.now
     @request_count = 0
     @max_requests = @options[:server_max_requests]
+    @retry_period = @options[:server_retry_period]
+    rebuild_live_server_list!
 
     @client_class.instance_methods.each do |method_name|
       if method_name =~ /^recv_(.*)$/
@@ -102,8 +101,13 @@ Valid optional parameters are:
   # Force the client to disconnect from the server.
   def disconnect!(keep = true)
     @transport.close rescue nil
-    @live_server_list.unshift(@current_server) if keep and @current_server
-    
+
+    # Keep live servers in the list if we have a retry period. Otherwise,
+    # always eject, because we will always re-add them.
+    if keep and @retry_period and @current_server
+      @live_server_list.unshift(@current_server)
+    end
+
     @request_count = 0
     @client = nil
     @current_server = nil
@@ -140,13 +144,21 @@ Valid optional parameters are:
   end
 
   def next_server
-    if @live_server_list.empty?
-      if @options[:server_retry_period] and Time.now < @last_retry + @options[:server_retry_period]
-        raise NoServersAvailable, "No live servers in #{@server_list.inspect} since #{@last_retry.inspect}."
-      end
-      @last_retry = Time.now
-      @live_server_list = @server_list.dup
+    if @retry_period
+      rebuild_live_server_list! if Time.now > @last_rebuild + @retry_period
+      raise NoServersAvailable, "No live servers in #{@server_list.inspect} since #{@last_rebuild.inspect}." if @live_server_list.empty?
+    elsif @live_server_list.empty?
+      rebuild_live_server_list!
     end
     @live_server_list.pop
+  end
+
+  def rebuild_live_server_list!
+    @last_rebuild = Time.now
+    if @options[:randomize_server_list]
+      @live_server_list = @server_list.sort_by { rand }
+    else
+      @live_server_list = @server_list.dup
+    end
   end
 end

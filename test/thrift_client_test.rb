@@ -37,12 +37,6 @@ class ThriftClientTest < Test::Unit::TestCase
     assert_raises(NoMethodError) { client.Missing(@entry) }
   end
 
-  def test_random_server_list
-    @lists = []
-    @lists << ThriftClient.new(ScribeThrift::Client, @servers, @options).server_list while @lists.size < 10
-    assert @lists.uniq.size > 1
-  end
-
   def test_random_fall_through
     assert_nothing_raised do
       10.times { ThriftClient.new(ScribeThrift::Client, @servers, @options).Log(@entry) }
