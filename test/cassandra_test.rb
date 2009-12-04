@@ -315,6 +315,13 @@ class CassandraTest < Test::Unit::TestCase
     end
   end
 
+  def test_raise_access_error_on_nonexistent_keyspace
+    nonexistent = Cassandra.new('Nonexistent')
+    assert_raises(Cassandra::AccessError) do
+      nonexistent.get "foo", "bar"
+    end
+  end
+
   private
 
   def key
