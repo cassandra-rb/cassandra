@@ -126,7 +126,7 @@ Valid optional parameters are:
   rescue NoServersAvailable => e
     handle_exception(e, method_name, args)
   rescue *@options[:exception_classes] => e
-    disconnect!
+    disconnect!(false)
     tries ||= @retries
     tries -= 1
     tries == 0 ? handle_exception(e, method_name, args) : retry
