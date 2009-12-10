@@ -1,4 +1,6 @@
 
+v0.3.2. Fix connection close bug (nkallen, mattknox).
+
 v0.3.1. Add ability to reset connection after N requests.
 
 v0.3. Change default timeout semantics; hash default was too sneaky. Fix bug.

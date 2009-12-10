@@ -95,6 +95,7 @@ Valid optional parameters are:
     @current_server = server
     @client = @client_class.new(@options[:protocol].new(@transport, *@options[:protocol_extra_params]))
   rescue Thrift::TransportException
+    @transport.close rescue nil
     retry
   end
 
@@ -125,13 +126,10 @@ Valid optional parameters are:
   rescue NoServersAvailable => e
     handle_exception(e, method_name, args)
   rescue *@options[:exception_classes] => e
+    disconnect!
     tries ||= @retries
-    if (tries -= 1) == 0
-      handle_exception(e, method_name, args)
-    else
-      disconnect!(false)
-      retry
-    end
+    tries -= 1
+    tries == 0 ? handle_exception(e, method_name, args) : retry
   end
 
   def set_timeout!(method_name)
