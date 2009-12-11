@@ -100,6 +100,7 @@ require 'cassandra_types'
           end
 
           def get_key_range(keyspace, column_family, start, finish, count, consistency_level)
+
             send_get_key_range(keyspace, column_family, start, finish, count, consistency_level)
             return recv_get_key_range()
           end

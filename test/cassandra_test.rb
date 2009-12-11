@@ -24,15 +24,6 @@ class CassandraTest < Test::Unit::TestCase
     end
   end
 
-  def test_connection_reopens
-    assert_raises(Thrift::ProtocolException) do
-      @twitter.send("_insert", [], -5, '')
-    end
-    assert_nothing_raised do
-      @twitter.insert(:Statuses, key, {'body' => 'v'})
-    end
-  end
-
   def test_get_key
     @twitter.insert(:Users, key, {'body' => 'v', 'user' => 'v'})
     assert_equal({'body' => 'v', 'user' => 'v'}, @twitter.get(:Users, key))

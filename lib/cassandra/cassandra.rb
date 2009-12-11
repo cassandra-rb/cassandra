@@ -37,10 +37,8 @@ class Cassandra
     include CassandraThrift::ConsistencyLevel
   end
 
-  MAX_INT = 2**31 - 1
-
   WRITE_DEFAULTS = {
-    :count => MAX_INT,
+    :count => 1000,
     :timestamp => nil,
     :consistency => Consistency::ONE
   }.freeze
@@ -128,7 +126,9 @@ class Cassandra
   # FIXME May not currently delete all records without multiple calls. Waiting
   # for ranged remove support in Cassandra.
   def clear_column_family!(column_family, options = {})
-    get_range(column_family).each { |key| remove(column_family, key, options) }
+    while (keys = get_range(column_family, :count => 100)).length > 0
+      keys.each { |key| remove(column_family, key, options) }
+    end
   end
 
   # Remove all rows in the keyspace. Supports options <tt>:consistency</tt> and
@@ -214,9 +214,15 @@ class Cassandra
   # Count all rows in the column_family you request. Requires the table
   # to be partitioned with OrderPreservingHash. Supports the <tt>:start</tt>,
   # <tt>:finish</tt>, and <tt>:consistency</tt> options.
-  # FIXME will count only MAX_INT records
   def count_range(column_family, options = {})
-    get_range(column_family, options.merge(:count => MAX_INT)).size
+    count = 0
+    l = []
+    start_key = ''
+    while (l = get_range(column_family, options.merge(:count => 1000, :start => start_key))).size > 0
+      count += l.size
+      start_key = l.last.succ
+    end
+    count
   end
 
   # Open a batch operation and yield. Inserts and deletes will be queued until

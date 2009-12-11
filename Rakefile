@@ -16,7 +16,7 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
   end
 end
 
-REVISION = "c1fa17c0e359fa032bdb2d6b5f63120359ff881f"
+REVISION = "7e7331dda302c3277903fa90abd2d0f5d52c2514"
 
 PATCHES = []
 
@@ -35,7 +35,7 @@ task :cassandra => [:build_cassandra, CASSANDRA_TEST] do
   if !ENV["CASSANDRA_INCLUDE"]
     env << "CASSANDRA_INCLUDE=#{Dir.pwd}/conf/cassandra.in.sh "
     env << "CASSANDRA_HOME=#{CASSANDRA_HOME} "
-    env << "CASSANDRA_CONF=#{File.expand_path(File.dirname(__FILE__))}/conf"
+    env << "CASSANDRA_CONF=#{Dir.pwd}/conf"
   end
   # Start server
   Dir.chdir(CASSANDRA_TEST) do
