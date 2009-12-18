@@ -1,4 +1,3 @@
-
 cassandra
 
 A Ruby client for the Cassandra distributed database. 
@@ -37,7 +36,7 @@ Now, start IRb and require the library:
   
 Connect to a server and keyspace:
   
-  client = Cassandra.new('Twitter', "127.0.0.1")
+  client = Cassandra.new('Twitter', '127.0.0.1:9160')
   
 Insert into a column family. You can insert a Cassandra::OrderedHash, or a regular Hash, if order doesn't matter:
 
