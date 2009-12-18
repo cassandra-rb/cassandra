@@ -70,13 +70,18 @@ class Cassandra
 
 
   def client
-    @client ||= begin
-      client = ThriftClient.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
-      unless (keyspaces = client.get_string_list_property("keyspaces")).include?(@keyspace)
-        raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
-      end
-      client
+    return @client if defined?(@client)
+    client!
+  end
+
+  def client!
+    @client = raw_client
+    unless (keyspaces = client.get_string_list_property("keyspaces")).include?(@keyspace)
+      raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
     end
+    @servers = all_nodes
+    @client.disconnect!
+    @client = raw_client
   end
 
   def keyspaces
@@ -303,5 +308,15 @@ class Cassandra
     else
       @schema ||= client.describe_keyspace(@keyspace)
     end
+  end
+
+  def raw_client
+    ThriftClient.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
+  end
+
+  def all_nodes
+    ips = ::JSON.parse(@client.get_string_property('token map')).values
+    port = @servers.first.split(':')[1]
+    @servers = ips.map{|ip| "#{ip}:#{port}" }
   end
 end

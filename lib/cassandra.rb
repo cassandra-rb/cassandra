@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'thrift_client'
+require 'json'
 
 here = File.expand_path(File.dirname(__FILE__))
 
