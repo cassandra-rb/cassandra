@@ -91,6 +91,10 @@ class Cassandra
       total_usecs <=> other.send(:total_usecs)
     end
 
+    def ==(other)
+      to_s == other.to_s
+    end
+
     def inspect(long = false)
       "<Cassandra::UUID##{object_id} time: #{
         Time.at(seconds).inspect

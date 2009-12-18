@@ -72,7 +72,7 @@ class Cassandra
   def client
     @client ||= begin
       client = ThriftClient.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
-      unless client.get_string_list_property("keyspaces").include?(@keyspace)
+      unless (keyspaces = client.get_string_list_property("keyspaces")).include?(@keyspace)
         raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
       end
       client
