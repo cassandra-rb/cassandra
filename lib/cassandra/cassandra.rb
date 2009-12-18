@@ -316,7 +316,7 @@ class Cassandra
 
   def all_nodes
     ips = ::JSON.parse(@client.get_string_property('token map')).values
-    port = @servers.first.split(':')[1]
-    @servers = ips.map{|ip| "#{ip}:#{port}" }
+    port = @servers.first.split(':').last
+    ips.map{|ip| "#{ip}:#{port}" }
   end
 end
