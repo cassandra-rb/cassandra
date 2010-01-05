@@ -43,4 +43,9 @@ class ComparableTypesTest < Test::Unit::TestCase
       UUID.new("bogus")
     end
   end
+  
+  def test_types_behave_well
+    assert !(UUID.new() == false)
+    assert !(Long.new() == false)
+  end
 end
