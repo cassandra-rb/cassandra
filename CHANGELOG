@@ -1,3 +1,4 @@
+v0.3.3  Allow for a timeout over all requests in a call.
 
 v0.3.2. Fix connection close bug (nkallen, mattknox).
 

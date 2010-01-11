@@ -8,12 +8,13 @@ else
   require 'thrift'
 end
 
+require 'timeout'
 require 'rubygems'
 require 'thrift_client/thrift'
 
 class ThriftClient
-
   class NoServersAvailable < StandardError; end
+  class GlobalThriftClientTimeout < Timeout::Error; end
 
   DEFAULTS = {
     :protocol => Thrift::BinaryProtocol,
@@ -51,7 +52,8 @@ Valid optional parameters are:
 <tt>:retries</tt>:: How many times to retry a request. Defaults to the number of servers defined.
 <tt>:server_retry_period</tt>:: How many seconds to wait before trying to reconnect after marking all servers as down. Defaults to <tt>1</tt>. Set to <tt>nil</tt> to retry endlessly.
 <tt>:server_max_requests</tt>:: How many requests to perform before moving on to the next server in the pool, regardless of error status. Defaults to <tt>nil</tt> (no limit).
-<tt>:timeout</tt>:: Specify the default timeout in seconds. Defaults to <tt>1</tt>.
+<tt>:global_timeout</tt>:: Specify the timeout for all connections made. Defaults to being disabled.
+<tt>:timeout</tt>:: Specify the default timeout in seconds per connection. Defaults to <tt>1</tt>.
 <tt>:timeout_overrides</tt>:: Specify additional timeouts on a per-method basis, in seconds. Only works with <tt>Thrift::BufferedTransport</tt>.
 <tt>:defaults</tt>:: Specify default values to return on a per-method basis, if <tt>:raise</tt> is set to false.
 
@@ -74,6 +76,7 @@ Valid optional parameters are:
     @request_count = 0
     @max_requests = @options[:server_max_requests]
     @retry_period = @options[:server_retry_period]
+    @global_timeout = @options[:global_timeout] || 0
     rebuild_live_server_list!
 
     @client_class.instance_methods.each do |method_name|
@@ -117,6 +120,15 @@ Valid optional parameters are:
   private
 
   def proxy(method_name, *args)
+    Timeout.timeout(@global_timeout, GlobalThriftClientTimeout) do
+      raw_proxy(method_name, *args)
+    end
+  rescue GlobalThriftClientTimeout => e
+    disconnect!(false)
+    raise e
+  end
+
+  def raw_proxy(method_name, args)
     disconnect! if @max_requests and @request_count >= @max_requests
     connect! unless @client
 
