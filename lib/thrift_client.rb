@@ -128,7 +128,7 @@ Valid optional parameters are:
     raise e
   end
 
-  def raw_proxy(method_name, args)
+  def raw_proxy(method_name, *args)
     disconnect! if @max_requests and @request_count >= @max_requests
     connect! unless @client
 
