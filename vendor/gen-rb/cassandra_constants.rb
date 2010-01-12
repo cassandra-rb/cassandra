@@ -7,4 +7,6 @@
 require 'cassandra_types'
 
   module CassandraThrift
+    VERSION = %q"0.5-beta2"
+
 end

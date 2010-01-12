@@ -27,6 +27,7 @@ require 'cassandra_types'
             raise result.ire unless result.ire.nil?
             raise result.nfe unless result.nfe.nil?
             raise result.ue unless result.ue.nil?
+            raise result.te unless result.te.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get failed: unknown result')
           end
 
@@ -43,8 +44,8 @@ require 'cassandra_types'
             result = receive_message(Get_slice_result)
             return result.success unless result.success.nil?
             raise result.ire unless result.ire.nil?
-            raise result.nfe unless result.nfe.nil?
             raise result.ue unless result.ue.nil?
+            raise result.te unless result.te.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice failed: unknown result')
           end
 
@@ -62,6 +63,7 @@ require 'cassandra_types'
             return result.success unless result.success.nil?
             raise result.ire unless result.ire.nil?
             raise result.ue unless result.ue.nil?
+            raise result.te unless result.te.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'multiget failed: unknown result')
           end
 
@@ -79,6 +81,7 @@ require 'cassandra_types'
             return result.success unless result.success.nil?
             raise result.ire unless result.ire.nil?
             raise result.ue unless result.ue.nil?
+            raise result.te unless result.te.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'multiget_slice failed: unknown result')
           end
 
@@ -96,11 +99,11 @@ require 'cassandra_types'
             return result.success unless result.success.nil?
             raise result.ire unless result.ire.nil?
             raise result.ue unless result.ue.nil?
+            raise result.te unless result.te.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_count failed: unknown result')
           end
 
           def get_key_range(keyspace, column_family, start, finish, count, consistency_level)
-
             send_get_key_range(keyspace, column_family, start, finish, count, consistency_level)
             return recv_get_key_range()
           end
@@ -114,7 +117,26 @@ require 'cassandra_types'
             return result.success unless result.success.nil?
             raise result.ire unless result.ire.nil?
             raise result.ue unless result.ue.nil?
+            raise result.te unless result.te.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_key_range failed: unknown result')
+          end
+
+          def get_range_slice(keyspace, column_parent, predicate, start_key, finish_key, row_count, consistency_level)
+            send_get_range_slice(keyspace, column_parent, predicate, start_key, finish_key, row_count, consistency_level)
+            return recv_get_range_slice()
+          end
+
+          def send_get_range_slice(keyspace, column_parent, predicate, start_key, finish_key, row_count, consistency_level)
+            send_message('get_range_slice', Get_range_slice_args, :keyspace => keyspace, :column_parent => column_parent, :predicate => predicate, :start_key => start_key, :finish_key => finish_key, :row_count => row_count, :consistency_level => consistency_level)
+          end
+
+          def recv_get_range_slice()
+            result = receive_message(Get_range_slice_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise result.ue unless result.ue.nil?
+            raise result.te unless result.te.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_range_slice failed: unknown result')
           end
 
           def insert(keyspace, key, column_path, value, timestamp, consistency_level)
@@ -130,6 +152,7 @@ require 'cassandra_types'
             result = receive_message(Insert_result)
             raise result.ire unless result.ire.nil?
             raise result.ue unless result.ue.nil?
+            raise result.te unless result.te.nil?
             return
           end
 
@@ -146,6 +169,7 @@ require 'cassandra_types'
             result = receive_message(Batch_insert_result)
             raise result.ire unless result.ire.nil?
             raise result.ue unless result.ue.nil?
+            raise result.te unless result.te.nil?
             return
           end
 
@@ -162,6 +186,7 @@ require 'cassandra_types'
             result = receive_message(Remove_result)
             raise result.ire unless result.ire.nil?
             raise result.ue unless result.ue.nil?
+            raise result.te unless result.te.nil?
             return
           end
 
@@ -227,6 +252,8 @@ require 'cassandra_types'
               result.nfe = nfe
             rescue CassandraThrift::UnavailableException => ue
               result.ue = ue
+            rescue CassandraThrift::TimedOutException => te
+              result.te = te
             end
             write_result(result, oprot, 'get', seqid)
           end
@@ -238,10 +265,10 @@ require 'cassandra_types'
               result.success = @handler.get_slice(args.keyspace, args.key, args.column_parent, args.predicate, args.consistency_level)
             rescue CassandraThrift::InvalidRequestException => ire
               result.ire = ire
-            rescue CassandraThrift::NotFoundException => nfe
-              result.nfe = nfe
             rescue CassandraThrift::UnavailableException => ue
               result.ue = ue
+            rescue CassandraThrift::TimedOutException => te
+              result.te = te
             end
             write_result(result, oprot, 'get_slice', seqid)
           end
@@ -255,6 +282,8 @@ require 'cassandra_types'
               result.ire = ire
             rescue CassandraThrift::UnavailableException => ue
               result.ue = ue
+            rescue CassandraThrift::TimedOutException => te
+              result.te = te
             end
             write_result(result, oprot, 'multiget', seqid)
           end
@@ -268,6 +297,8 @@ require 'cassandra_types'
               result.ire = ire
             rescue CassandraThrift::UnavailableException => ue
               result.ue = ue
+            rescue CassandraThrift::TimedOutException => te
+              result.te = te
             end
             write_result(result, oprot, 'multiget_slice', seqid)
           end
@@ -281,6 +312,8 @@ require 'cassandra_types'
               result.ire = ire
             rescue CassandraThrift::UnavailableException => ue
               result.ue = ue
+            rescue CassandraThrift::TimedOutException => te
+              result.te = te
             end
             write_result(result, oprot, 'get_count', seqid)
           end
@@ -294,8 +327,25 @@ require 'cassandra_types'
               result.ire = ire
             rescue CassandraThrift::UnavailableException => ue
               result.ue = ue
+            rescue CassandraThrift::TimedOutException => te
+              result.te = te
             end
             write_result(result, oprot, 'get_key_range', seqid)
+          end
+
+          def process_get_range_slice(seqid, iprot, oprot)
+            args = read_args(iprot, Get_range_slice_args)
+            result = Get_range_slice_result.new()
+            begin
+              result.success = @handler.get_range_slice(args.keyspace, args.column_parent, args.predicate, args.start_key, args.finish_key, args.row_count, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            rescue CassandraThrift::UnavailableException => ue
+              result.ue = ue
+            rescue CassandraThrift::TimedOutException => te
+              result.te = te
+            end
+            write_result(result, oprot, 'get_range_slice', seqid)
           end
 
           def process_insert(seqid, iprot, oprot)
@@ -307,6 +357,8 @@ require 'cassandra_types'
               result.ire = ire
             rescue CassandraThrift::UnavailableException => ue
               result.ue = ue
+            rescue CassandraThrift::TimedOutException => te
+              result.te = te
             end
             write_result(result, oprot, 'insert', seqid)
           end
@@ -320,6 +372,8 @@ require 'cassandra_types'
               result.ire = ire
             rescue CassandraThrift::UnavailableException => ue
               result.ue = ue
+            rescue CassandraThrift::TimedOutException => te
+              result.te = te
             end
             write_result(result, oprot, 'batch_insert', seqid)
           end
@@ -333,6 +387,8 @@ require 'cassandra_types'
               result.ire = ire
             rescue CassandraThrift::UnavailableException => ue
               result.ue = ue
+            rescue CassandraThrift::TimedOutException => te
+              result.te = te
             end
             write_result(result, oprot, 'remove', seqid)
           end
@@ -397,13 +453,15 @@ require 'cassandra_types'
           IRE = 1
           NFE = 2
           UE = 3
+          TE = 4
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :nfe, :ue
+          ::Thrift::Struct.field_accessor self, :success, :ire, :nfe, :ue, :te
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CassandraThrift::ColumnOrSuperColumn},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
             NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException},
-            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
+            TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
           }
 
           def struct_fields; FIELDS; end
@@ -444,15 +502,15 @@ require 'cassandra_types'
           include ::Thrift::Struct
           SUCCESS = 0
           IRE = 1
-          NFE = 2
-          UE = 3
+          UE = 2
+          TE = 3
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :nfe, :ue
+          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
-            NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException},
-            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
+            TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
           }
 
           def struct_fields; FIELDS; end
@@ -492,12 +550,14 @@ require 'cassandra_types'
           SUCCESS = 0
           IRE = 1
           UE = 2
+          TE = 3
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :ue
+          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
-            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
+            TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
           }
 
           def struct_fields; FIELDS; end
@@ -539,12 +599,14 @@ require 'cassandra_types'
           SUCCESS = 0
           IRE = 1
           UE = 2
+          TE = 3
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :ue
+          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}}},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
-            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
+            TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
           }
 
           def struct_fields; FIELDS; end
@@ -584,12 +646,14 @@ require 'cassandra_types'
           SUCCESS = 0
           IRE = 1
           UE = 2
+          TE = 3
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :ue
+          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::I32, :name => 'success'},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
-            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
+            TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
           }
 
           def struct_fields; FIELDS; end
@@ -633,12 +697,67 @@ require 'cassandra_types'
           SUCCESS = 0
           IRE = 1
           UE = 2
+          TE = 3
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :ue
+          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRING}},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
-            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
+            TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_range_slice_args
+          include ::Thrift::Struct
+          KEYSPACE = 1
+          COLUMN_PARENT = 2
+          PREDICATE = 3
+          START_KEY = 4
+          FINISH_KEY = 5
+          ROW_COUNT = 6
+          CONSISTENCY_LEVEL = 7
+
+          ::Thrift::Struct.field_accessor self, :keyspace, :column_parent, :predicate, :start_key, :finish_key, :row_count, :consistency_level
+          FIELDS = {
+            KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
+            COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
+            PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate},
+            START_KEY => {:type => ::Thrift::Types::STRING, :name => 'start_key', :default => %q""},
+            FINISH_KEY => {:type => ::Thrift::Types::STRING, :name => 'finish_key', :default => %q""},
+            ROW_COUNT => {:type => ::Thrift::Types::I32, :name => 'row_count', :default => 100},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Get_range_slice_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+          UE = 2
+          TE = 3
+
+          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::KeySlice}},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
+            TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
           }
 
           def struct_fields; FIELDS; end
@@ -681,11 +800,13 @@ require 'cassandra_types'
           include ::Thrift::Struct
           IRE = 1
           UE = 2
+          TE = 3
 
-          ::Thrift::Struct.field_accessor self, :ire, :ue
+          ::Thrift::Struct.field_accessor self, :ire, :ue, :te
           FIELDS = {
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
-            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
+            TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
           }
 
           def struct_fields; FIELDS; end
@@ -724,11 +845,13 @@ require 'cassandra_types'
           include ::Thrift::Struct
           IRE = 1
           UE = 2
+          TE = 3
 
-          ::Thrift::Struct.field_accessor self, :ire, :ue
+          ::Thrift::Struct.field_accessor self, :ire, :ue, :te
           FIELDS = {
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
-            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
+            TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
           }
 
           def struct_fields; FIELDS; end
@@ -769,11 +892,13 @@ require 'cassandra_types'
           include ::Thrift::Struct
           IRE = 1
           UE = 2
+          TE = 3
 
-          ::Thrift::Struct.field_accessor self, :ire, :ue
+          ::Thrift::Struct.field_accessor self, :ire, :ue, :te
           FIELDS = {
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
-            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
+            TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
           }
 
           def struct_fields; FIELDS; end
