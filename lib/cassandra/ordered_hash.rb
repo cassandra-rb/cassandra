@@ -1,42 +1,37 @@
-
+# OrderedHash is namespaced to prevent conflicts with other implementations
 class Cassandra
   # Hash is ordered in Ruby 1.9!
   if RUBY_VERSION >= '1.9'
     OrderedHash = ::Hash
-  else  
-    #  Copyright (c) 2004-2009 David Heinemeier Hansson
-    #  
-    #  Permission is hereby granted, free of charge, to any person obtaining
-    #  a copy of this software and associated documentation files (the
-    #  "Software"), to deal in the Software without restriction, including
-    #  without limitation the rights to use, copy, modify, merge, publish,
-    #  distribute, sublicense, and/or sell copies of the Software, and to
-    #  permit persons to whom the Software is furnished to do so, subject to
-    #  the following conditions:
-    #  
-    #  The above copyright notice and this permission notice shall be
-    #  included in all copies or substantial portions of the Software.
-    #  
-    #  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-    #  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-    #  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-    #  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-    #  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-    #  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-    #  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-  
-    class OrderedHash < Hash #:nodoc: all
-      require 'enumerator'    
-    
-      def self.[](*array)
-        hash = new
-        array.each_slice(2) { |key, value| hash[key] = value }
-        hash
-      end
-
+  else
+    class OrderedHash < Hash #:nodoc:
       def initialize(*args, &block)
         super
         @keys = []
+      end
+
+      def self.[](*args)
+        ordered_hash = new
+
+        if (args.length == 1 && args.first.is_a?(Array))
+          args.first.each do |key_value_pair|
+            next unless (key_value_pair.is_a?(Array))
+            ordered_hash[key_value_pair[0]] = key_value_pair[1]
+          end
+
+          return ordered_hash
+        end
+
+        unless (args.size % 2 == 0)
+          raise ArgumentError.new("odd number of arguments for Hash")
+        end
+
+        args.each_with_index do |val, ind|
+          next if (ind % 2 != 0)
+          ordered_hash[val] = args[ind + 1]
+        end
+
+        ordered_hash
       end
 
       def initialize_copy(other)
@@ -86,6 +81,10 @@ class Cassandra
         self
       end
 
+      def to_a
+        @keys.map { |key| [ key, self[key] ] }
+      end
+
       def each_key
         @keys.each { |key| yield key }
       end
@@ -119,6 +118,13 @@ class Cassandra
 
       def merge(other_hash)
         dup.merge!(other_hash)
+      end
+
+      # When replacing with another hash, the initial order of our keys must come from the other hash -ordered or not.
+      def replace(other)
+        super
+        @keys = other.keys
+        self
       end
 
       def inspect
