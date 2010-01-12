@@ -55,7 +55,14 @@ class ComparableTypesTest < Test::Unit::TestCase
     end
   end
 
-  def test_inspect
-    assert_equal '<Cassandra::Long#16395660 time: Wed Dec 31 16:00:00 -0800 1969, usecs: 0, jitter: 0, guid: 00000000-0000-0000>', Long.new("\000\000\000\000\000\000\000\000").inspect
+  def test_long_inspect
+    obj = Long.new("\000\000\000\000\000\000\000\000")
+    assert_equal "<Cassandra::Long##{obj.object_id} time: Wed Dec 31 16:00:00 -0800 1969, usecs: 0, jitter: 0, guid: 00000000-0000-0000>", obj.inspect
+  end
+
+  def test_uuid_casting_error
+    assert_raises(Cassandra::Comparable::TypeError) do
+      Cassandra::UUID.new({})
+    end
   end
 end
