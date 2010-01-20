@@ -12,7 +12,7 @@ Copyright 2009 Twitter, Inc. See included LICENSE file. Portions copyright 2004-
 * compatible UUID and Long classes, for GUID generation
 * Ruby 1.9 compatibility
 
-The Github source repository is {here}[http://github.com/fauna/cassandra/]. Patches and contributions are very welcome.
+The Github source repository is [here](http://github.com/fauna/cassandra/). Patches and contributions are very welcome.
 
 ## Installation
 
@@ -20,11 +20,11 @@ You need Ruby 1.8 or 1.9. If you have those, just run:
 
   sudo gem install cassandra
 
-Cassandra itself is a rapidly moving target. In order to get a working server, use the <tt>bin/cassandra_helper</tt> script:
+Cassandra itself is a rapidly moving target. In order to get a working server, use the `bin/cassandra_helper` script:
 
   cassandra_helper cassandra
 
-A server will be installed in <tt>$HOME/cassandra/server</tt>, and started in debug mode.
+A server will be installed in `$HOME/cassandra/server`, and started in debug mode.
 
 WARNING: Don't use the test folder for your data, as it will get overwritten when you update the gem.
 
@@ -38,7 +38,7 @@ Connect to a server and keyspace:
 
   client = Cassandra.new('Twitter', '127.0.0.1:9160')
 
-Insert into a column family. You can insert a Cassandra::OrderedHash, or a regular Hash, if order doesn't matter:
+Insert into a column family. You can insert a `Cassandra::OrderedHash`, or a regular Hash, if order doesn't matter:
 
   client.insert(:Users, "5", {'screen_name' => "buttonscat"})
 
@@ -64,9 +64,9 @@ The list of hosts you pass to the client is only used to auto-discover all the n
 
 ## Further reading
 
-* {Up and Running With Cassandra}[http://blog.evanweaver.com/articles/2009/07/06/up-and-running-with-cassandra]
+* [Up and Running With Cassandra](http://blog.evanweaver.com/articles/2009/07/06/up-and-running-with-cassandra)
 
 ## Reporting problems
 
-The Github issue tracker is {here}[http://github.com/fauna/cassandra/issues]. If you have problems with this library or Cassandra itself, please use the {cassandra-user mailing list}[http://mail-archives.apache.org/mod_mbox/incubator-cassandra-user/].
+The Github issue tracker is [here](http://github.com/fauna/cassandra/issues). If you have problems with this library or Cassandra itself, please use the [cassandra-user mailing list](http://mail-archives.apache.org/mod_mbox/incubator-cassandra-user/).
 
