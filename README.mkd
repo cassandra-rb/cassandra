@@ -1,14 +1,12 @@
-cassandra
+# cassandra
 
 A Ruby client for the Cassandra distributed database. 
 
-== License
+## License
 
 Copyright 2009 Twitter, Inc. See included LICENSE file. Portions copyright 2004-2009 David Heinemeier Hansson, and used with permission.
 
-The public certificate for this gem is here[http://rubyforge.org/frs/download.php/25331/evan_weaver-original-public_cert.pem]. 
-
-== Features
+## Features
 
 * clean encapsulation of the Thrift API
 * compatible UUID and Long classes, for GUID generation
@@ -16,33 +14,33 @@ The public certificate for this gem is here[http://rubyforge.org/frs/download.ph
 
 The Github source repository is {here}[http://github.com/fauna/cassandra/]. Patches and contributions are very welcome.
 
-== Installation
+## Installation
 
 You need Ruby 1.8 or 1.9. If you have those, just run:
 
   sudo gem install cassandra
-  
+
 Cassandra itself is a rapidly moving target. In order to get a working server, use the <tt>bin/cassandra_helper</tt> script:
 
   cassandra_helper cassandra
-  
+
 A server will be installed in <tt>$HOME/cassandra/server</tt>, and started in debug mode.
 
 WARNING: Don't use the test folder for your data, as it will get overwritten when you update the gem.
 
-== Usage
-  
+## Usage
+
 Now, start IRb and require the library:
-  
+
   require 'cassandra'
-  
+
 Connect to a server and keyspace:
-  
+
   client = Cassandra.new('Twitter', '127.0.0.1:9160')
-  
+
 Insert into a column family. You can insert a Cassandra::OrderedHash, or a regular Hash, if order doesn't matter:
 
-  client.insert(:Users, "5", {'screen_name' => "buttonscat"})  
+  client.insert(:Users, "5", {'screen_name' => "buttonscat"})
 
 Insert into a super column family:
 
@@ -51,16 +49,24 @@ Insert into a super column family:
 Query a super column:
 
   timeline = client.get(:UserRelationships, "5", "user_timeline")
-  
+
 The returned result will always be a Cassandra::OrderedHash.
 
 See Cassandra for more methods.
 
-== Further reading
+## Configuration
+
+By default, cassandra is setup to listen on localhost. If you want to move your clients to another host, you're going to need to change which interface it binds to in the storage-conf.xml. You should also change the seed address.
+
+## Node Auto-Discovery
+
+The list of hosts you pass to the client is only used to auto-discover all the nodes in your cluster. You don't need to give the client a list of all of your nodes.
+
+## Further reading
 
 * {Up and Running With Cassandra}[http://blog.evanweaver.com/articles/2009/07/06/up-and-running-with-cassandra]
 
-== Reporting problems
+## Reporting problems
 
-The Github issue tracker is {here}[http://github.com/fauna/cassandra/issues]. If you have problems with Cassandra itself, please use the {cassandra-user mailing list}[http://mail-archives.apache.org/mod_mbox/incubator-cassandra-user/].
+The Github issue tracker is {here}[http://github.com/fauna/cassandra/issues]. If you have problems with this library or Cassandra itself, please use the {cassandra-user mailing list}[http://mail-archives.apache.org/mod_mbox/incubator-cassandra-user/].
 
