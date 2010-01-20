@@ -28,6 +28,8 @@ Cassandra itself is a rapidly moving target. In order to get a working server, u
   
 A server will be installed in <tt>$HOME/cassandra/server</tt>, and started in debug mode.
 
+WARNING: Don't use the test folder for your data, as it will get overwritten when you update the gem.
+
 == Usage
   
 Now, start IRb and require the library:
