@@ -2,7 +2,7 @@
 =begin rdoc
 Create a new Cassandra client instance. Accepts a keyspace name, and optional host and port.
 
-  client = Cassandra.new('twitter', '127.0.0.1', 9160)
+  client = Cassandra.new('twitter', '127.0.0.1:9160')
 
 You can then make calls to the server via the <tt>client</tt> instance.
 
