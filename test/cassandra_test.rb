@@ -4,7 +4,7 @@ class CassandraTest < Test::Unit::TestCase
   include Cassandra::Constants
 
   def setup
-    @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2)
+    @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :exception_classes => [])
     @twitter.clear_keyspace!
 
     @blogs = Cassandra.new('Multiblog')
@@ -320,6 +320,10 @@ class CassandraTest < Test::Unit::TestCase
     assert_raises(Cassandra::AccessError) do
       nonexistent.get "foo", "bar"
     end
+  end
+
+  def test_nil_sub_column_value
+    @twitter.insert(:Index, 'asdf', {"thing" => {'jkl' => nil} })
   end
 
   private

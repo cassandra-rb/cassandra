@@ -68,7 +68,6 @@ class Cassandra
     @servers = Array(servers)
   end
 
-
   def client
     return @client if defined?(@client)
     client!
