@@ -1,4 +1,3 @@
-
 unless ENV['FROM_BIN_CASSANDRA_HELPER']
   require 'rubygems'
   require 'echoe'
@@ -8,7 +7,7 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
     p.project = "fauna"
     p.summary = "A Ruby client for the Cassandra distributed database."
     p.rubygems_version = ">= 0.8"
-    p.dependencies = ['thrift_client', 'json', 'rake']
+    p.dependencies = ['thrift_client', 'json', 'rake', ['simple_uuid', '>= 0.0.2']]
     p.ignore_pattern = /^(data|vendor\/cassandra|cassandra|vendor\/thrift)/
     p.rdoc_pattern = /^(lib|bin|tasks|ext)|^README|^CHANGELOG|^TODO|^LICENSE|^COPYING$/
     p.url = "http://blog.evanweaver.com/files/doc/fauna/cassandra/"
