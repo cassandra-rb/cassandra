@@ -1,7 +1,7 @@
 require 'rubygems'
 require 'thrift_client'
 require 'json'
-
+require 'simple_uuid'
 here = File.expand_path(File.dirname(__FILE__))
 
 $LOAD_PATH << "#{here}/../vendor/gen-rb"
@@ -11,7 +11,6 @@ $LOAD_PATH << "#{here}"
 require 'cassandra/array'
 require 'cassandra/time'
 require 'cassandra/comparable'
-require 'cassandra/uuid'
 require 'cassandra/long'
 require 'cassandra/ordered_hash'
 require 'cassandra/columns'
