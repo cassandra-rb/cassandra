@@ -1,7 +1,7 @@
 CHANGELOG
 LICENSE
 Manifest
-README.mkd
+README.rdoc
 Rakefile
 bin/cassandra_helper
 conf/cassandra.in.sh
