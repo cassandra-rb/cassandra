@@ -15,7 +15,7 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
   end
 end
 
-REVISION = "450cfa10f0b82d9d5af9ffda182a5097afee402b"
+REVISION = "298a0e66ba66c5d2a1e5d4a70f2f619ae3fbf72a"
 
 PATCHES = []
 
