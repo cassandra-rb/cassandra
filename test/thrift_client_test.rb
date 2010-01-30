@@ -9,15 +9,27 @@ class ThriftClientTest < Test::Unit::TestCase
     @options = {:protocol_extra_params => [false]}
   end
 
-  def test_live_server
+  def test_single_server_with_no_errors
+    client = ThriftClient.new(ScribeThrift::Client, @servers.last, @options)
+    client.expects(:transport_instance).with("127.0.0.1", "1463").returns(mock("Transport", :open))
+    client.expects(:internal_client_instance).returns(mock("InternalClient", :Log))
+    
     assert_nothing_raised do
-      ThriftClient.new(ScribeThrift::Client, @servers.last, @options).Log(@entry)
+      client.Log(@entry)
     end
   end
 
   def test_non_random_fall_through
+    client = ThriftClient.new(ScribeThrift::Client, @servers, @options.merge(:randomize_server_list => false))
+    transport_fails_connect = stub("Transport", :close)
+    transport_fails_connect.expects(:open).times(2).raises(Thrift::TransportException)
+    client.expects(:transport_instance).with("127.0.0.1", "1463").returns(transport_fails_connect)
+    client.expects(:transport_instance).with("127.0.0.1", "1462").returns(transport_fails_connect)
+    client.expects(:transport_instance).with("127.0.0.1", "1461").returns(mock("Transport", :open))
+    client.expects(:internal_client_instance).returns(mock("InternalClient", :Log))
+    
     assert_nothing_raised do
-      ThriftClient.new(ScribeThrift::Client, @servers, @options.merge(:randomize_server_list => false)).Log(@entry)
+      client.Log(@entry)
     end
   end
 
@@ -38,8 +50,12 @@ class ThriftClientTest < Test::Unit::TestCase
   end
 
   def test_random_fall_through
+    client = ThriftClient.new(ScribeThrift::Client, @servers, @options)
+    client.stubs(:transport_instance).returns(stub("Transport", :open))
+    client.stubs(:internal_client_instance).returns(stub("InternalClient", :Log))
+    
     assert_nothing_raised do
-      10.times { ThriftClient.new(ScribeThrift::Client, @servers, @options).Log(@entry) }
+      10.times { client.Log(@entry) }
     end
   end
 
@@ -110,6 +126,13 @@ class ThriftClientTest < Test::Unit::TestCase
   
   def test_server_max_requests
     client = ThriftClient.new(ScribeThrift::Client, @servers, @options.merge(:server_max_requests => 2))
+    trans1 = mock("Transport1", :open, :close)
+    trans2 = mock("Transport2", :open)
+    client.expects(:transport_instance).times(2).returns(trans1).then.returns(trans2)
+    internal_client_instance = mock("InternalClient")
+    internal_client_instance.expects(:Log).times(2)
+    client.expects(:internal_client_instance).times(2).returns(internal_client_instance).then.returns(mock("InternalClient2", :Log))
+    
     client.Log(@entry)
     internal_client = client.client
     client.Log(@entry)
