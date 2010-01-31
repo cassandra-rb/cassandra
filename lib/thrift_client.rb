@@ -92,22 +92,14 @@ Valid optional parameters are:
     host, port = server.to_s.split(":")
     raise ArgumentError, 'Servers must be in the form "host:port"' unless host and port
 
-    @transport = transport_instance(host, port)
+    @transport = @options[:transport].new(
+      Thrift::Socket.new(host, port.to_i, @options[:timeout]))
     @transport.open
     @current_server = server
-    @client = internal_client_instance
+    @client = @client_class.new(@options[:protocol].new(@transport, *@options[:protocol_extra_params]))
   rescue Thrift::TransportException
     @transport.close rescue nil
     retry
-  end
-  
-  def transport_instance(host, port_string)
-    @options[:transport].new(
-      Thrift::Socket.new(host, port_string.to_i, @options[:timeout]))
-  end
-  
-  def internal_client_instance
-    @client_class.new(@options[:protocol].new(@transport, *@options[:protocol_extra_params]))
   end
 
   # Force the client to disconnect from the server.
