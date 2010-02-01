@@ -14,20 +14,3 @@ Echoe.new("thrift_client") do |p|
   p.docs_host = "blog.evanweaver.com:~/www/bax/public/files/doc/"
   p.spec_pattern = "spec/*_spec.rb"
 end
-
-desc "Start Scribe in order to run the system tests"
-task :start do
-  system("mkdir /tmp/scribetest/") unless File.exist?("/tmp/scribetest/")
-  system("scribed -c #{File.expand_path(File.dirname(__FILE__))}/test/scribe.conf &")
-end
-
-desc "Stop Scribe"
-task :stop do
-  system("killall scribed")
-end
-
-desc "Restart Scribe"
-task :restart => ["stop", "start"] do
-end
-
-task :test => ["restart"]
