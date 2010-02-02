@@ -7,11 +7,15 @@ class ThriftClientTest < Test::Unit::TestCase
     @socket = 1461
     @timeout = 0.2
     @options = {:protocol_extra_params => [false]}
-    @server_thread = Thread.new { Greeter::Server.new("1463").serve }
+    @pid = Process.fork do
+      Signal.trap("INT") { exit }
+      Greeter::Server.new("1463").serve
+    end
   end
   
   def teardown
-    @server_thread.kill
+    Process.kill("INT", @pid)
+    Process.wait
   end
 
   def test_live_server
