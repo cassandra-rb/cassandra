@@ -11,6 +11,7 @@ class ThriftClientTest < Test::Unit::TestCase
       Signal.trap("INT") { exit }
       Greeter::Server.new("1463").serve
     end
+    sleep 0.01 # give the server a bit of time to spin up
   end
   
   def teardown

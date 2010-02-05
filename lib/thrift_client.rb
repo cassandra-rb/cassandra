@@ -11,6 +11,7 @@ end
 require 'timeout'
 require 'rubygems'
 require 'thrift_client/thrift'
+require 'net/http'
 
 class ThriftClient
   class NoServersAvailable < StandardError; end
@@ -87,8 +88,19 @@ Valid optional parameters are:
   end
 
   # Force the client to connect to the server.
+  # TODO refactor
   def connect!
+    case @options[:transport].to_s
+    when "Thrift::HTTPClientTransport"
+      connect_with_http
+    else
+      connect_with_socket
+    end
+  end
+  
+  def connect_with_socket
     server = next_server
+    
     host, port = server.to_s.split(":")
     raise ArgumentError, 'Servers must be in the form "host:port"' unless host and port
 
@@ -99,6 +111,21 @@ Valid optional parameters are:
     @client = @client_class.new(@options[:protocol].new(@transport, *@options[:protocol_extra_params]))
   rescue Thrift::TransportException
     @transport.close rescue nil
+    retry
+  end
+  
+  def connect_with_http
+    server = next_server
+    
+    uri = URI.parse(server)
+    raise ArgumentError, 'Servers must start with http' unless uri.scheme =~ /^http/
+    
+    @transport = @options[:transport].new(server)
+    Net::HTTP.get(uri)
+    # TODO http.use_ssl = @url.scheme == "https"
+    @current_server = server
+    @client = @client_class.new(@options[:protocol].new(@transport, *@options[:protocol_extra_params]))
+  rescue Errno::ECONNREFUSED
     retry
   end
 
