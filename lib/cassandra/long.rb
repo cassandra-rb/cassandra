@@ -15,7 +15,7 @@ class Cassandra
         when 18 # Human-readable UUID-like representation; inverse of #to_guid
           elements = bytes.split("-")
           raise TypeError, "Expected #{bytes.inspect} to cast to a #{self.class} (malformed UUID-like representation)" if elements.size != 3
-          @bytes = elements.join.to_a.pack('H32')
+          @bytes = [elements.join].pack('H32')
         else
           raise TypeError, "Expected #{bytes.inspect} to cast to a #{self.class} (invalid bytecount)"
         end
