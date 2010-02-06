@@ -45,7 +45,7 @@ class Cassandra
 
     def inspect
       "<Cassandra::Long##{object_id} time: #{
-        Time.at((to_i >> 12) / 1_000_000).inspect
+        Time.at((to_i >> 12) / 1_000_000).utc.inspect
       }, usecs: #{
         (to_i >> 12) % 1_000_000
       }, jitter: #{

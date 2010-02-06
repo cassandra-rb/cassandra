@@ -35,7 +35,7 @@ class ComparableTypesTest < Test::Unit::TestCase
 
   def test_long_inspect
     obj = Long.new("\000\000\000\000\000\000\000\000")
-    assert_equal "<Cassandra::Long##{obj.object_id} time: Wed Dec 31 16:00:00 -0800 1969, usecs: 0, jitter: 0, guid: 00000000-0000-0000>", obj.inspect
+    assert_equal "<Cassandra::Long##{obj.object_id} time: Thu Jan 01 00:00:00 UTC 1970, usecs: 0, jitter: 0, guid: 00000000-0000-0000>", obj.inspect
   end
 
 end
