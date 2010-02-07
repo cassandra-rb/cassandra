@@ -52,7 +52,7 @@ class Cassandra
   }.freeze
   
   THRIFT_DEFAULTS = {
-    :transport => Thrift::BufferedTransport
+    :transport_wrapper => Thrift::BufferedTransport
   }.freeze
 
   attr_reader :keyspace, :servers, :schema, :thrift_client_options
