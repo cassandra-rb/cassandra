@@ -19,7 +19,8 @@ class ThriftClient
   DEFAULTS = {
     :protocol => Thrift::BinaryProtocol,
     :protocol_extra_params => [],
-    :transport => Thrift::FramedTransport,
+    :transport => Thrift::Socket,
+    :transport_wrapper => Thrift::FramedTransport,
     :randomize_server_list => true,
     :exception_classes => [
       IOError,
@@ -66,10 +67,10 @@ Valid optional parameters are:
     @retries = options[:retries] || @server_list.size
 
     if @options[:timeout_overrides].any?
-      if @options[:transport].instance_methods.include?("timeout=")
+      if (@options[:transport_wrapper] || @options[:transport]).method_defined?(:timeout=)
         @set_timeout = true
       else
-        warn "ThriftClient: Timeout overrides have no effect with with transport type #{@options[:transport]}"
+        warn "ThriftClient: Timeout overrides have no effect with with transport type #{(@options[:transport_wrapper] || @options[:transport])}"
       end
     end
 
@@ -92,8 +93,8 @@ Valid optional parameters are:
     host, port = server.to_s.split(":")
     raise ArgumentError, 'Servers must be in the form "host:port"' unless host and port
 
-    @transport = @options[:transport].new(
-      Thrift::Socket.new(host, port.to_i, @options[:timeout]))
+    @transport = @options[:transport].new(*[host, port.to_i, @options[:timeout]])
+    @transport = @options[:transport_wrapper].new(@transport) if @options[:transport_wrapper]
     @transport.open
     @current_server = server
     @client = @client_class.new(@options[:protocol].new(@transport, *@options[:protocol_extra_params]))
