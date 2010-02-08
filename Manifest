@@ -4,6 +4,12 @@ Manifest
 README
 Rakefile
 lib/thrift_client.rb
+lib/thrift_client/event_machine.rb
+lib/thrift_client/simple.rb
 lib/thrift_client/thrift.rb
+test/greeter/greeter.rb
+test/greeter/greeter.thrift
+test/greeter/server.rb
+test/simple_test.rb
 test/test_helper.rb
 test/thrift_client_test.rb
