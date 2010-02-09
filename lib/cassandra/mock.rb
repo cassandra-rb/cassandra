@@ -130,8 +130,6 @@ class Cassandra
 
     def _get_range(column_family, start, finish, count)
       ret = OrderedHash.new
-      p column_family
-      p @data
       @data[column_family.to_sym].keys.sort.each do |key|
         break if ret.keys.size >= count
         if key > start && key < finish
