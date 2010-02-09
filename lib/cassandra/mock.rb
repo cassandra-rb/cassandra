@@ -1,11 +1,19 @@
+require 'nokogiri'
 class Cassandra
   class Mock
+    include ::Cassandra::Helpers
+    include ::Cassandra::Columns
+
     def initialize(keyspace, servers=nil, options={})
       #read storage-conf.xml
+      @keyspace = keyspace
+      @column_name_class = {}
+      @sub_column_name_class = {}
+      @storage_xml = options[:storage_xml]
     end
 
     def clear_keyspace!
-      @keyspace = {}
+      @data = {}
     end
 
     def insert(column_family, key, hash, options = {})
@@ -13,11 +21,11 @@ class Cassandra
         @batch << [:insert, column_family, key, hash, options]
       else
         raise ArgumentError if key.nil?
-        @keyspace[column_family] ||= OrderedHash.new
-        if @keyspace[column_family][key]
-          @keyspace[column_family][key] = OrderedHash[@keyspace[column_family][key].merge(hash).sort{|a,b| a[0] <=> b[0]}]
+        @data[column_family] ||= OrderedHash.new
+        if @data[column_family][key]
+          @data[column_family][key] = OrderedHash[@data[column_family][key].merge(hash).sort{|a,b| a[0] <=> b[0]}]
         else
-          @keyspace[column_family][key] = OrderedHash[hash.sort{|a,b| a[0] <=> b[0]}]
+          @data[column_family][key] = OrderedHash[hash.sort{|a,b| a[0] <=> b[0]}]
         end
       end
     end
@@ -35,8 +43,8 @@ class Cassandra
     end
 
     def get(column_family, key, column=nil)
-      @keyspace[column_family] ||= OrderedHash.new
-      d = @keyspace[column_family][key] || OrderedHash.new
+      @data[column_family] ||= OrderedHash.new
+      d = @data[column_family][key] || OrderedHash.new
       column ? d[column] : d
     end
 
@@ -52,14 +60,14 @@ class Cassandra
     end
 
     def remove(column_family, key, column=nil)
-      @keyspace[column_family] ||= OrderedHash.new
+      @data[column_family] ||= OrderedHash.new
       if @batch
         @batch << [:remove, column_family, key, column]
       else
         if column
-          @keyspace[column_family][key].delete(column)
+          @data[column_family][key].delete(column)
         else
-          @keyspace[column_family].delete(key)
+          @data[column_family].delete(key)
         end
       end
     end
@@ -72,7 +80,7 @@ class Cassandra
     end
 
     def clear_column_family!(column_family)
-      @keyspace[column_family] = OrderedHash.new
+      @data[column_family] = OrderedHash.new
     end
 
     def count_columns(column_family, key)
@@ -91,6 +99,70 @@ class Cassandra
         hash[key] = count_columns(column_family, key) || 0
         hash
       end
+    end
+
+    def get_range(column_family, options = {})
+      column_family, _, _, options = 
+        extract_and_validate_params(column_family, "", [options], READ_DEFAULTS)
+      _get_range(column_family, options[:start].to_s, options[:finish].to_s, options[:count])
+    end
+
+    def count_range(column_family, options={})
+      count = 0
+      l = []
+      start_key = ''
+      while (l = get_range(column_family, options.merge(:count => 1000, :start => start_key))).size > 0
+        count += l.size
+        start_key = l.last.succ
+      end
+      count
+    end
+
+    def schema(load=true)
+      if !load && !@schema
+        []
+      else
+        @schema ||= schema_for_keyspace(@keyspace)
+      end
+    end
+
+    private
+
+    def _get_range(column_family, start, finish, count)
+      ret = OrderedHash.new
+      p column_family
+      p @data
+      @data[column_family.to_sym].keys.sort.each do |key|
+        break if ret.keys.size >= count
+        if key > start && key < finish
+          ret[key] = @data[column_family][key]
+        end
+      end
+      ret
+    end
+
+    def schema_for_keyspace(keyspace)
+      doc = read_storage_xml
+      ret = {}
+      doc.css("Keyspaces Keyspace[@Name='#{keyspace}']").css('ColumnFamily').each do |cf|
+        ret[cf['Name']] = {}
+        if cf['CompareSubcolumnsWith']
+          ret[cf['Name']]['CompareSubcolumnsWith'] = 'org.apache.cassandra.db.marshal.' + cf['CompareSubcolumnsWith']
+        end
+        if cf['CompareWith']
+          ret[cf['Name']]['CompareWith'] = 'org.apache.cassandra.db.marshal.' + cf['CompareWith']
+        end
+        if cf['ColumnType']
+          ret[cf['Name']]['Type'] = 'Super'
+        else
+          ret[cf['Name']]['Type'] = 'Standard'
+        end
+      end
+      ret
+    end
+
+    def read_storage_xml
+      @doc ||= Nokogiri::XML(open(@storage_xml))
     end
   end
 end

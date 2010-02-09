@@ -6,13 +6,14 @@ class CassandraMockTest < CassandraTest
   include Cassandra::Constants
 
   def setup
-    @twitter = Cassandra::Mock.new('Twitter')
+    storage_xml_path = File.expand_path(File.join(File.dirname(File.dirname(__FILE__)), 'conf', 'storage-conf.xml'))
+    @twitter = Cassandra::Mock.new('Twitter', nil, :storage_xml => storage_xml_path)
     @twitter.clear_keyspace!
 
-    @blogs = Cassandra::Mock.new('Multiblog')
+    @blogs = Cassandra::Mock.new('Multiblog', nil, :storage_xml => storage_xml_path)
     @blogs.clear_keyspace!
 
-    @blogs_long = Cassandra::Mock.new('MultiblogLong')
+    @blogs_long = Cassandra::Mock.new('MultiblogLong', nil, :storage_xml => storage_xml_path)
     @blogs_long.clear_keyspace!
 
     @uuids = (0..6).map {|i| UUID.new(Time.at(2**(24+i))) }
@@ -23,5 +24,32 @@ class CassandraMockTest < CassandraTest
     assert @twitter
     assert @blogs
     assert @blogs_long
+  end
+  
+  def test_schema_for_keyspace
+    data = {
+      "StatusRelationships"=>{
+          "CompareSubcolumnsWith"=>"org.apache.cassandra.db.marshal.TimeUUIDType", 
+          "CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type",
+          "Type"=>"Super"},
+      "StatusAudits"=>{
+        "CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type",
+        "Type"=>"Standard"}, 
+      "Statuses"=>{
+        "CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type",
+        "Type"=>"Standard"}, 
+      "UserRelationships"=>{
+        "CompareSubcolumnsWith"=>"org.apache.cassandra.db.marshal.TimeUUIDType", 
+        "CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type",
+        "Type"=>"Super"}, 
+      "UserAudits"=>{
+        "CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type", 
+        "Type"=>"Standard"},
+      "Users"=>{"CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type", "Type"=>"Standard"}
+    }
+    stuff = @twitter.send(:schema_for_keyspace, 'Twitter')
+    data.keys.each do |k|
+      assert_equal data[k], stuff[k], k
+    end
   end
 end
