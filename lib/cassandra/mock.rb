@@ -104,7 +104,7 @@ class Cassandra
     def get_range(column_family, options = {})
       column_family, _, _, options = 
         extract_and_validate_params(column_family, "", [options], READ_DEFAULTS)
-      _get_range(column_family, options[:start].to_s, options[:finish].to_s, options[:count])
+      _get_range(column_family, options[:start].to_s, options[:finish].to_s, options[:count]).keys
     end
 
     def count_range(column_family, options={})
@@ -132,8 +132,8 @@ class Cassandra
       ret = OrderedHash.new
       @data[column_family.to_sym].keys.sort.each do |key|
         break if ret.keys.size >= count
-        if key > start && key < finish
-          ret[key] = @data[column_family][key]
+        if (key >= start || start == '') && (key <= finish || finish == '')
+          ret[key] = @data[column_family.to_sym][key]
         end
       end
       ret
