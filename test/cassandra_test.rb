@@ -84,7 +84,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_nil @twitter.get(:Statuses, 'bogus', 'body')
 
     assert @twitter.exists?(:Statuses, key, 'body')
-    assert_nil @twitter.exists?(:Statuses, 'bogus', 'body')
+    assert !@twitter.exists?(:Statuses, 'bogus', 'body')
   end
 
   def test_get_super_key
@@ -157,7 +157,7 @@ class CassandraTest < Test::Unit::TestCase
   def test_multi_get
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
     @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
-    
+
     expected = OrderedHash[key + '1', {'body' => 'v1', 'user' => 'v1'}, key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}]
     result = @twitter.multi_get(:Users, [key + '1', key + '2', 'bogus'])
     assert_equal expected, result
