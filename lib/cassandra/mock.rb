@@ -21,11 +21,11 @@ class Cassandra
         @batch << [:insert, column_family, key, hash, options]
       else
         raise ArgumentError if key.nil?
-        @data[column_family] ||= OrderedHash.new
-        if @data[column_family][key]
-          @data[column_family][key] = OrderedHash[@data[column_family][key].merge(hash).sort{|a,b| a[0] <=> b[0]}]
+        @data[column_family.to_sym] ||= OrderedHash.new
+        if @data[column_family.to_sym][key]
+          @data[column_family.to_sym][key] = OrderedHash[@data[column_family.to_sym][key].merge(hash).sort{|a,b| a[0] <=> b[0]}]
         else
-          @data[column_family][key] = OrderedHash[hash.sort{|a,b| a[0] <=> b[0]}]
+          @data[column_family.to_sym][key] = OrderedHash[hash.sort{|a,b| a[0] <=> b[0]}]
         end
       end
     end
@@ -42,10 +42,22 @@ class Cassandra
       @batch = nil
     end
 
-    def get(column_family, key, column=nil)
-      @data[column_family] ||= OrderedHash.new
-      d = @data[column_family][key] || OrderedHash.new
-      column ? d[column] : d
+    def get(column_family, key, *columns_and_options)
+      column_family, column, sub_column, options =
+        extract_and_validate_params(column_family, [key], columns_and_options, READ_DEFAULTS)
+      @data[column_family.to_sym] ||= OrderedHash.new
+      d = @data[column_family.to_sym][key] || OrderedHash.new
+      if column
+        d[column]
+      else
+        if options[:count]
+          keys = d.keys[0...options[:count]]
+          keys.inject({}) do |memo, key|
+            memo[key] = d[key]
+            memo
+          end
+        end
+      end
     end
 
     def exists?(column_family, key, column=nil)
@@ -60,14 +72,14 @@ class Cassandra
     end
 
     def remove(column_family, key, column=nil)
-      @data[column_family] ||= OrderedHash.new
+      @data[column_family.to_sym] ||= OrderedHash.new
       if @batch
         @batch << [:remove, column_family, key, column]
       else
         if column
-          @data[column_family][key].delete(column)
+          @data[column_family.to_sym][key].delete(column)
         else
-          @data[column_family].delete(key)
+          @data[column_family.to_sym].delete(key)
         end
       end
     end
@@ -80,7 +92,7 @@ class Cassandra
     end
 
     def clear_column_family!(column_family)
-      @data[column_family] = OrderedHash.new
+      @data[column_family.to_sym] = OrderedHash.new
     end
 
     def count_columns(column_family, key)
