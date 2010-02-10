@@ -5,7 +5,6 @@ class Cassandra
     include ::Cassandra::Columns
 
     def initialize(keyspace, servers=nil, options={})
-      #read storage-conf.xml
       @keyspace = keyspace
       @column_name_class = {}
       @sub_column_name_class = {}
@@ -51,13 +50,20 @@ class Cassandra
         d[column]
       else
         if options[:count]
-          keys = d.keys[0...options[:count]]
+          keys = d.keys.sort
+          keys = keys.reverse if options[:reversed]
+          keys = keys[0...options[:count]]
           keys.inject({}) do |memo, key|
             memo[key] = d[key]
             memo
           end
         end
       end
+    end
+
+    def sort_keys(keys, column_family, reversed=false)
+      p schema[column_family]['Compare']
+      keys
     end
 
     def exists?(column_family, key, column=nil)

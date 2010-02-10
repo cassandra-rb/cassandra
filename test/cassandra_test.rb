@@ -57,7 +57,7 @@ class CassandraTest < Test::Unit::TestCase
   def test_get_first_long_column
     @blogs_long.insert(:Blogs, key, 
       {@longs[0] => 'I like this cat', @longs[1] => 'Buttons is cuter', @longs[2] => 'I disagree'})
-    
+
     assert_equal({@longs[0] => 'I like this cat'}, @blogs_long.get(:Blogs, key, :count => 1))
     assert_equal({@longs[2] => 'I disagree'}, @blogs_long.get(:Blogs, key, :count => 1, :reversed => true))
     assert_equal({}, @blogs_long.get(:Blogs, 'bogus'))
