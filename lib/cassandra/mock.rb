@@ -61,11 +61,6 @@ class Cassandra
       end
     end
 
-    def sort_keys(keys, column_family, reversed=false)
-      p schema[column_family]['Compare']
-      keys
-    end
-
     def exists?(column_family, key, column=nil)
       !!get(column_family, key, column)
     end
