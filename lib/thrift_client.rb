@@ -11,7 +11,7 @@ end
 require 'timeout'
 require 'rubygems'
 require 'thrift_client/thrift'
-require 'net/http'
+require 'thrift_client/connection'
 
 class ThriftClient
   class NoServersAvailable < StandardError; end
@@ -87,92 +87,9 @@ Valid optional parameters are:
     end
   end
   
-  class ConnectionFactory
-    def self.create(thrift_client_instance)
-      case thrift_client_instance.options[:transport].to_s
-      when "Thrift::HTTPClientTransport"
-        ConnectionHTTP.new(thrift_client_instance, :handles_error => Errno::ECONNREFUSED)
-      else
-        ConnectionSocket.new(thrift_client_instance, :handles_error => Thrift::TransportException)
-      end
-    end
-  end
-  
-  class ConnectionBase
-    attr_accessor :transport, :server
-    
-    def initialize(thrift_client_instance, error_hash)
-      @thrift_client = thrift_client_instance
-      @error_type = error_hash[:handles_error]
-    end
-    
-    def connect!
-      @server = @thrift_client.next_server
-      force_connection(@server)
-    rescue @error_type
-      handle_error
-      retry
-    end
-    
-    def close
-    end
-    
-  private
-  
-    def force_connection(server)
-      raise "not implemented"
-    end
-    
-    def handle_error
-    end
-  end
-  
-  class ConnectionSocket < ConnectionBase
-    def close
-      @transport.close
-    end
-    
-  private
-  
-    def force_connection(server)
-      host, port = parse_server(server)
-      @transport = @thrift_client.options[:transport].new(
-        Thrift::Socket.new(host, port.to_i, @thrift_client.options[:timeout]))
-      @transport.open
-    end
-    
-    def handle_error
-      @transport.close rescue nil
-    end
-    
-    def parse_server(server)
-      host, port = server.to_s.split(":")
-      raise ArgumentError, 'Servers must be in the form "host:port"' unless host and port
-      [host, port]
-    end
-  end
-  
-  class ConnectionHTTP < ConnectionBase
-  
-  private
-  
-    def force_connection(server)
-      uri = parse_server(server)
-      @transport = Thrift::HTTPClientTransport.new(server)
-      Net::HTTP.get(uri)
-      # TODO http.use_ssl = @url.scheme == "https"
-    end
-    
-    def parse_server(server)
-      uri = URI.parse(server)
-      raise ArgumentError, 'Servers must start with http' unless uri.scheme =~ /^http/
-      uri
-    end
-  end
-  
   # Force the client to connect to the server.
   def connect!
-    @connection = ConnectionFactory.create(self)
+    @connection = Connection::Factory.create(self)
     @connection.connect!
     @current_server = @connection.server
     @client = @client_class.new(@options[:protocol].new(@connection.transport, *@options[:protocol_extra_params]))
