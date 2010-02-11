@@ -36,6 +36,14 @@ You need Ruby 1.8 or 1.9. If you have those, just run:
 
   sudo gem install thrift_client
 
+== Contributing
+
+To contribute changes:
+
+1. Fork the project
+2. make your change, adding tests
+3. send a pull request to fauna and ryanking
+
 == Reporting problems
 
 The Github issue tracker is {here}[http://github.com/fauna/thrift_client/issues].
