@@ -11,7 +11,9 @@ class ThriftClientTest < Test::Unit::TestCase
       Signal.trap("INT") { exit }
       Greeter::Server.new("1463").serve
     end
-    sleep 0.01 # give the server a bit of time to spin up
+    # Need to give the child process a moment to open the listening socket or
+    # we get occasional "could not connect" errors in tests.
+    sleep 0.05
   end
   
   def teardown
@@ -90,7 +92,7 @@ class ThriftClientTest < Test::Unit::TestCase
       measurement = Benchmark.measure do
         assert_raises(Thrift::TransportException) do
           ThriftClient.new(Greeter::Client, "127.0.0.1:#{@socket}",
-            @options.merge(:timeout => @timeout, :transport => Thrift::BufferedTransport)
+            @options.merge(:timeout => @timeout, :transport_wrapper => Thrift::BufferedTransport)
           ).greeting("someone")
         end
       end
@@ -106,7 +108,7 @@ class ThriftClientTest < Test::Unit::TestCase
       measurement = Benchmark.measure do
         assert_raises(Thrift::TransportException) do
           ThriftClient.new(Greeter::Client, "127.0.0.1:#{@socket}",
-            @options.merge(:timeout => @timeout, :timeout_overrides => {:greeting => log_timeout}, :transport => Thrift::BufferedTransport)
+            @options.merge(:timeout => @timeout, :timeout_overrides => {:greeting => log_timeout}, :transport_wrapper => Thrift::BufferedTransport)
           ).greeting("someone")
         end
       end

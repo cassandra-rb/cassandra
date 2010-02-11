@@ -12,7 +12,9 @@ class ThriftClientHTTPTest < Test::Unit::TestCase
       Signal.trap("INT") { exit }
       Greeter::HTTPServer.new(@servers.last).serve
     end
-    sleep 0.01 # give the server a bit of time to spin up
+    # Need to give the child process a moment to open the listening socket or
+    # we get occasional "could not connect" errors in tests.
+    sleep 0.05
   end
   
   def teardown
