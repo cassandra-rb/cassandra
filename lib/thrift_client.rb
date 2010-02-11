@@ -86,25 +86,14 @@ Valid optional parameters are:
       end
     end
   end
-
-  # Force the client to connect to the server.
-  # TODO refactor
-  # def connect!
-  #   case @options[:transport].to_s
-  #   when "Thrift::HTTPClientTransport"
-  #     connect_with_http
-  #   else
-  #     connect_with_socket
-  #   end
-  # end
   
   class ConnectionFactory
     def self.create(thrift_client_instance)
       case thrift_client_instance.options[:transport].to_s
       when "Thrift::HTTPClientTransport"
-        ConnectionHTTP.new(thrift_client_instance)
+        ConnectionHTTP.new(thrift_client_instance, :handles_error => Errno::ECONNREFUSED)
       else
-        ConnectionSocket.new(thrift_client_instance)
+        ConnectionSocket.new(thrift_client_instance, :handles_error => Thrift::TransportException)
       end
     end
   end
@@ -112,98 +101,82 @@ Valid optional parameters are:
   class ConnectionBase
     attr_accessor :transport, :server
     
-    def initialize(thrift_client_instance)
+    def initialize(thrift_client_instance, error_hash)
       @thrift_client = thrift_client_instance
+      @error_type = error_hash[:handles_error]
     end
     
-    def validate_server_format
-      raise "not implemented"
-    end
-    
-    def open_transport
-      raise "not implemented"
+    def connect!
+      @server = @thrift_client.next_server
+      force_connection(@server)
+    rescue @error_type
+      handle_error
+      retry
     end
     
     def close
+    end
+    
+  private
+  
+    def force_connection(server)
+      raise "not implemented"
+    end
+    
+    def handle_error
     end
   end
   
   class ConnectionSocket < ConnectionBase
-    def open_transport
-      @server = @thrift_client.next_server
-      validate_server_format
-      @transport = @thrift_client.options[:transport].new(
-        Thrift::Socket.new(@host, @port.to_i, @thrift_client.options[:timeout]))
-      @transport.open
-    rescue Thrift::TransportException
-      @transport.close rescue nil
-      retry
-    end
-    
-    def validate_server_format
-      @host, @port = @server.to_s.split(":")
-      raise ArgumentError, 'Servers must be in the form "host:port"' unless @host and @port
-    end
-    
     def close
       @transport.close
+    end
+    
+  private
+  
+    def force_connection(server)
+      host, port = parse_server(server)
+      @transport = @thrift_client.options[:transport].new(
+        Thrift::Socket.new(host, port.to_i, @thrift_client.options[:timeout]))
+      @transport.open
+    end
+    
+    def handle_error
+      @transport.close rescue nil
+    end
+    
+    def parse_server(server)
+      host, port = server.to_s.split(":")
+      raise ArgumentError, 'Servers must be in the form "host:port"' unless host and port
+      [host, port]
     end
   end
   
   class ConnectionHTTP < ConnectionBase
-    def validate_server_format
-      @uri = URI.parse(@server)
-      raise ArgumentError, 'Servers must start with http' unless @uri.scheme =~ /^http/
+  
+  private
+  
+    def force_connection(server)
+      uri = parse_server(server)
+      @transport = Thrift::HTTPClientTransport.new(server)
+      Net::HTTP.get(uri)
+      # TODO http.use_ssl = @url.scheme == "https"
     end
     
-    def open_transport
-      @server = @thrift_client.next_server
-      validate_server_format
-      @transport = Thrift::HTTPClientTransport.new(@server)
-      Net::HTTP.get(@uri)
-      # TODO http.use_ssl = @url.scheme == "https"
-    rescue Errno::ECONNREFUSED
-      retry
+    def parse_server(server)
+      uri = URI.parse(server)
+      raise ArgumentError, 'Servers must start with http' unless uri.scheme =~ /^http/
+      uri
     end
   end
   
+  # Force the client to connect to the server.
   def connect!
     @connection = ConnectionFactory.create(self)
-    @connection.open_transport # @connection.transport
+    @connection.connect!
     @current_server = @connection.server
     @client = @client_class.new(@options[:protocol].new(@connection.transport, *@options[:protocol_extra_params]))
   end
-  
-  # def connect_with_socket
-  #   server = next_server
-  #   
-  #   host, port = server.to_s.split(":")
-  #   raise ArgumentError, 'Servers must be in the form "host:port"' unless host and port
-  # 
-  #   @transport = @options[:transport].new(
-  #     Thrift::Socket.new(host, port.to_i, @options[:timeout]))
-  #   @transport.open
-  #   @current_server = server
-  #   @client = @client_class.new(@options[:protocol].new(@transport, *@options[:protocol_extra_params]))
-  # rescue Thrift::TransportException
-  #   @transport.close rescue nil
-  #   retry
-  # end
-  # 
-  # def connect_with_http
-  #   server = next_server
-  #   
-  #   uri = URI.parse(server)
-  #   raise ArgumentError, 'Servers must start with http' unless uri.scheme =~ /^http/
-  #   
-  #   @transport = @options[:transport].new(server)
-  #   Net::HTTP.get(uri)
-  #   # TODO http.use_ssl = @url.scheme == "https"
-  #   @current_server = server
-  #   @client = @client_class.new(@options[:protocol].new(@transport, *@options[:protocol_extra_params]))
-  # rescue Errno::ECONNREFUSED
-  #   retry
-  # end
 
   # Force the client to disconnect from the server.
   def disconnect!(keep = true)
