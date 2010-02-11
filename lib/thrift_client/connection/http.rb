@@ -6,8 +6,9 @@ module Connection
     def force_connection(server)
       uri = parse_server(server)
       @transport = Thrift::HTTPClientTransport.new(server)
-      Net::HTTP.get(uri)
-      # TODO http.use_ssl = @url.scheme == "https"
+      http = Net::HTTP.new(uri.host, uri.port)
+      http.use_ssl = uri.scheme == "https"
+      http.get(uri.path)
     end
   
     def parse_server(server)
