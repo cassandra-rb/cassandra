@@ -88,7 +88,7 @@ module Thrift
     def receive_data(data)
       trap do
         (@buf) << data
-      
+
         if @callback and can_read?(@size)
           callback = @callback
           data = yank(@size)

@@ -16,7 +16,7 @@ class ThriftClientHTTPTest < Test::Unit::TestCase
     # we get occasional "could not connect" errors in tests.
     sleep 0.05
   end
-  
+
   def teardown
     Process.kill("INT", @pid)
     Process.wait
@@ -28,14 +28,14 @@ class ThriftClientHTTPTest < Test::Unit::TestCase
       ThriftClient.new(Greeter::Client, "127.0.0.1:1463", @options).greeting("someone")
     end
   end
-  
+
   def test_bad_uri_no_http
     assert_raises ArgumentError do
       @options.merge!({ :protocol => Thrift::BinaryProtocol, :transport => Thrift::HTTPClientTransport })
       ThriftClient.new(Greeter::Client, "//127.0.0.1:1463", @options).greeting("someone")
     end
   end
-  
+
   def test_valid_server
     assert_nothing_raised do
       @options.merge!({ :protocol => Thrift::BinaryProtocol, :transport => Thrift::HTTPClientTransport })

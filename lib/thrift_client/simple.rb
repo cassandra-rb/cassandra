@@ -1,4 +1,3 @@
-
 require 'socket'
 require 'getoptlong'
 
@@ -165,7 +164,6 @@ class ThriftClient
       end
     end
 
-
     ## ----------------------------------------
 
     class Field
@@ -182,7 +180,6 @@ class ThriftClient
       end
     end
 
-
     class ThriftException < RuntimeError
       def initialize(reason)
         @reason = reason
@@ -192,7 +189,6 @@ class ThriftClient
         "ThriftException(#{@reason.inspect})"
       end
     end
-
 
     module ThriftStruct
       module Include
@@ -212,7 +208,6 @@ class ThriftClient
       end
     end
 
-
     def self.make_struct(name, *fields)
       st_name = "ST_#{name}"
       if Struct.constants.include?(st_name)
@@ -227,7 +222,6 @@ class ThriftClient
         klass
       end
     end
-
 
     class ThriftService
       def initialize(sock)

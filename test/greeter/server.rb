@@ -4,7 +4,7 @@ module Greeter
       "hello there #{name}!"
     end
   end
-  
+
   class Server
     def initialize(port)
       @port = port
@@ -14,12 +14,12 @@ module Greeter
       transportFactory = Thrift::FramedTransportFactory.new()
       @server = Thrift::SimpleServer.new(processor, transport, transportFactory)
     end
-    
+
     def serve
       @server.serve()
     end
   end
-  
+
   # client:
   # trans = Thrift::HTTPClientTransport.new("http://127.0.0.1:9292/greeter")
   # prot = Thrift::BinaryProtocol.new(trans)
@@ -32,7 +32,7 @@ module Greeter
       path = uri.path[1..-1]
       @server = Thrift::MongrelHTTPServer.new(processor, :port => uri.port, :ip => uri.host, :path => path)
     end
-    
+
     def serve
       @server.serve()
     end

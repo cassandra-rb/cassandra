@@ -10,7 +10,7 @@ module Connection
       http.use_ssl = uri.scheme == "https"
       http.get(uri.path)
     end
-  
+
     def parse_server(server)
       uri = URI.parse(server)
       raise ArgumentError, 'Servers must start with http' unless uri.scheme =~ /^http/

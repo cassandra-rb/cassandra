@@ -2,18 +2,18 @@
 require "#{File.dirname(__FILE__)}/test_helper"
 
 class SimpleTest < Test::Unit::TestCase
- 
+
   S = ThriftClient::Simple
   S.make_struct("Example", S::Field.new(:name, S::STRING, 1))
   S.make_struct("Args")
   S.make_struct("Retval", S::Field.new(:rv, S::I32, 0))
- 
+
   def test_definition
     assert Struct::ST_Example
     assert Struct::ST_Args
     assert Struct::ST_Retval
   end
-  
+
   ## Encoding
 
   def test_boolean_encoding
@@ -69,7 +69,7 @@ class SimpleTest < Test::Unit::TestCase
     assert_equal "\x80\x01\x00\x01\x00\x00\x00\x09getHeight\x00\x00\x00\x17\x00", 
       S.pack_request("getHeight", Struct::ST_Args.new, 23)
   end
-  
+
   ## Decoding
 
   def test_boolean_decoding
@@ -133,5 +133,5 @@ class SimpleTest < Test::Unit::TestCase
       StringIO.new("\x80\x01\x00\x02\x00\x00\x00\x09getHeight\x00\x00\x00\xff\x08\x00\x00\x00\x00\x00\x01\x00"),
       Struct::ST_Retval)
   end
-  
+
 end

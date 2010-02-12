@@ -1,4 +1,3 @@
-
 if ENV["ANCIENT_THRIFT"]
   $LOAD_PATH.unshift("/Users/eweaver/p/twitter/rails/vendor/gems/thrift-751142/lib")
   $LOAD_PATH.unshift("/Users/eweaver/p/twitter/rails/vendor/gems/thrift-751142/ext")
@@ -84,7 +83,7 @@ Valid optional parameters are:
       end
     end
   end
-  
+
   # Force the client to connect to the server.
   def connect!
     @connection = Connection::Factory.create(self)
@@ -107,7 +106,7 @@ Valid optional parameters are:
     @client = nil
     @current_server = nil
   end
-  
+
   def next_server
     if @retry_period
       rebuild_live_server_list! if Time.now > @last_rebuild + @retry_period
@@ -117,7 +116,7 @@ Valid optional parameters are:
     end
     @live_server_list.pop
   end
-  
+
   def rebuild_live_server_list!
     @last_rebuild = Time.now
     if @options[:randomize_server_list]

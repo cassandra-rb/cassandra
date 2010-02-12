@@ -27,7 +27,7 @@ Instantiate a client:
 You can then make calls to the server via the <tt>client</tt> instance as if was your internal Thrift client. The connection will be opened lazily and methods will be proxied through.
 
   client.get_string_list_property("keyspaces")
-  
+
 On failures, the client will try the remaining servers in the list before giving up. See ThriftClient for more.
 
 == Installation

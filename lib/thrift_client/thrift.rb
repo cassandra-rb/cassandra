@@ -1,4 +1,3 @@
-
 module Thrift
   class BufferedTransport
     def timeout=(timeout)
