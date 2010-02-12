@@ -82,8 +82,7 @@ class ThriftClientTest < Test::Unit::TestCase
           ).greeting("someone")
         end
       end
-      assert((measurement.real > @timeout - 0.01), "#{measurement.real} < #{@timeout}")
-      assert((measurement.real < @timeout + 0.01), "#{measurement.real} > #{@timeout}")
+      assert((measurement.real > @timeout), "#{measurement.real} < #{@timeout}")
     end
   end
   
@@ -96,8 +95,7 @@ class ThriftClientTest < Test::Unit::TestCase
           ).greeting("someone")
         end
       end
-      assert((measurement.real > @timeout - 0.01), "#{measurement.real} < #{@timeout}")
-      assert((measurement.real < @timeout + 0.01), "#{measurement.real} > #{@timeout}")
+      assert((measurement.real > @timeout), "#{measurement.real} < #{@timeout}")
     end
   end
   
@@ -112,8 +110,7 @@ class ThriftClientTest < Test::Unit::TestCase
           ).greeting("someone")
         end
       end
-      assert((measurement.real > log_timeout - 0.01), "#{measurement.real} < #{log_timeout}")
-      assert((measurement.real < log_timeout + 0.01), "#{measurement.real} > #{log_timeout}")
+      assert((measurement.real > log_timeout), "#{measurement.real} < #{log_timeout}")
     end
   end
   

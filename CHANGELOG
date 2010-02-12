@@ -1,3 +1,5 @@
+v0.4.1 Add support for HTTPClientTransport
+
 v0.4.0. Add new EventMachine transport.  This requires two layers of transport
 configurability: 
   options[:transport] for EventMachine or Socket transports

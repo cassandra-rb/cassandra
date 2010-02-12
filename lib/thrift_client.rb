@@ -10,6 +10,7 @@ end
 
 require 'rubygems'
 require 'thrift_client/thrift'
+require 'thrift_client/connection'
 
 class ThriftClient
 
@@ -83,26 +84,18 @@ Valid optional parameters are:
       end
     end
   end
-
+  
   # Force the client to connect to the server.
   def connect!
-    server = next_server
-    host, port = server.to_s.split(":")
-    raise ArgumentError, 'Servers must be in the form "host:port"' unless host and port
-
-    @transport = @options[:transport].new(*[host, port.to_i, @options[:timeout]])
-    @transport = @options[:transport_wrapper].new(@transport) if @options[:transport_wrapper]
-    @transport.open
-    @current_server = server
-    @client = @client_class.new(@options[:protocol].new(@transport, *@options[:protocol_extra_params]))
-  rescue Thrift::TransportException
-    @transport.close rescue nil
-    retry
+    @connection = Connection::Factory.create(self)
+    @connection.connect!
+    @current_server = @connection.server
+    @client = @client_class.new(@options[:protocol].new(@connection.transport, *@options[:protocol_extra_params]))
   end
 
   # Force the client to disconnect from the server.
   def disconnect!(keep = true)
-    @transport.close rescue nil
+    @connection.close rescue nil
 
     # Keep live servers in the list if we have a retry period. Otherwise,
     # always eject, because we will always re-add them.
@@ -113,6 +106,25 @@ Valid optional parameters are:
     @request_count = 0
     @client = nil
     @current_server = nil
+  end
+  
+  def next_server
+    if @retry_period
+      rebuild_live_server_list! if Time.now > @last_rebuild + @retry_period
+      raise NoServersAvailable, "No live servers in #{@server_list.inspect} since #{@last_rebuild.inspect}." if @live_server_list.empty?
+    elsif @live_server_list.empty?
+      rebuild_live_server_list!
+    end
+    @live_server_list.pop
+  end
+  
+  def rebuild_live_server_list!
+    @last_rebuild = Time.now
+    if @options[:randomize_server_list]
+      @live_server_list = @server_list.sort_by { rand }
+    else
+      @live_server_list = @server_list.dup
+    end
   end
 
   private
@@ -140,24 +152,5 @@ Valid optional parameters are:
   def handle_exception(e, method_name, args)
     raise e if @options[:raise]
     @options[:defaults][method_name.to_sym]
-  end
-
-  def next_server
-    if @retry_period
-      rebuild_live_server_list! if Time.now > @last_rebuild + @retry_period
-      raise NoServersAvailable, "No live servers in #{@server_list.inspect} since #{@last_rebuild.inspect}." if @live_server_list.empty?
-    elsif @live_server_list.empty?
-      rebuild_live_server_list!
-    end
-    @live_server_list.pop
-  end
-
-  def rebuild_live_server_list!
-    @last_rebuild = Time.now
-    if @options[:randomize_server_list]
-      @live_server_list = @server_list.sort_by { rand }
-    else
-      @live_server_list = @server_list.dup
-    end
   end
 end
