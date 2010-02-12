@@ -90,7 +90,7 @@ Valid optional parameters are:
     @connection = Connection::Factory.create(@options[:transport], @options[:transport_wrapper], @current_server, @options[:timeout])
     @connection.connect!
     @client = @client_class.new(@options[:protocol].new(@connection.transport, *@options[:protocol_extra_params]))
-  rescue Thrift::TransportException
+  rescue Thrift::TransportException, Errno::ECONNREFUSED
     @transport.close rescue nil
     retry
   end

@@ -16,10 +16,5 @@ module Connection
 
     def close
     end
-
-  private
-
-    def handle_error
-    end
   end
 end
