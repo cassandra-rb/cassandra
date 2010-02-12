@@ -86,10 +86,13 @@ Valid optional parameters are:
 
   # Force the client to connect to the server.
   def connect!
-    @connection = Connection::Factory.create(self)
+    @current_server = next_server
+    @connection = Connection::Factory.create(@options[:transport], @options[:transport_wrapper], @current_server, @options[:timeout])
     @connection.connect!
-    @current_server = @connection.server
     @client = @client_class.new(@options[:protocol].new(@connection.transport, *@options[:protocol_extra_params]))
+  rescue Thrift::TransportException
+    @transport.close rescue nil
+    retry
   end
 
   # Force the client to disconnect from the server.
@@ -106,6 +109,8 @@ Valid optional parameters are:
     @client = nil
     @current_server = nil
   end
+
+  private
 
   def next_server
     if @retry_period
@@ -125,8 +130,6 @@ Valid optional parameters are:
       @live_server_list = @server_list.dup
     end
   end
-
-  private
 
   def proxy(method_name, *args)
     disconnect! if @max_requests and @request_count >= @max_requests
@@ -148,7 +151,7 @@ Valid optional parameters are:
     @client.timeout = @options[:timeout_overrides][method_name.to_sym] || @options[:timeout]
   end
 
-  def handle_exception(e, method_name, args)
+  def handle_exception(e, method_name, args=nil)
     raise e if @options[:raise]
     @options[:defaults][method_name.to_sym]
   end

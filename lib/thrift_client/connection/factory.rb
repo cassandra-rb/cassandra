@@ -1,11 +1,10 @@
 module Connection
   class Factory
-    def self.create(thrift_client_instance)
-      case thrift_client_instance.options[:transport].to_s
-      when "Thrift::HTTPClientTransport"
-        Connection::HTTP.new(thrift_client_instance, :handles_error => Errno::ECONNREFUSED)
+    def self.create(transport, transport_wrapper, server, timeout)
+      if transport == Thrift::HTTPClientTransport
+        Connection::HTTP.new(transport, transport_wrapper, server, timeout, :handles_error => Errno::ECONNREFUSED)
       else
-        Connection::Socket.new(thrift_client_instance, :handles_error => Thrift::TransportException)
+        Connection::Socket.new(transport, transport_wrapper, server, timeout, :handles_error => Thrift::TransportException)
       end
     end
   end
