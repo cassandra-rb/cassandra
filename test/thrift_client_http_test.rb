@@ -42,5 +42,13 @@ class ThriftClientHTTPTest < Test::Unit::TestCase
       ThriftClient.new(Greeter::Client, "http://127.0.0.1:1463/greeter", @options).greeting("someone")
     end
   end
+  
+  def test_non_random_fall_through
+    @servers = ["http://127.0.0.1:1463/greeter", "http://127.0.0.1:1461/greeter", "http://127.0.0.1:1462/greeter"]
+    assert_nothing_raised do
+      @options.merge!({ :protocol => Thrift::BinaryProtocol, :transport => Thrift::HTTPClientTransport })
+      ThriftClient.new(Greeter::Client, @servers, @options.merge(:randomize_server_list => false)).greeting("someone")
+    end
+  end
 
 end

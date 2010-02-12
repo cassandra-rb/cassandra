@@ -13,10 +13,6 @@ module Connection
 
   private
 
-    def handle_error
-      @transport.close rescue nil
-    end
-
     def parse_server(server)
       host, port = server.to_s.split(":")
       raise ArgumentError, 'Servers must be in the form "host:port"' unless host and port
