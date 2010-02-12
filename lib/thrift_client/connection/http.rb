@@ -2,7 +2,6 @@ module Connection
   class HTTP < Base
     def connect!
       uri = parse_server(@server)
-      puts "connecting to #{uri.inspect}"
       @transport = Thrift::HTTPClientTransport.new(@server)
       http = Net::HTTP.new(uri.host, uri.port)
       http.use_ssl = uri.scheme == "https"
