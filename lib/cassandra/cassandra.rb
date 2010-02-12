@@ -221,7 +221,7 @@ class Cassandra
   def count_range(column_family, options = {})
     count = 0
     l = []
-    start_key = ''
+    start_key = options[:start]
     while (l = get_range(column_family, options.merge(:count => 1000, :start => start_key))).size > 0
       count += l.size
       start_key = l.last.succ
