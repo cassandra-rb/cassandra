@@ -55,8 +55,8 @@ end
 
 desc "Check Git version"
 task :git do
-  unless `git --version 2>&1` =~ /git version 1.6/
-    puts "You need to install git 1.6."
+  unless `git --version 2>&1` =~ /git version 1.(6|7)/
+    puts "You need to install git 1.6 or 1.7"
     exit(1)
   end
 end
