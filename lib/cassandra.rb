@@ -8,6 +8,8 @@ $LOAD_PATH << "#{here}/../vendor/gen-rb"
 require "#{here}/../vendor/gen-rb/cassandra"
 
 $LOAD_PATH << "#{here}"
+
+require 'cassandra/helpers'
 require 'cassandra/array'
 require 'cassandra/time'
 require 'cassandra/comparable'

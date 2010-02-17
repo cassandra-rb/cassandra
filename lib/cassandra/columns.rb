@@ -28,9 +28,10 @@ class Cassandra
     end
 
     def column_family_property(column_family, key)
+      unless schema[column_family]
+        raise AccessError, "Invalid column family \"#{column_family}\""
+      end
       schema[column_family][key]
-    rescue NoMethodError
-      raise AccessError, "Invalid column family \"#{column_family}\""    
     end
 
     def multi_column_to_hash!(hash)

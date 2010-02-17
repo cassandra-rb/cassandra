@@ -2,7 +2,7 @@
 class Cassandra
   # A temporally-ordered Long class for use in Cassandra column names
   class Long < Comparable
-  
+
     # FIXME Should unify with or subclass Cassandra::UUID
     def initialize(bytes = nil)
       case bytes
@@ -38,7 +38,7 @@ class Cassandra
         ints[1]
       end
     end
-    
+
     def to_guid
       "%08x-%04x-%04x" % @bytes.unpack("Nnn")
     end    

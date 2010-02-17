@@ -57,19 +57,19 @@ class CassandraTest < Test::Unit::TestCase
   def test_get_first_long_column
     @blogs_long.insert(:Blogs, key, 
       {@longs[0] => 'I like this cat', @longs[1] => 'Buttons is cuter', @longs[2] => 'I disagree'})
-    
+
     assert_equal({@longs[0] => 'I like this cat'}, @blogs_long.get(:Blogs, key, :count => 1))
     assert_equal({@longs[2] => 'I disagree'}, @blogs_long.get(:Blogs, key, :count => 1, :reversed => true))
     assert_equal({}, @blogs_long.get(:Blogs, 'bogus'))
   end
-  
+
   def test_long_remove_bug
     @blogs_long.insert(:Blogs, key, {@longs[0] => 'I like this cat'})
     @blogs_long.remove(:Blogs, key)
     assert_equal({}, @blogs_long.get(:Blogs, key, :count => 1))
 
-    @blogs_long.insert(:Blogs, key, {@longs[0] => 'I like this cat'})
-    assert_equal({@longs[0] => 'I like this cat'}, @blogs_long.get(:Blogs, key, :count => 1))
+    @blogs_long.insert(:Blogs, key, {@longs[0] => 'I really like this cat'})
+    assert_equal({@longs[0] => 'I really like this cat'}, @blogs_long.get(:Blogs, key, :count => 1))
   end
 
   def test_get_with_count
@@ -84,7 +84,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_nil @twitter.get(:Statuses, 'bogus', 'body')
 
     assert @twitter.exists?(:Statuses, key, 'body')
-    assert_nil @twitter.exists?(:Statuses, 'bogus', 'body')
+    assert !@twitter.exists?(:Statuses, 'bogus', 'body')
   end
 
   def test_get_super_key
@@ -157,7 +157,7 @@ class CassandraTest < Test::Unit::TestCase
   def test_multi_get
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
     @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
-    
+
     expected = OrderedHash[key + '1', {'body' => 'v1', 'user' => 'v1'}, key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}]
     result = @twitter.multi_get(:Users, [key + '1', key + '2', 'bogus'])
     assert_equal expected, result
