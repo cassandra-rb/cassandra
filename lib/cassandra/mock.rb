@@ -2,14 +2,10 @@ require 'nokogiri'
 
 class UUID
   def >=(other)
-    other = nil if other == ''
-    other = UUID.new(other) unless other.kind_of?(UUID)
     (self <=> other) >= 0
   end
 
   def <=(other)
-    other = nil if other == ''
-    other = UUID.new(other) unless other.kind_of?(UUID)
     (self <=> other) <= 0
   end
 end
@@ -116,7 +112,7 @@ class Cassandra
             finish = to_compare_with_type(options[:finish], column_family, false)
             ret = OrderedHash.new
             row.keys.each do |key|
-              if (key >= start || start.nil?) && (key <= finish || finish.nil?)
+              if (start.nil? || key >= start) && (finish.nil? || key <= finish)
                 ret[key] = row[key]
               end
             end
@@ -186,7 +182,7 @@ class Cassandra
     def get_range(column_family, options = {})
       column_family, _, _, options = 
         extract_and_validate_params_for_real(column_family, "", [options], READ_DEFAULTS)
-      _get_range(column_family, options[:start].to_s, options[:finish].to_s, options[:count]).keys
+      _get_range(column_family, options[:start], options[:finish], options[:count]).keys
     end
 
     def count_range(column_family, options={})
@@ -212,9 +208,11 @@ class Cassandra
 
     def _get_range(column_family, start, finish, count)
       ret = OrderedHash.new
+      start  = to_compare_with_type(start,  column_family)
+      finish = to_compare_with_type(finish, column_family)
       cf(column_family).keys.sort.each do |key|
         break if ret.keys.size >= count
-        if (key >= start || start == '') && (key <= finish || finish == '')
+        if (start.nil? || key >= start) && (finish.nil? || key <= finish)
           ret[key] = cf(column_family)[key]
         end
       end
