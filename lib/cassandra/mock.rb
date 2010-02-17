@@ -35,7 +35,7 @@ class Cassandra
         @batch << [:insert, column_family, key, hash, options]
       else
         raise ArgumentError if key.nil?
-        if schema[column_family.to_s]['Type'] == 'Standard'
+        if column_family_type(column_family) == 'Standard'
           insert_standard(column_family, key, hash)
         else
           insert_super(column_family, key, hash)
@@ -44,22 +44,24 @@ class Cassandra
     end
 
     def insert_standard(column_family, key, hash)
-      @data[column_family.to_sym] ||= OrderedHash.new
-      if @data[column_family.to_sym][key]
-        @data[column_family.to_sym][key] = OrderedHash[@data[column_family.to_sym][key].merge(hash).sort{|a,b| a[0] <=> b[0]}]
+      if cf(column_family)[key]
+        cf(column_family)[key] = merge_and_sort(cf(column_family)[key], hash)
       else
-        @data[column_family.to_sym][key] = OrderedHash[hash.sort{|a,b| a[0] <=> b[0]}]
+        cf(column_family)[key] = OrderedHash[hash.sort{|a,b| a[0] <=> b[0]}]
       end
     end
 
+    def merge_and_sort(old_stuff, new_stuff)
+      OrderedHash[old_stuff.merge(new_stuff).sort{|a,b| a[0] <=> b[0]}]
+    end
+
     def insert_super(column_family, key, hash)
-      @data[column_family.to_sym]      ||= OrderedHash.new
-      @data[column_family.to_sym][key] ||= OrderedHash.new
+      cf(column_family)[key] ||= OrderedHash.new
       hash.keys.each do |sub_key|
-        if @data[column_family.to_sym][key][sub_key]
-          @data[column_family.to_sym][key][sub_key] = OrderedHash[@data[column_family.to_sym][key][sub_key].merge(hash[sub_key]).sort{|a,b| a[0] <=> b[0]}]
+        if cf(column_family)[key][sub_key]
+          cf(column_family)[key][sub_key] = merge_and_sort(cf(column_family)[key][sub_key], hash[sub_key])
         else
-          @data[column_family.to_sym][key][sub_key] = OrderedHash[hash[sub_key].sort{|a,b| a[0] <=> b[0]}]
+          cf(column_family)[key][sub_key] = OrderedHash[hash[sub_key].sort{|a,b| a[0] <=> b[0]}]
         end
       end
     end
@@ -79,8 +81,7 @@ class Cassandra
     def get(column_family, key, *columns_and_options)
       column_family, column, sub_column, options =
         extract_and_validate_params_for_real(column_family, [key], columns_and_options, READ_DEFAULTS)
-      @data[column_family.to_sym] ||= OrderedHash.new
-      if schema[column_family]['Type'] == 'Standard'
+      if column_family_type(column_family) == 'Standard'
         get_standard(column_family, key, column, options)
       else
         get_super(column_family, key, column, sub_column, options)
@@ -88,60 +89,57 @@ class Cassandra
     end
 
     def get_standard(column_family, key, column, options)
-      d = @data[column_family.to_sym][key] || OrderedHash.new
+      row = cf(column_family)[key] || OrderedHash.new
       if column
-        d[column]
+        row[column]
       else
-        if options[:count]
-          keys = d.keys.sort
-          keys = keys.reverse if options[:reversed]
-          keys = keys[0...options[:count]]
-          keys.inject(OrderedHash.new) do |memo, key|
-            memo[key] = d[key]
-            memo
-          end
-        else
-          d
+        apply_count(row, options[:count], options[:reversed])
+      end
+    end
+
+    def apply_count(row, count, reversed=false)
+      if count
+        keys = row.keys.sort
+        keys = keys.reverse if reversed
+        keys = keys[0...count]
+        keys.inject(OrderedHash.new) do |memo, key|
+          memo[key] = row[key]
+          memo
         end
+      else
+        row
       end
     end
 
     def get_super(column_family, key, column, sub_column, options)
       if column
         if sub_column
-          @data[column_family.to_sym][key] &&
-          @data[column_family.to_sym][key][column] &&
-          @data[column_family.to_sym][key][column][sub_column]
+          if cf(column_family)[key] &&
+             cf(column_family)[key][column] &&
+             cf(column_family)[key][column][sub_column]
+            cf(column_family)[key][column][sub_column]
+          else
+            nil
+          end
         else
-          d = @data[column_family.to_sym][key] && @data[column_family.to_sym][key][column] ?
-            @data[column_family.to_sym][key][column] :
+          row = cf(column_family)[key] && cf(column_family)[key][column] ?
+            cf(column_family)[key][column] :
             OrderedHash.new
           if options[:start] || options[:finish]
-            start = to_compare_with_type(options[:start], column_family, false)
+            start  = to_compare_with_type(options[:start],  column_family, false)
             finish = to_compare_with_type(options[:finish], column_family, false)
             ret = OrderedHash.new
-            d.keys.sort.each do |key|
+            row.keys.each do |key|
               if (key >= start || start.nil?) && (key <= finish || finish.nil?)
-                ret[key] = d[key]
+                ret[key] = row[key]
               end
             end
-            d = ret
+            row = ret
           end
-
-          if options[:count]
-            keys = d.keys.sort
-            keys = keys.reverse if options[:reversed]
-            keys = keys[0...options[:count]]
-            keys.inject(OrderedHash.new) do |memo, key|
-              memo[key] = d[key]
-              memo
-            end
-          else
-            d
-          end
+          apply_count(row, options[:count], options[:reversed])
         end
-      elsif @data[column_family.to_sym][key]
-        @data[column_family.to_sym][key]
+      elsif cf(column_family)[key]
+        cf(column_family)[key]
       else
         OrderedHash.new
       end
@@ -153,24 +151,23 @@ class Cassandra
 
     def multi_get(column_family, keys)
       keys.inject(OrderedHash.new) do |hash, key|
-        hash[key] = get(column_family, key) || OrderedHash.new
+        hash[key] = get(column_family, key)
         hash
       end
     end
 
     def remove(column_family, key, column=nil, sub_column=nil)
-      @data[column_family.to_sym] ||= OrderedHash.new
       if @batch
         @batch << [:remove, column_family, key, column]
       else
         if column
           if sub_column
-            @data[column_family.to_sym][key][column].delete(sub_column)
+            cf(column_family)[key][column].delete(sub_column)
           else
-            @data[column_family.to_sym][key].delete(column)
+            cf(column_family)[key].delete(column)
           end
         else
-          @data[column_family.to_sym].delete(key)
+          cf(column_family).delete(key)
         end
       end
     end
@@ -192,14 +189,14 @@ class Cassandra
 
     def multi_get_columns(column_family, keys, columns)
       keys.inject(OrderedHash.new) do |hash, key|
-        hash[key] = get_columns(column_family, key, columns) || OrderedHash.new
+        hash[key] = get_columns(column_family, key, columns)
         hash
       end
     end
 
     def multi_count_columns(column_family, keys)
       keys.inject(OrderedHash.new) do |hash, key|
-        hash[key] = count_columns(column_family, key) || 0
+        hash[key] = count_columns(column_family, key)
         hash
       end
     end
@@ -233,10 +230,10 @@ class Cassandra
 
     def _get_range(column_family, start, finish, count)
       ret = OrderedHash.new
-      @data[column_family.to_sym].keys.sort.each do |key|
+      cf(column_family).keys.sort.each do |key| #TODO: sort?
         break if ret.keys.size >= count
         if (key >= start || start == '') && (key <= finish || finish == '')
-          ret[key] = @data[column_family.to_sym][key]
+          ret[key] = cf(column_family)[key]
         end
       end
       ret
@@ -292,6 +289,14 @@ class Cassandra
         p klass
         raise
       end
+    end
+
+    def column_family_type(column_family)
+      schema[column_family.to_s]['Type']
+    end
+
+    def cf(column_family)
+      @data[column_family.to_sym] ||= OrderedHash.new
     end
   end
 end
