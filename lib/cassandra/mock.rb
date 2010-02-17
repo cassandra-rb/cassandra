@@ -30,6 +30,10 @@ class Cassandra
       @data = {}
     end
 
+    def clear_column_family!(column_family)
+      @data[column_family.to_sym] = OrderedHash.new
+    end
+
     def insert(column_family, key, hash, options = {})
       if @batch
         @batch << [:insert, column_family, key, hash, options]
@@ -49,10 +53,6 @@ class Cassandra
       else
         cf(column_family)[key] = OrderedHash[hash.sort{|a,b| a[0] <=> b[0]}]
       end
-    end
-
-    def merge_and_sort(old_stuff, new_stuff)
-      OrderedHash[old_stuff.merge(new_stuff).sort{|a,b| a[0] <=> b[0]}]
     end
 
     def insert_super(column_family, key, hash)
@@ -94,20 +94,6 @@ class Cassandra
         row[column]
       else
         apply_count(row, options[:count], options[:reversed])
-      end
-    end
-
-    def apply_count(row, count, reversed=false)
-      if count
-        keys = row.keys.sort
-        keys = keys.reverse if reversed
-        keys = keys[0...count]
-        keys.inject(OrderedHash.new) do |memo, key|
-          memo[key] = row[key]
-          memo
-        end
-      else
-        row
       end
     end
 
@@ -179,10 +165,6 @@ class Cassandra
       end
     end
 
-    def clear_column_family!(column_family)
-      @data[column_family.to_sym] = OrderedHash.new
-    end
-
     def count_columns(column_family, key, column=nil)
       get(column_family, key, column).keys.length
     end
@@ -230,7 +212,7 @@ class Cassandra
 
     def _get_range(column_family, start, finish, count)
       ret = OrderedHash.new
-      cf(column_family).keys.sort.each do |key| #TODO: sort?
+      cf(column_family).keys.sort.each do |key|
         break if ret.keys.size >= count
         if (key >= start || start == '') && (key <= finish || finish == '')
           ret[key] = cf(column_family)[key]
@@ -297,6 +279,24 @@ class Cassandra
 
     def cf(column_family)
       @data[column_family.to_sym] ||= OrderedHash.new
+    end
+
+    def merge_and_sort(old_stuff, new_stuff)
+      OrderedHash[old_stuff.merge(new_stuff).sort{|a,b| a[0] <=> b[0]}]
+    end
+
+    def apply_count(row, count, reversed=false)
+      if count
+        keys = row.keys.sort
+        keys = keys.reverse if reversed
+        keys = keys[0...count]
+        keys.inject(OrderedHash.new) do |memo, key|
+          memo[key] = row[key]
+          memo
+        end
+      else
+        row
+      end
     end
   end
 end
