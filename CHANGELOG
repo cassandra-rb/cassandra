@@ -3,8 +3,8 @@ configurability:
   options[:transport] for EventMachine or Socket transports
   options[:transport_wrapper] for optional Buffered or Framed Transport.
 Clients will need to update their options to ensure they don't conflict with this change. (mperham)
-Revert global timeouts.
-Add support for HTTPClientTransport
+Revert global timeouts. (ryanking)
+Add support for HTTPClientTransport (Chris Sepic)
 
 v0.3.3. Allow for a timeout over all requests in a call.
 
