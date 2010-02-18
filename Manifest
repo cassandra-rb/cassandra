@@ -1,7 +1,7 @@
 CHANGELOG
 LICENSE
 Manifest
-README
+README.rdoc
 Rakefile
 lib/thrift_client.rb
 lib/thrift_client/connection.rb
