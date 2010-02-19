@@ -1,3 +1,5 @@
+v0.7.3 New Cassandra::Mock - a pure ruby mock of cassanra; bugfixes.
+
 v0.7.2 Switch to newly-extraced simple_uuid gem, minor bugfixes.
 
 v0.7.1 update thrift-generated code to 0.5
