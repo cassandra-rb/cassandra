@@ -2,46 +2,46 @@
 
 Gem::Specification.new do |s|
   s.name = %q{cassandra}
-  s.version = "0.7.2"
+  s.version = "0.7.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0.8") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Evan Weaver"]
+  s.authors = ["Evan Weaver, Ryan King"]
   s.cert_chain = ["/Users/ryan/.gemkeys/gem-public_cert.pem"]
-  s.date = %q{2010-01-25}
+  s.date = %q{2010-02-19}
   s.default_executable = %q{cassandra_helper}
   s.description = %q{A Ruby client for the Cassandra distributed database.}
   s.email = %q{}
   s.executables = ["cassandra_helper"]
-  s.extra_rdoc_files = ["CHANGELOG", "LICENSE", "README.mkd", "bin/cassandra_helper", "lib/cassandra.rb", "lib/cassandra/array.rb", "lib/cassandra/cassandra.rb", "lib/cassandra/columns.rb", "lib/cassandra/comparable.rb", "lib/cassandra/constants.rb", "lib/cassandra/debug.rb", "lib/cassandra/long.rb", "lib/cassandra/ordered_hash.rb", "lib/cassandra/protocol.rb", "lib/cassandra/time.rb"]
-  s.files = ["CHANGELOG", "LICENSE", "Manifest", "README.mkd", "Rakefile", "bin/cassandra_helper", "conf/cassandra.in.sh", "conf/log4j.properties", "conf/storage-conf.xml", "lib/cassandra.rb", "lib/cassandra/array.rb", "lib/cassandra/cassandra.rb", "lib/cassandra/columns.rb", "lib/cassandra/comparable.rb", "lib/cassandra/constants.rb", "lib/cassandra/debug.rb", "lib/cassandra/long.rb", "lib/cassandra/ordered_hash.rb", "lib/cassandra/protocol.rb", "lib/cassandra/time.rb", "test/cassandra_test.rb", "test/comparable_types_test.rb", "test/ordered_hash_test.rb", "test/test_helper.rb", "vendor/gen-rb/cassandra.rb", "vendor/gen-rb/cassandra_constants.rb", "vendor/gen-rb/cassandra_types.rb", "cassandra.gemspec"]
+  s.extra_rdoc_files = ["CHANGELOG", "LICENSE", "README.rdoc", "bin/cassandra_helper", "lib/cassandra.rb", "lib/cassandra/array.rb", "lib/cassandra/cassandra.rb", "lib/cassandra/columns.rb", "lib/cassandra/comparable.rb", "lib/cassandra/constants.rb", "lib/cassandra/debug.rb", "lib/cassandra/long.rb", "lib/cassandra/ordered_hash.rb", "lib/cassandra/protocol.rb", "lib/cassandra/time.rb"]
+  s.files = ["CHANGELOG", "LICENSE", "Manifest", "README.rdoc", "Rakefile", "bin/cassandra_helper", "conf/cassandra.in.sh", "conf/log4j.properties", "conf/storage-conf.xml", "lib/cassandra.rb", "lib/cassandra/array.rb", "lib/cassandra/cassandra.rb", "lib/cassandra/columns.rb", "lib/cassandra/comparable.rb", "lib/cassandra/constants.rb", "lib/cassandra/debug.rb", "lib/cassandra/long.rb", "lib/cassandra/ordered_hash.rb", "lib/cassandra/protocol.rb", "lib/cassandra/time.rb", "test/cassandra_test.rb", "test/comparable_types_test.rb", "test/ordered_hash_test.rb", "test/test_helper.rb", "vendor/gen-rb/cassandra.rb", "vendor/gen-rb/cassandra_constants.rb", "vendor/gen-rb/cassandra_types.rb", "cassandra.gemspec", "test/cassandra_mock_test.rb"]
   s.homepage = %q{http://blog.evanweaver.com/files/doc/fauna/cassandra/}
-  s.rdoc_options = ["--line-numbers", "--inline-source", "--title", "Cassandra", "--main", "README.mkd"]
+  s.rdoc_options = ["--line-numbers", "--inline-source", "--title", "Cassandra", "--main", "README.rdoc"]
   s.require_paths = ["lib"]
   s.rubyforge_project = %q{fauna}
   s.rubygems_version = %q{1.3.5}
   s.signing_key = %q{/Users/ryan/.gemkeys/gem-private_key.pem}
   s.summary = %q{A Ruby client for the Cassandra distributed database.}
-  s.test_files = ["test/cassandra_test.rb", "test/comparable_types_test.rb", "test/ordered_hash_test.rb", "test/test_helper.rb"]
+  s.test_files = ["test/cassandra_mock_test.rb", "test/cassandra_test.rb", "test/comparable_types_test.rb", "test/ordered_hash_test.rb", "test/test_helper.rb"]
 
   if s.respond_to? :specification_version then
     current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
 
     if Gem::Version.new(Gem::RubyGemsVersion) >= Gem::Version.new('1.2.0') then
-      s.add_runtime_dependency(%q<thrift_client>, [">= 0"])
+      s.add_runtime_dependency(%q<thrift_client>, [">= 0", "= 0.4.0"])
       s.add_runtime_dependency(%q<json>, [">= 0"])
       s.add_runtime_dependency(%q<rake>, [">= 0"])
-      s.add_runtime_dependency(%q<simple_uuid>, [">= 0.0.2"])
+      s.add_runtime_dependency(%q<simple_uuid>, [">= 0", "= 0.1.0"])
     else
-      s.add_dependency(%q<thrift_client>, [">= 0"])
+      s.add_dependency(%q<thrift_client>, [">= 0", "= 0.4.0"])
       s.add_dependency(%q<json>, [">= 0"])
       s.add_dependency(%q<rake>, [">= 0"])
-      s.add_dependency(%q<simple_uuid>, [">= 0.0.2"])
+      s.add_dependency(%q<simple_uuid>, [">= 0", "= 0.1.0"])
     end
   else
-    s.add_dependency(%q<thrift_client>, [">= 0"])
+    s.add_dependency(%q<thrift_client>, [">= 0", "= 0.4.0"])
     s.add_dependency(%q<json>, [">= 0"])
     s.add_dependency(%q<rake>, [">= 0"])
-    s.add_dependency(%q<simple_uuid>, [">= 0.0.2"])
+    s.add_dependency(%q<simple_uuid>, [">= 0", "= 0.1.0"])
   end
 end
