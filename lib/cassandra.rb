@@ -2,6 +2,7 @@ require 'rubygems'
 require 'thrift_client'
 require 'json'
 require 'simple_uuid'
+include SimpleUUID
 here = File.expand_path(File.dirname(__FILE__))
 
 $LOAD_PATH << "#{here}/../vendor/gen-rb"
