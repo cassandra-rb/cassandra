@@ -14,10 +14,13 @@ lib/cassandra/columns.rb
 lib/cassandra/comparable.rb
 lib/cassandra/constants.rb
 lib/cassandra/debug.rb
+lib/cassandra/helpers.rb
 lib/cassandra/long.rb
+lib/cassandra/mock.rb
 lib/cassandra/ordered_hash.rb
 lib/cassandra/protocol.rb
 lib/cassandra/time.rb
+test/cassandra_mock_test.rb
 test/cassandra_test.rb
 test/comparable_types_test.rb
 test/ordered_hash_test.rb
