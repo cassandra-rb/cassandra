@@ -15,31 +15,38 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
   end
 end
 
-REVISION = "298a0e66ba66c5d2a1e5d4a70f2f619ae3fbf72a"
+CASSANDRA_HOME = "#{ENV['HOME']}/cassandra"
+DIST_URL = "http://github.com/downloads/ryanking/cassandra/apache-cassandra-incubating-0.5.0.2010-02-21-bin.tar.gz"
+DIST_FILE = DIST_URL.split('/').last
 
-PATCHES = []
-
-CASSANDRA_HOME = "#{ENV['HOME']}/cassandra/server"
-
-CASSANDRA_TEST = "#{ENV['HOME']}/cassandra/test"
-
-GIT_REPO = "git://github.com/ryanking/cassandra.git"
-
-directory CASSANDRA_TEST
+directory CASSANDRA_HOME
+directory File.join(CASSANDRA_HOME, 'test', 'data')
 
 desc "Start Cassandra"
-task :cassandra => [:build_cassandra, CASSANDRA_TEST] do
-  # Construct environment
+task :cassandra => [:java, File.join(CASSANDRA_HOME, 'server'), File.join(CASSANDRA_HOME, 'test', 'data')] do
   env = ""
   if !ENV["CASSANDRA_INCLUDE"]
     env << "CASSANDRA_INCLUDE=#{Dir.pwd}/conf/cassandra.in.sh "
-    env << "CASSANDRA_HOME=#{CASSANDRA_HOME} "
+    env << "CASSANDRA_HOME=#{CASSANDRA_HOME}/server "
     env << "CASSANDRA_CONF=#{Dir.pwd}/conf"
   end
-  # Start server
-  Dir.chdir(CASSANDRA_TEST) do
-    exec("env #{env} #{CASSANDRA_HOME}/bin/cassandra -f")
+
+  Dir.chdir(File.join(CASSANDRA_HOME, 'server')) do
+    sh("env #{env} bin/cassandra -f")
   end
+end
+
+file File.join(CASSANDRA_HOME, 'server') => File.join(CASSANDRA_HOME, DIST_FILE) do
+  Dir.chdir(CASSANDRA_HOME) do
+    sh "tar xzvf #{DIST_FILE}"
+    sh "mv #{DIST_FILE.split('.')[0..2].join('.')} server"
+  end
+end
+
+file File.join(CASSANDRA_HOME, DIST_FILE) => CASSANDRA_HOME do
+  puts "downloading"
+  cmd = "curl -L -o #{File.join(CASSANDRA_HOME, DIST_FILE)} #{DIST_URL}"
+  sh cmd
 end
 
 desc "Check Java version"
@@ -53,70 +60,11 @@ task :java do
   end
 end
 
-desc "Check Git version"
-task :git do
-  unless `git --version 2>&1` =~ /git version 1.(6|7)/
-    puts "You need to install git 1.6 or 1.7"
-    exit(1)
-  end
-end
-
-desc "Checkout Cassandra from git"
-task :clone_cassandra => [:java, :git] do
-  # Like a git submodule, but all in one more obvious place
-  unless File.exist?(CASSANDRA_HOME)
-    puts "Checking Cassandra out from git"
-    cmd = "git clone #{GIT_REPO} #{CASSANDRA_HOME}"
-    if !system(cmd)
-      put "Checkout failed. Try:\n  #{cmd}"
-      exit(1)
-    end
-  end
-end
-
-desc "Check out the right revision"
-task :checkout_cassandra => [:clone_cassandra] do
-  Dir.chdir(CASSANDRA_HOME) do
-    current_checkout = `git log | head -n1`
-    if !current_checkout.include?(REVISION)
-      puts "Updating Cassandra."
-      system("rm -rf #{CASSANDRA_TEST}/data")
-      system("ant clean && git fetch && git reset #{REVISION} --hard")
-      # Delete untracked files
-      Array(`git status`[/Untracked files:(.*)$/m, 1].to_s.split("\n")[3..-1]).each do |file|
-        File.unlink(file.sub(/^.\s+/, "")) rescue nil
-      end
-    end
-  end
-end
-
-desc "Rebuild Cassandra"
-task :build_cassandra => [:checkout_cassandra] do
-  unless File.exist?("#{CASSANDRA_HOME}/build")
-    puts "Building Cassandra"
-    cmd = "cd #{CASSANDRA_HOME} && ant"
-    if !system(cmd)
-      puts "Could not build Casssandra. Try:\n  #{cmd}"
-      exit(1)
-    end
-  end
-end
-
-desc "Clean Cassandra build"
-task :clean_cassandra do
-  puts "Cleaning Cassandra"
-  if File.exist?(CASSANDRA_HOME)
-    Dir.chdir(CASSANDRA_HOME) do
-      system("ant clean")
-    end
-  end
-end
-
 namespace :data do
   desc "Reset test data"
   task :reset do
     puts "Resetting test data"
-    system("rm -rf #{CASSANDRA_TEST}/data")
+    system("rm -rf #{File.join(CASSANDRA_HOME, 'test', 'data')}")
   end
 end
 
