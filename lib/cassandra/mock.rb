@@ -154,12 +154,19 @@ class Cassandra
       end
     end
 
-    def get_columns(column_family, key, columns)
+    def get_columns(column_family, key, columns, sub_columns=nil)
       columns = [columns].flatten
+      sub_columns = [sub_columns].flatten if sub_columns
+
       d = get(column_family, key)
+
       columns.collect do |column|
-        d[column]
-      end
+        if sub_columns
+          sub_columns.collect { |sub_column| d[column][sub_column] }
+        else
+          d[column]
+        end
+      end.flatten
     end
 
     def count_columns(column_family, key, column=nil)

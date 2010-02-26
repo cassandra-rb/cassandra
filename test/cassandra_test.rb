@@ -54,6 +54,13 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({}, @blogs.get(:Blogs, 'bogus'))
   end
 
+  def test_get_multiple_time_uuid_columns
+    @blogs.insert(:Blogs, key,
+      {@uuids[0] => 'I like this cat', @uuids[1] => 'Buttons is cuter', @uuids[2] => 'I disagree'})
+
+    assert_equal(['I like this cat', 'Buttons is cuter'], @blogs.get_columns(:Blogs, key, @uuids[0..1]))
+  end
+
   def test_get_first_long_column
     @blogs_long.insert(:Blogs, key, 
       {@longs[0] => 'I like this cat', @longs[1] => 'Buttons is cuter', @longs[2] => 'I disagree'})
@@ -233,6 +240,13 @@ class CassandraTest < Test::Unit::TestCase
       {'user_timelines' => user_columns, 'mentions_timelines' => mentions_columns})
     assert_equal [user_columns, mentions_columns],
       @twitter.get_columns(:StatusRelationships, key, ['user_timelines', 'mentions_timelines'])
+  end
+
+  def test_get_sub_column_values_super
+    user_columns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => user_columns})
+    assert_equal ['v1', 'v2'],
+      @twitter.get_columns(:StatusRelationships, key, 'user_timelines', @uuids[1..2])
   end
 
   def test_multi_get_columns
