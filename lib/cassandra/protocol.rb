@@ -38,7 +38,9 @@ class Cassandra
           CassandraThrift::SlicePredicate.new(:column_names => columns),
           consistency))
       end
-      (sub_columns || columns).map { |name| result[name] }
+
+      klass = column_name_class(column_family)
+      (sub_columns || columns).map { |name| result[klass.new(name)] }
     end
 
     def _multiget(column_family, keys, column, sub_column, count, start, finish, reversed, consistency)
