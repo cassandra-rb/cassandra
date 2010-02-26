@@ -155,6 +155,7 @@ class Cassandra
     end
 
     def get_columns(column_family, key, columns)
+      columns = [columns].flatten
       d = get(column_family, key)
       columns.collect do |column|
         d[column]

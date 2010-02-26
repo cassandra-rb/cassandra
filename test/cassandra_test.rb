@@ -282,31 +282,33 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_batch_mutate
-    @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
+    k = key
+
+    @twitter.insert(:Users, k + '1', {'body' => 'v1', 'user' => 'v1'})
 
     @twitter.batch do
-      @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
-      @twitter.insert(:Users, key + '3', {'body' => 'bogus', 'user' => 'v3'})
-      @twitter.insert(:Users, key + '3', {'body' => 'v3', 'location' => 'v3'})
-      @twitter.insert(:Statuses, key + '3', {'body' => 'v'})
+      @twitter.insert(:Users, k + '2', {'body' => 'v2', 'user' => 'v2'})
+      @twitter.insert(:Users, k + '3', {'body' => 'bogus', 'user' => 'v3'})
+      @twitter.insert(:Users, k + '3', {'body' => 'v3', 'location' => 'v3'})
+      @twitter.insert(:Statuses, k + '3', {'body' => 'v'})
 
-      assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, key + '1')) # Written
-      assert_equal({}, @twitter.get(:Users, key + '2')) # Not yet written
-      assert_equal({}, @twitter.get(:Statuses, key + '3')) # Not yet written
+      assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Written
+      assert_equal({}, @twitter.get(:Users, k + '2')) # Not yet written
+      assert_equal({}, @twitter.get(:Statuses, k + '3')) # Not yet written
 
-      @twitter.remove(:Users, key + '1')
-      assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, key + '1')) # Not yet removed
+      @twitter.remove(:Users, k + '1')
+      assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Not yet removed
 
-      @twitter.remove(:Users, key + '4')
-      @twitter.insert(:Users, key + '4', {'body' => 'v4', 'user' => 'v4'})
-      assert_equal({}, @twitter.get(:Users, key + '4')) # Not yet written
+      @twitter.remove(:Users, k + '4')
+      @twitter.insert(:Users, k + '4', {'body' => 'v4', 'user' => 'v4'})
+      assert_equal({}, @twitter.get(:Users, k + '4')) # Not yet written
     end
 
-    assert_equal({'body' => 'v2', 'user' => 'v2'}, @twitter.get(:Users, key + '2')) # Written
-    assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}, @twitter.get(:Users, key + '3')) # Written and compacted
-    assert_equal({'body' => 'v4', 'user' => 'v4'}, @twitter.get(:Users, key + '4')) # Written
-    assert_equal({'body' => 'v'}, @twitter.get(:Statuses, key + '3')) # Written
-    assert_equal({}, @twitter.get(:Users, key + '1')) # Removed
+    assert_equal({'body' => 'v2', 'user' => 'v2'}, @twitter.get(:Users, k + '2')) # Written
+    assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}, @twitter.get(:Users, k + '3')) # Written and compacted
+    assert_equal({'body' => 'v4', 'user' => 'v4'}, @twitter.get(:Users, k + '4')) # Written
+    assert_equal({'body' => 'v'}, @twitter.get(:Statuses, k + '3')) # Written
+    assert_equal({}, @twitter.get(:Users, k + '1')) # Removed
   end
 
   def test_complain_about_nil_key
