@@ -210,14 +210,16 @@ module TimingOutThriftClient
   end
 
   def has_timeouts!
-    if @options[:timeout_overrides].any?
-      if (@options[:transport_wrapper] || @options[:transport]).method_defined?(:timeout=)
-        return true
-      else
-        warn "ThriftClient: Timeout overrides have no effect with with transport type #{(@options[:transport_wrapper] || @options[:transport])}"
-      end
+    transport_can_timeout? if @options[:timeout_overrides].any?
+  end
+
+  def transport_can_timeout?
+    if (@options[:transport_wrapper] || @options[:transport]).method_defined?(:timeout=)
+      true
+    else
+      warn "ThriftClient: Timeout overrides have no effect with with transport type #{(@options[:transport_wrapper] || @options[:transport])}"
+      false
     end
-    false
   end
 end
 
