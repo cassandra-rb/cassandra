@@ -89,6 +89,7 @@ Valid optional parameters are:
     @current_server = nil
   end
 
+  private
   def proxy(method_name, *args)
     connect! unless @client
     @client.send(method_name, *args)
@@ -96,7 +97,6 @@ Valid optional parameters are:
     handle_exception(e, method_name, args)
   end
 
-  private
   def handle_exception(e, method_name, args=nil)
     raise e if @options[:raise]
     @options[:defaults][method_name.to_sym]
@@ -139,7 +139,8 @@ module RetryingThriftClient
   end
 
   # Force the client to disconnect from the server.
-  def disconnect!(keep = true) # FIXME fucked on submodule
+  # FIXME Method signature change breaks the DI
+  def disconnect!(keep = true)
     # Keep live servers in the list if we have a retry period. Otherwise,
     # always eject, because we will always re-add them.
     if keep and @retry_period and @current_server
