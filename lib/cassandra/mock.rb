@@ -15,11 +15,12 @@ class Cassandra
     include ::Cassandra::Helpers
     include ::Cassandra::Columns
 
-    def initialize(keyspace, servers=nil, options={})
+    def initialize(keyspace, storage_xml)
       @keyspace = keyspace
       @column_name_class = {}
       @sub_column_name_class = {}
-      @storage_xml = options[:storage_xml]
+      @storage_xml = storage_xml
+      clear_keyspace!
     end
 
     def clear_keyspace!
@@ -131,14 +132,15 @@ class Cassandra
       !!get(column_family, key, column)
     end
 
-    def multi_get(column_family, keys)
+    def multi_get(column_family, keys, options)
       keys.inject(OrderedHash.new) do |hash, key|
         hash[key] = get(column_family, key)
         hash
       end
     end
 
-    def remove(column_family, key, column=nil, sub_column=nil)
+    def remove(column_family, key, *columns_and_options)
+      column_family, column, sub_column, options = extract_and_validate_params(column_family, key, columns_and_options, WRITE_DEFAULTS)
       if @batch
         @batch << [:remove, column_family, key, column]
       else
@@ -154,19 +156,11 @@ class Cassandra
       end
     end
 
-    def get_columns(column_family, key, columns, sub_columns=nil)
-      columns = [columns].flatten
-      sub_columns = [sub_columns].flatten if sub_columns
-
+    def get_columns(column_family, key, columns)
       d = get(column_family, key)
-
       columns.collect do |column|
-        if sub_columns
-          sub_columns.collect { |sub_column| d[column][sub_column] }
-        else
-          d[column]
-        end
-      end.flatten
+        d[column]
+      end
     end
 
     def count_columns(column_family, key, column=nil)
