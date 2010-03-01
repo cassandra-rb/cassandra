@@ -7,13 +7,13 @@ class CassandraMockTest < CassandraTest
 
   def setup
     storage_xml_path = File.expand_path(File.join(File.dirname(File.dirname(__FILE__)), 'conf', 'storage-conf.xml'))
-    @twitter = Cassandra::Mock.new('Twitter', nil, :storage_xml => storage_xml_path)
+    @twitter = Cassandra::Mock.new('Twitter', storage_xml_path)
     @twitter.clear_keyspace!
 
-    @blogs = Cassandra::Mock.new('Multiblog', nil, :storage_xml => storage_xml_path)
+    @blogs = Cassandra::Mock.new('Multiblog', storage_xml_path)
     @blogs.clear_keyspace!
 
-    @blogs_long = Cassandra::Mock.new('MultiblogLong', nil, :storage_xml => storage_xml_path)
+    @blogs_long = Cassandra::Mock.new('MultiblogLong', storage_xml_path)
     @blogs_long.clear_keyspace!
 
     @uuids = (0..6).map {|i| UUID.new(Time.at(2**(24+i))) }

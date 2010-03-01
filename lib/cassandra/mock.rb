@@ -132,7 +132,8 @@ class Cassandra
       !!get(column_family, key, column)
     end
 
-    def multi_get(column_family, keys, options)
+    def multi_get(column_family, keys, *columns_and_options)
+      column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, keys, columns_and_options, READ_DEFAULTS)
       keys.inject(OrderedHash.new) do |hash, key|
         hash[key] = get(column_family, key)
         hash
@@ -140,7 +141,7 @@ class Cassandra
     end
 
     def remove(column_family, key, *columns_and_options)
-      column_family, column, sub_column, options = extract_and_validate_params(column_family, key, columns_and_options, WRITE_DEFAULTS)
+      column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, WRITE_DEFAULTS)
       if @batch
         @batch << [:remove, column_family, key, column]
       else
@@ -156,10 +157,19 @@ class Cassandra
       end
     end
 
-    def get_columns(column_family, key, columns)
+    def get_columns(column_family, key, *columns_and_options)
+      column_family, columns, sub_columns, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, READ_DEFAULTS)
       d = get(column_family, key)
-      columns.collect do |column|
-        d[column]
+
+
+      if sub_columns
+        sub_columns.collect do |sub_column|
+          d[columns][sub_column]
+        end
+      else
+        columns.collect do |column|
+          d[column]
+        end
       end
     end
 
@@ -182,8 +192,7 @@ class Cassandra
     end
 
     def get_range(column_family, options = {})
-      column_family, _, _, options = 
-        extract_and_validate_params_for_real(column_family, "", [options], READ_DEFAULTS)
+      column_family, _, _, options = extract_and_validate_params_for_real(column_family, "", [options], READ_DEFAULTS)
       _get_range(column_family, options[:start], options[:finish], options[:count]).keys
     end
 
@@ -246,10 +255,20 @@ class Cassandra
     end
 
     def extract_and_validate_params_for_real(column_family, keys, args, options)
-      column_family, column, sub_column, options = extract_and_validate_params(column_family, keys, args, options)
+      column_family, columns, sub_column, options = extract_and_validate_params(column_family, keys, args, options)
       options[:start] = nil if options[:start] == ''
       options[:finish] = nil if options[:finish] == ''
-      [column_family, to_compare_with_type(column, column_family), to_compare_with_type(sub_column, column_family, false), options]
+      [column_family, to_compare_with_types(columns, column_family), to_compare_with_types(sub_column, column_family, false), options]
+    end
+
+    def to_compare_with_types(column_names, column_family, standard=true)
+      if column_names.is_a?(Array)
+        column_names.collect do |name|
+          to_compare_with_type(name, column_family, standard)
+        end
+      else
+        to_compare_with_type(column_names, column_family, standard)
+      end
     end
 
     def to_compare_with_type(column_name, column_family, standard=true)
