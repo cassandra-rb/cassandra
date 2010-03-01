@@ -92,6 +92,14 @@ Valid optional parameters are:
   def proxy(method_name, *args)
     connect! unless @client
     @client.send(method_name, *args)
+  rescue Exception => e
+    handle_exception(e, method_name, args)
+  end
+
+  private
+  def handle_exception(e, method_name, args=nil)
+    raise e if @options[:raise]
+    @options[:defaults][method_name.to_sym]
   end
 end
 
@@ -165,7 +173,8 @@ module RetryingThriftClient
   end
 
   # FIXME we override the original proxy completely just to stick the
-  # @request_count addition in there. Which is lame
+  # @request_count addition in there and to redo the rescues. Which
+  # breaks the DI.
   def proxy(method_name, *args)
     disconnect! if @max_requests and @request_count >= @max_requests
     connect! unless @client
@@ -183,11 +192,6 @@ module RetryingThriftClient
     tries == 0 ? handle_exception(e, method_name, args) : retry
   rescue Exception => e
     handle_exception(e, method_name, args)
-  end
-
-  def handle_exception(e, method_name, args=nil)
-    raise e if @options[:raise]
-    @options[:defaults][method_name.to_sym]
   end
 end
 
