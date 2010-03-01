@@ -11,24 +11,18 @@ require 'rubygems'
 require 'thrift_client/thrift'
 require 'thrift_client/connection'
 
-class ThriftClient
 
-  class NoServersAvailable < StandardError; end
+class AbstractThriftClient
 
   DEFAULTS = {
     :protocol => Thrift::BinaryProtocol,
     :protocol_extra_params => [],
     :transport => Thrift::Socket,
     :transport_wrapper => Thrift::FramedTransport,
+    # FIXME everything below here should be in the modules that care
+    # about it
     :randomize_server_list => true,
-    :exception_classes => [
-      IOError,
-      Thrift::Exception,
-      Thrift::ProtocolException,
-      Thrift::ApplicationException,
-      Thrift::TransportException,
-      NoServersAvailable],
-    :raise => true,
+    :raise => true, # FIXME hrm.
     :retries => nil,
     :server_retry_period => 1,
     :server_max_requests => nil,
@@ -37,7 +31,13 @@ class ThriftClient
     :defaults => {}
   }.freeze
 
-  attr_reader :client, :client_class, :current_server, :server_list, :options
+  # FIXME Document client_methods
+  # FIXME disconnect!(false) in RetryingThriftClient
+  # FIXME test_buffered_transport_timeout,
+  # test_framed_transport_timeout and test_buffered_transport_timeout
+  # is commented/written wrong
+
+  attr_reader :client, :client_class, :current_server, :server_list, :options, :client_methods
 
 =begin rdoc
 Create a new ThriftClient instance. Accepts an internal Thrift client class (such as CassandraRb::Client), a list of servers with ports, and optional parameters.
@@ -63,8 +63,54 @@ Valid optional parameters are:
     @options = DEFAULTS.merge(options)
     @client_class = client_class
     @server_list = Array(servers)
-    @retries = options[:retries] || @server_list.size
+    @current_server = @server_list.first
 
+    @client_methods = []
+    @client_class.instance_methods.each do |method_name|
+      if method_name =~ /^recv_(.*)$/
+        instance_eval("def #{$1}(*args); proxy(:'#{$1}', *args); end")
+        @client_methods << $1
+      end
+    end
+  end
+
+  def connect!
+    @connection = Connection::Factory.create(@options[:transport], @options[:transport_wrapper], @current_server, @options[:timeout])
+    @connection.connect!
+    @client = @client_class.new(@options[:protocol].new(@connection.transport, *@options[:protocol_extra_params]))
+  rescue Thrift::TransportException, Errno::ECONNREFUSED => e
+    @transport.close rescue nil
+    raise e
+  end
+
+  def disconnect!
+    @connection.close rescue nil
+    @client = nil
+    @current_server = nil
+  end
+end
+
+class ThriftClient < AbstractThriftClient
+  # FIXME for backwards compatibility only. If defined in
+  # RetryingThriftClient instead, causes the test suite to break.
+  class NoServersAvailable < StandardError; end
+end
+
+module RetryingThriftClient
+  NoServersAvailable = ThriftClient::NoServersAvailable
+  DISCONNECT_ERRORS = [
+                       IOError,
+                       Thrift::Exception,
+                       Thrift::ProtocolException,
+                       Thrift::ApplicationException,
+                       Thrift::TransportException,
+                       ThriftClient::NoServersAvailable
+                      ]
+
+  def initialize(client_class, servers, options = {})
+    super
+    @retries = options[:retries] || @server_list.size
+    @options[:exception_classes] ||= DISCONNECT_ERRORS
     if @options[:timeout_overrides].any?
       if (@options[:transport_wrapper] || @options[:transport]).method_defined?(:timeout=)
         @set_timeout = true
@@ -78,37 +124,27 @@ Valid optional parameters are:
     @retry_period = @options[:server_retry_period]
     rebuild_live_server_list!
 
-    @client_class.instance_methods.each do |method_name|
-      if method_name =~ /^recv_(.*)$/
-        instance_eval("def #{$1}(*args); proxy(:'#{$1}', *args); end")
-      end
-    end
   end
 
   # Force the client to connect to the server.
   def connect!
     @current_server = next_server
-    @connection = Connection::Factory.create(@options[:transport], @options[:transport_wrapper], @current_server, @options[:timeout])
-    @connection.connect!
-    @client = @client_class.new(@options[:protocol].new(@connection.transport, *@options[:protocol_extra_params]))
+    super
+    set_method_timeouts!
   rescue Thrift::TransportException, Errno::ECONNREFUSED
-    @transport.close rescue nil
     retry
   end
 
   # Force the client to disconnect from the server.
-  def disconnect!(keep = true)
-    @connection.close rescue nil
-
+  def disconnect!(keep = true) # FIXME fucked on submodule
     # Keep live servers in the list if we have a retry period. Otherwise,
     # always eject, because we will always re-add them.
     if keep and @retry_period and @current_server
       @live_server_list.unshift(@current_server)
     end
 
+    super()
     @request_count = 0
-    @client = nil
-    @current_server = nil
   end
 
   private
@@ -136,12 +172,11 @@ Valid optional parameters are:
     disconnect! if @max_requests and @request_count >= @max_requests
     connect! unless @client
 
-    set_timeout!(method_name) if @set_timeout
     @request_count += 1
     @client.send(method_name, *args)
   rescue NoServersAvailable => e
     handle_exception(e, method_name, args)
-  rescue *@options[:exception_classes] => e
+  rescue *(@options[:exception_classes]) => e
     disconnect!(false)
     tries ||= @retries
     tries -= 1
@@ -150,12 +185,19 @@ Valid optional parameters are:
     handle_exception(e, method_name, args)
   end
 
-  def set_timeout!(method_name)
-    @client.timeout = @options[:timeout_overrides][method_name.to_sym] || @options[:timeout]
+  def set_method_timeouts!
+    return unless @set_timeout
+    @client_methods.each do |method_name|
+      @client.timeout = @options[:timeout_overrides][method_name.to_sym] || @options[:timeout]
+    end
   end
 
   def handle_exception(e, method_name, args=nil)
     raise e if @options[:raise]
     @options[:defaults][method_name.to_sym]
   end
+end
+
+class ThriftClient < AbstractThriftClient
+  include RetryingThriftClient
 end
