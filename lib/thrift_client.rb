@@ -88,6 +88,11 @@ Valid optional parameters are:
     @client = nil
     @current_server = nil
   end
+
+  def proxy(method_name, *args)
+    connect! unless @client
+    @client.send(method_name, *args)
+  end
 end
 
 class ThriftClient < AbstractThriftClient
@@ -97,7 +102,6 @@ class ThriftClient < AbstractThriftClient
 end
 
 module RetryingThriftClient
-  NoServersAvailable = ThriftClient::NoServersAvailable
   DISCONNECT_ERRORS = [
                        IOError,
                        Thrift::Exception,
@@ -111,13 +115,6 @@ module RetryingThriftClient
     super
     @retries = options[:retries] || @server_list.size
     @options[:exception_classes] ||= DISCONNECT_ERRORS
-    if @options[:timeout_overrides].any?
-      if (@options[:transport_wrapper] || @options[:transport]).method_defined?(:timeout=)
-        @set_timeout = true
-      else
-        warn "ThriftClient: Timeout overrides have no effect with with transport type #{(@options[:transport_wrapper] || @options[:transport])}"
-      end
-    end
 
     @request_count = 0
     @max_requests = @options[:server_max_requests]
@@ -130,7 +127,6 @@ module RetryingThriftClient
   def connect!
     @current_server = next_server
     super
-    set_method_timeouts!
   rescue Thrift::TransportException, Errno::ECONNREFUSED
     retry
   end
@@ -152,7 +148,7 @@ module RetryingThriftClient
   def next_server
     if @retry_period
       rebuild_live_server_list! if Time.now > @last_rebuild + @retry_period
-      raise NoServersAvailable, "No live servers in #{@server_list.inspect} since #{@last_rebuild.inspect}." if @live_server_list.empty?
+      raise ThriftClient::NoServersAvailable, "No live servers in #{@server_list.inspect} since #{@last_rebuild.inspect}." if @live_server_list.empty?
     elsif @live_server_list.empty?
       rebuild_live_server_list!
     end
@@ -168,15 +164,19 @@ module RetryingThriftClient
     end
   end
 
+  # FIXME we override the original proxy completely just to stick the
+  # @request_count addition in there. Which is lame
   def proxy(method_name, *args)
     disconnect! if @max_requests and @request_count >= @max_requests
     connect! unless @client
 
     @request_count += 1
     @client.send(method_name, *args)
-  rescue NoServersAvailable => e
+
+  # FIXME Why is NoServersAvailable here and in :exception_classes?
+  rescue ThriftClient::NoServersAvailable => e
     handle_exception(e, method_name, args)
-  rescue *(@options[:exception_classes]) => e
+  rescue *@options[:exception_classes] => e
     disconnect!(false)
     tries ||= @retries
     tries -= 1
@@ -185,12 +185,7 @@ module RetryingThriftClient
     handle_exception(e, method_name, args)
   end
 
-  def set_method_timeouts!
-    return unless @set_timeout
-    @client_methods.each do |method_name|
-      @client.timeout = @options[:timeout_overrides][method_name.to_sym] || @options[:timeout]
-    end
-  end
+
 
   def handle_exception(e, method_name, args=nil)
     raise e if @options[:raise]
@@ -198,6 +193,36 @@ module RetryingThriftClient
   end
 end
 
+module TimingOutThriftClient
+  def connect!
+    super
+    set_method_timeouts!
+  end
+
+  def has_timeouts?
+    @has_timeouts ||= has_timeouts!
+  end
+
+  private
+  def set_method_timeouts!
+    return unless has_timeouts?
+    @client_methods.each do |method_name|
+      @client.timeout = @options[:timeout_overrides][method_name.to_sym] || @options[:timeout]
+    end
+  end
+
+  def has_timeouts!
+    if @options[:timeout_overrides].any?
+      if (@options[:transport_wrapper] || @options[:transport]).method_defined?(:timeout=)
+        @set_timeout = true
+      else
+        warn "ThriftClient: Timeout overrides have no effect with with transport type #{(@options[:transport_wrapper] || @options[:transport])}"
+      end
+    end
+  end
+end
+
 class ThriftClient < AbstractThriftClient
   include RetryingThriftClient
+  include TimingOutThriftClient
 end
