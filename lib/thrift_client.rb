@@ -185,8 +185,6 @@ module RetryingThriftClient
     handle_exception(e, method_name, args)
   end
 
-
-
   def handle_exception(e, method_name, args=nil)
     raise e if @options[:raise]
     @options[:defaults][method_name.to_sym]
@@ -214,11 +212,12 @@ module TimingOutThriftClient
   def has_timeouts!
     if @options[:timeout_overrides].any?
       if (@options[:transport_wrapper] || @options[:transport]).method_defined?(:timeout=)
-        @set_timeout = true
+        return true
       else
         warn "ThriftClient: Timeout overrides have no effect with with transport type #{(@options[:transport_wrapper] || @options[:transport])}"
       end
     end
+    false
   end
 end
 
