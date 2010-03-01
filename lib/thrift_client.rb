@@ -115,8 +115,7 @@ module RetryingThriftClient
                        Thrift::Exception,
                        Thrift::ProtocolException,
                        Thrift::ApplicationException,
-                       Thrift::TransportException,
-                       ThriftClient::NoServersAvailable
+                       Thrift::TransportException
                       ]
 
   def initialize(client_class, servers, options = {})
