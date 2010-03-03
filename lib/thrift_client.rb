@@ -68,7 +68,7 @@ Valid optional parameters are:
     @client_methods = []
     @client_class.instance_methods.each do |method_name|
       if method_name =~ /^recv_(.*)$/
-        instance_eval("def #{$1}(*args); proxy(:'#{$1}', *args); end")
+        instance_eval("def #{$1}(*args); handled_proxy(:'#{$1}', *args); end", __FILE__, __LINE__)
         @client_methods << $1
       end
     end
@@ -90,11 +90,25 @@ Valid optional parameters are:
   end
 
   private
-  def proxy(method_name, *args)
-    connect! unless @client
-    @client.send(method_name, *args)
+  def handled_proxy(method_name, *args)
+    proxy(method_name, *args)
   rescue Exception => e
     handle_exception(e, method_name, args)
+  end
+
+  def proxy(method_name, *args)
+    connect! unless @client
+    send_rpc(method_name, *args)
+  end
+
+  def send_rpc(method_name, *args)
+    @client.send(method_name, *args)
+  end
+
+  def disconnect_on_error!
+    @connection.close rescue nil
+    @client = nil
+    @current_server = nil
   end
 
   def handle_exception(e, method_name, args=nil)
@@ -105,7 +119,7 @@ end
 
 class ThriftClient < AbstractThriftClient
   # FIXME for backwards compatibility only. If defined in
-  # RetryingThriftClient instead, causes the test suite to break.
+  # RetryingThriftClient instead, causes the test suite will break.
   class NoServersAvailable < StandardError; end
 end
 
@@ -122,12 +136,10 @@ module RetryingThriftClient
     super
     @retries = options[:retries] || @server_list.size
     @options[:exception_classes] ||= DISCONNECT_ERRORS
-
     @request_count = 0
     @max_requests = @options[:server_max_requests]
     @retry_period = @options[:server_retry_period]
     rebuild_live_server_list!
-
   end
 
   # Force the client to connect to the server.
@@ -139,11 +151,10 @@ module RetryingThriftClient
   end
 
   # Force the client to disconnect from the server.
-  # FIXME Method signature change breaks the DI
-  def disconnect!(keep = true)
+  def disconnect!
     # Keep live servers in the list if we have a retry period. Otherwise,
     # always eject, because we will always re-add them.
-    if keep and @retry_period and @current_server
+    if @retry_period && @current_server
       @live_server_list.unshift(@current_server)
     end
 
@@ -172,26 +183,33 @@ module RetryingThriftClient
     end
   end
 
-  # FIXME we override the original proxy completely just to stick the
-  # @request_count addition in there and to redo the rescues. Which
-  # breaks the DI.
+  def handled_proxy(method_name, *args)
+    disconnect_on_max! if @max_requests and @request_count >= @max_requests
+    super
+  end
+
+  def disconnect_on_max!
+    @live_server_list.push(@current_server)
+    disconnect_on_error!
+  end
+
+  def disconnect_on_error!
+    super
+    @request_count = 0
+  end
+
   def proxy(method_name, *args)
-    disconnect! if @max_requests and @request_count >= @max_requests
-    connect! unless @client
-
-    @request_count += 1
-    @client.send(method_name, *args)
-
-  # FIXME Why is NoServersAvailable here and in :exception_classes?
-  rescue ThriftClient::NoServersAvailable => e
-    handle_exception(e, method_name, args)
+    super
   rescue *@options[:exception_classes] => e
-    disconnect!(false)
+    disconnect_on_error!
     tries ||= @retries
     tries -= 1
     tries == 0 ? handle_exception(e, method_name, args) : retry
-  rescue Exception => e
-    handle_exception(e, method_name, args)
+  end
+
+  def send_rpc(method_name, *args)
+    @request_count += 1
+    super
   end
 end
 
