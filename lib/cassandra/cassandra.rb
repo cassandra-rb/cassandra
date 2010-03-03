@@ -69,21 +69,6 @@ class Cassandra
     @servers = Array(servers)
   end
 
-  def client
-    return @client if defined?(@client)
-    client!
-  end
-
-  def client!
-    @client = raw_client
-    unless (keyspaces = client.get_string_list_property("keyspaces")).include?(@keyspace)
-      raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
-    end
-    @servers = all_nodes
-    @client.disconnect!
-    @client = raw_client
-  end
-
   def keyspaces
     @keyspaces ||= client.get_string_list_property("keyspaces")
   end
@@ -272,6 +257,21 @@ class Cassandra
       @schema ||= client.describe_keyspace(@keyspace)
     end
   end
+
+  def client
+    @client ||= client!
+  end
+
+  def client!
+    @client = raw_client
+    unless (keyspaces = client.get_string_list_property("keyspaces")).include?(@keyspace)
+      raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
+    end
+    @servers = all_nodes
+    @client.disconnect!
+    @client = raw_client
+  end
+
 
   def raw_client
     ThriftClient.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
