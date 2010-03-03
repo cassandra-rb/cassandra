@@ -60,6 +60,9 @@ Valid optional parameters are:
     end
   end
 
+  # Force the client to connect to the server. Not necessary to be
+  # called as the connection will be made on the first RPC method
+  # call.
   def connect!
     @connection = Connection::Factory.create(@options[:transport], @options[:transport_wrapper], @current_server, @options[:timeout])
     @connection.connect!
@@ -130,7 +133,6 @@ module RetryingThriftClient
     rebuild_live_server_list!
   end
 
-  # Force the client to connect to the server.
   def connect!
     @current_server = next_server
     super
@@ -138,7 +140,6 @@ module RetryingThriftClient
     retry
   end
 
-  # Force the client to disconnect from the server.
   def disconnect!
     # Keep live servers in the list if we have a retry period. Otherwise,
     # always eject, because we will always re-add them.
