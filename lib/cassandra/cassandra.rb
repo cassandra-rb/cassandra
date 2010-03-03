@@ -239,10 +239,10 @@ class Cassandra
     @batch = nil
   end
 
-  private
+  protected
 
   def calling_method
-     "#{self.class}##{caller[0].split('`').last[0..-3]}"
+    "#{self.class}##{caller[0].split('`').last[0..-3]}"
   end
 
   # Roll up queued mutations, to improve atomicity.
@@ -259,26 +259,28 @@ class Cassandra
   end
 
   def client
-    @client ||= client!
+    reconnect! if @client.nil?
+    @client
   end
 
-  def client!
-    @client = raw_client
+  def reconnect!
+    @servers = all_nodes
+    @client = new_client
+    check_keyspace
+  end
+
+  def check_keyspace
     unless (keyspaces = client.get_string_list_property("keyspaces")).include?(@keyspace)
       raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
     end
-    @servers = all_nodes
-    @client.disconnect!
-    @client = raw_client
   end
 
-
-  def raw_client
+  def new_client
     ThriftClient.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
   end
 
   def all_nodes
-    ips = ::JSON.parse(@client.get_string_property('token map')).values
+    ips = ::JSON.parse(new_client.get_string_property('token map')).values
     port = @servers.first.split(':').last
     ips.map{|ip| "#{ip}:#{port}" }
   end
