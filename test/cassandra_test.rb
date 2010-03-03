@@ -4,7 +4,7 @@ class CassandraTest < Test::Unit::TestCase
   include Cassandra::Constants
 
   def setup
-    @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2)
+    @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :exception_classes => [])
     @twitter.clear_keyspace!
 
     @blogs = Cassandra.new('Multiblog')
@@ -54,22 +54,29 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({}, @blogs.get(:Blogs, 'bogus'))
   end
 
+  def test_get_multiple_time_uuid_columns
+    @blogs.insert(:Blogs, key,
+      {@uuids[0] => 'I like this cat', @uuids[1] => 'Buttons is cuter', @uuids[2] => 'I disagree'})
+
+    assert_equal(['I like this cat', 'Buttons is cuter'], @blogs.get_columns(:Blogs, key, @uuids[0..1]))
+  end
+
   def test_get_first_long_column
     @blogs_long.insert(:Blogs, key, 
       {@longs[0] => 'I like this cat', @longs[1] => 'Buttons is cuter', @longs[2] => 'I disagree'})
-    
+
     assert_equal({@longs[0] => 'I like this cat'}, @blogs_long.get(:Blogs, key, :count => 1))
     assert_equal({@longs[2] => 'I disagree'}, @blogs_long.get(:Blogs, key, :count => 1, :reversed => true))
     assert_equal({}, @blogs_long.get(:Blogs, 'bogus'))
   end
-  
+
   def test_long_remove_bug
     @blogs_long.insert(:Blogs, key, {@longs[0] => 'I like this cat'})
     @blogs_long.remove(:Blogs, key)
     assert_equal({}, @blogs_long.get(:Blogs, key, :count => 1))
 
-    @blogs_long.insert(:Blogs, key, {@longs[0] => 'I like this cat'})
-    assert_equal({@longs[0] => 'I like this cat'}, @blogs_long.get(:Blogs, key, :count => 1))
+    @blogs_long.insert(:Blogs, key, {@longs[0] => 'I really like this cat'})
+    assert_equal({@longs[0] => 'I really like this cat'}, @blogs_long.get(:Blogs, key, :count => 1))
   end
 
   def test_get_with_count
@@ -84,7 +91,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_nil @twitter.get(:Statuses, 'bogus', 'body')
 
     assert @twitter.exists?(:Statuses, key, 'body')
-    assert_nil @twitter.exists?(:Statuses, 'bogus', 'body')
+    assert !@twitter.exists?(:Statuses, 'bogus', 'body')
   end
 
   def test_get_super_key
@@ -157,7 +164,7 @@ class CassandraTest < Test::Unit::TestCase
   def test_multi_get
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
     @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
-    
+
     expected = OrderedHash[key + '1', {'body' => 'v1', 'user' => 'v1'}, key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}]
     result = @twitter.multi_get(:Users, [key + '1', key + '2', 'bogus'])
     assert_equal expected, result
@@ -235,6 +242,13 @@ class CassandraTest < Test::Unit::TestCase
       @twitter.get_columns(:StatusRelationships, key, ['user_timelines', 'mentions_timelines'])
   end
 
+  def test_get_sub_column_values_super
+    user_columns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => user_columns})
+    assert_equal ['v1', 'v2'],
+      @twitter.get_columns(:StatusRelationships, key, 'user_timelines', @uuids[1..2])
+  end
+
   def test_multi_get_columns
     @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
     @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
@@ -282,31 +296,33 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_batch_mutate
-    @twitter.insert(:Users, key + '1', {'body' => 'v1', 'user' => 'v1'})
+    k = key
+
+    @twitter.insert(:Users, k + '1', {'body' => 'v1', 'user' => 'v1'})
 
     @twitter.batch do
-      @twitter.insert(:Users, key + '2', {'body' => 'v2', 'user' => 'v2'})
-      @twitter.insert(:Users, key + '3', {'body' => 'bogus', 'user' => 'v3'})
-      @twitter.insert(:Users, key + '3', {'body' => 'v3', 'location' => 'v3'})
-      @twitter.insert(:Statuses, key + '3', {'body' => 'v'})
+      @twitter.insert(:Users, k + '2', {'body' => 'v2', 'user' => 'v2'})
+      @twitter.insert(:Users, k + '3', {'body' => 'bogus', 'user' => 'v3'})
+      @twitter.insert(:Users, k + '3', {'body' => 'v3', 'location' => 'v3'})
+      @twitter.insert(:Statuses, k + '3', {'body' => 'v'})
 
-      assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, key + '1')) # Written
-      assert_equal({}, @twitter.get(:Users, key + '2')) # Not yet written
-      assert_equal({}, @twitter.get(:Statuses, key + '3')) # Not yet written
+      assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Written
+      assert_equal({}, @twitter.get(:Users, k + '2')) # Not yet written
+      assert_equal({}, @twitter.get(:Statuses, k + '3')) # Not yet written
 
-      @twitter.remove(:Users, key + '1')
-      assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, key + '1')) # Not yet removed
+      @twitter.remove(:Users, k + '1')
+      assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Not yet removed
 
-      @twitter.remove(:Users, key + '4')
-      @twitter.insert(:Users, key + '4', {'body' => 'v4', 'user' => 'v4'})
-      assert_equal({}, @twitter.get(:Users, key + '4')) # Not yet written
+      @twitter.remove(:Users, k + '4')
+      @twitter.insert(:Users, k + '4', {'body' => 'v4', 'user' => 'v4'})
+      assert_equal({}, @twitter.get(:Users, k + '4')) # Not yet written
     end
 
-    assert_equal({'body' => 'v2', 'user' => 'v2'}, @twitter.get(:Users, key + '2')) # Written
-    assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}, @twitter.get(:Users, key + '3')) # Written and compacted
-    assert_equal({'body' => 'v4', 'user' => 'v4'}, @twitter.get(:Users, key + '4')) # Written
-    assert_equal({'body' => 'v'}, @twitter.get(:Statuses, key + '3')) # Written
-    assert_equal({}, @twitter.get(:Users, key + '1')) # Removed
+    assert_equal({'body' => 'v2', 'user' => 'v2'}, @twitter.get(:Users, k + '2')) # Written
+    assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}, @twitter.get(:Users, k + '3')) # Written and compacted
+    assert_equal({'body' => 'v4', 'user' => 'v4'}, @twitter.get(:Users, k + '4')) # Written
+    assert_equal({'body' => 'v'}, @twitter.get(:Statuses, k + '3')) # Written
+    assert_equal({}, @twitter.get(:Users, k + '1')) # Removed
   end
 
   def test_complain_about_nil_key
@@ -320,6 +336,15 @@ class CassandraTest < Test::Unit::TestCase
     assert_raises(Cassandra::AccessError) do
       nonexistent.get "foo", "bar"
     end
+  end
+
+  def test_nil_sub_column_value
+    @twitter.insert(:Index, 'asdf', {"thing" => {'jkl' => nil} })
+  end
+
+  def test_disconnect!
+    @twitter.disconnect!
+    assert_nil @twitter.instance_variable_get(:@client)
   end
 
   private

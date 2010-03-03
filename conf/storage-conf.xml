@@ -38,6 +38,7 @@
           <ColumnFamily CompareWith="UTF8Type" Name="Statuses" />
           <ColumnFamily CompareWith="UTF8Type" Name="StatusAudits" />
           <ColumnFamily CompareWith="UTF8Type" CompareSubcolumnsWith="TimeUUIDType" ColumnType="Super" Name="StatusRelationships" />  
+          <ColumnFamily CompareWith="UTF8Type" ColumnType="Super" Name="Index" />
       </Keyspace>
 
       <Keyspace Name="Multiblog">      

@@ -2,7 +2,7 @@
 class Cassandra
   # A temporally-ordered Long class for use in Cassandra column names
   class Long < Comparable
-  
+
     # FIXME Should unify with or subclass Cassandra::UUID
     def initialize(bytes = nil)
       case bytes
@@ -15,7 +15,7 @@ class Cassandra
         when 18 # Human-readable UUID-like representation; inverse of #to_guid
           elements = bytes.split("-")
           raise TypeError, "Expected #{bytes.inspect} to cast to a #{self.class} (malformed UUID-like representation)" if elements.size != 3
-          @bytes = elements.join.to_a.pack('H32')
+          @bytes = [elements.join].pack('H32')
         else
           raise TypeError, "Expected #{bytes.inspect} to cast to a #{self.class} (invalid bytecount)"
         end
@@ -38,14 +38,14 @@ class Cassandra
         ints[1]
       end
     end
-    
+
     def to_guid
       "%08x-%04x-%04x" % @bytes.unpack("Nnn")
     end    
 
     def inspect
       "<Cassandra::Long##{object_id} time: #{
-        Time.at((to_i >> 12) / 1_000_000).inspect
+        Time.at((to_i >> 12) / 1_000_000).utc.inspect
       }, usecs: #{
         (to_i >> 12) % 1_000_000
       }, jitter: #{

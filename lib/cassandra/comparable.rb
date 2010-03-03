@@ -18,7 +18,7 @@ class Cassandra
     end    
     
     def ==(other)
-      self.to_i == other.to_i
+      other.respond_to?(:to_i) && self.to_i == other.to_i
     end
     
     def to_s

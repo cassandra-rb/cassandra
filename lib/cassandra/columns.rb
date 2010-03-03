@@ -28,9 +28,10 @@ class Cassandra
     end
 
     def column_family_property(column_family, key)
+      unless schema[column_family]
+        raise AccessError, "Invalid column family \"#{column_family}\""
+      end
       schema[column_family][key]
-    rescue NoMethodError
-      raise AccessError, "Invalid column family \"#{column_family}\""    
     end
 
     def multi_column_to_hash!(hash)
@@ -83,7 +84,7 @@ class Cassandra
               :columns => sub_columns.collect { |sub_column_name, sub_column_value|
                 CassandraThrift::Column.new(
                   :name      => sub_column_name_class(column_family).new(sub_column_name).to_s,
-                  :value     => sub_column_value,
+                  :value     => sub_column_value.to_s,
                   :timestamp => timestamp
                 )
               }
