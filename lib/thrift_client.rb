@@ -25,26 +25,6 @@ class AbstractThriftClient
 
   attr_reader :client, :client_class, :current_server, :server_list, :options, :client_methods
 
-=begin rdoc
-Create a new ThriftClient instance. Accepts an internal Thrift client class (such as CassandraRb::Client), a list of servers with ports, and optional parameters.
-
-Valid optional parameters are:
-
-<tt>:protocol</tt>:: Which Thrift protocol to use. Defaults to <tt>Thrift::BinaryProtocol</tt>.
-<tt>:protocol_extra_params</tt>:: An array of additional parameters to pass to the protocol initialization call. Defaults to <tt>[]</tt>.
-<tt>:transport</tt>:: Which Thrift transport to use. Defaults to <tt>Thrift::FramedTransport</tt>.
-<tt>:randomize_server_list</tt>:: Whether to connect to the servers randomly, instead of in order. Defaults to <tt>true</tt>.
-<tt>:exception_classes</tt>:: Which exceptions to catch and retry when sending a request. Defaults to <tt>[IOError, Thrift::Exception, Thrift::ProtocolException, Thrift::ApplicationException, Thrift::TransportException, NoServersAvailable]</tt>
-<tt>:raise</tt>:: Whether to reraise errors if no responsive servers are found. Defaults to <tt>true</tt>.
-<tt>:retries</tt>:: How many times to retry a request. Defaults to the number of servers defined.
-<tt>:server_retry_period</tt>:: How many seconds to wait before trying to reconnect after marking all servers as down. Defaults to <tt>1</tt>. Set to <tt>nil</tt> to retry endlessly.
-<tt>:server_max_requests</tt>:: How many requests to perform before moving on to the next server in the pool, regardless of error status. Defaults to <tt>nil</tt> (no limit).
-<tt>:timeout</tt>:: Specify the default timeout in seconds. Defaults to <tt>1</tt>.
-<tt>:timeout_overrides</tt>:: Specify additional timeouts on a per-method basis, in seconds. Only works with <tt>Thrift::BufferedTransport</tt>.
-<tt>:defaults</tt>:: Specify default values to return on a per-method basis, if <tt>:raise</tt> is set to false.
-
-=end rdoc
-
   def initialize(client_class, servers, options = {})
     @options = DEFAULTS.merge(options)
     @client_class = client_class
@@ -250,4 +230,28 @@ class ThriftClient < AbstractThriftClient
   class NoServersAvailable < StandardError; end
   include RetryingThriftClient
   include TimingOutThriftClient
+
+=begin rdoc
+Create a new ThriftClient instance. Accepts an internal Thrift client class (such as CassandraRb::Client), a list of servers with ports, and optional parameters.
+
+Valid optional parameters are:
+
+<tt>:protocol</tt>:: Which Thrift protocol to use. Defaults to <tt>Thrift::BinaryProtocol</tt>.
+<tt>:protocol_extra_params</tt>:: An array of additional parameters to pass to the protocol initialization call. Defaults to <tt>[]</tt>.
+<tt>:transport</tt>:: Which Thrift transport to use. Defaults to <tt>Thrift::FramedTransport</tt>.
+<tt>:randomize_server_list</tt>:: Whether to connect to the servers randomly, instead of in order. Defaults to <tt>true</tt>.
+<tt>:exception_classes</tt>:: Which exceptions to catch and retry when sending a request. Defaults to <tt>[IOError, Thrift::Exception, Thrift::ProtocolException, Thrift::ApplicationException, Thrift::TransportException, NoServersAvailable]</tt>
+<tt>:raise</tt>:: Whether to reraise errors if no responsive servers are found. Defaults to <tt>true</tt>.
+<tt>:retries</tt>:: How many times to retry a request. Defaults to the number of servers defined.
+<tt>:server_retry_period</tt>:: How many seconds to wait before trying to reconnect after marking all servers as down. Defaults to <tt>1</tt>. Set to <tt>nil</tt> to retry endlessly.
+<tt>:server_max_requests</tt>:: How many requests to perform before moving on to the next server in the pool, regardless of error status. Defaults to <tt>nil</tt> (no limit).
+<tt>:timeout</tt>:: Specify the default timeout in seconds. Defaults to <tt>1</tt>.
+<tt>:timeout_overrides</tt>:: Specify additional timeouts on a per-method basis, in seconds. Only works with <tt>Thrift::BufferedTransport</tt>.
+<tt>:defaults</tt>:: Specify default values to return on a per-method basis, if <tt>:raise</tt> is set to false.
+
+=end rdoc
+
+  def initialize(client_class, servers, options = {})
+    super
+  end
 end
