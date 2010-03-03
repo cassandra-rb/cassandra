@@ -19,23 +19,9 @@ class AbstractThriftClient
     :protocol_extra_params => [],
     :transport => Thrift::Socket,
     :transport_wrapper => Thrift::FramedTransport,
-    # FIXME everything below here should be in the modules that care
-    # about it
-    :randomize_server_list => true,
-    :raise => true, # FIXME hrm.
-    :retries => nil,
-    :server_retry_period => 1,
-    :server_max_requests => nil,
-    :timeout => 1,
-    :timeout_overrides => {},
+    :raise => true,
     :defaults => {}
   }.freeze
-
-  # FIXME Document client_methods
-  # FIXME disconnect!(false) in RetryingThriftClient
-  # FIXME test_buffered_transport_timeout,
-  # test_framed_transport_timeout and test_buffered_transport_timeout
-  # is commented/written wrong
 
   attr_reader :client, :client_class, :current_server, :server_list, :options, :client_methods
 
@@ -117,12 +103,6 @@ Valid optional parameters are:
   end
 end
 
-class ThriftClient < AbstractThriftClient
-  # FIXME for backwards compatibility only. If defined in
-  # RetryingThriftClient instead, causes the test suite will break.
-  class NoServersAvailable < StandardError; end
-end
-
 module RetryingThriftClient
   DISCONNECT_ERRORS = [
                        IOError,
@@ -130,12 +110,20 @@ module RetryingThriftClient
                        Thrift::ProtocolException,
                        Thrift::ApplicationException,
                        Thrift::TransportException
-                      ]
+                      ].freeze
+
+  RETRYING_DEFAULTS = {
+    :exception_classes => DISCONNECT_ERRORS,
+    :randomize_server_list => true,
+    :retries => nil,
+    :server_retry_period => 1,
+    :server_max_requests => nil
+  }.freeze
 
   def initialize(client_class, servers, options = {})
     super
+    @options = RETRYING_DEFAULTS.merge(@options)
     @retries = options[:retries] || @server_list.size
-    @options[:exception_classes] ||= DISCONNECT_ERRORS
     @request_count = 0
     @max_requests = @options[:server_max_requests]
     @retry_period = @options[:server_retry_period]
@@ -214,6 +202,16 @@ module RetryingThriftClient
 end
 
 module TimingOutThriftClient
+  TIMINGOUT_DEFAULTS = {
+    :timeout => 1,
+    :timeout_overrides => {}
+  }.freeze
+
+  def initialize(client_class, servers, options = {})
+    super
+    @options = TIMINGOUT_DEFAULTS.merge(@options)
+  end
+
   def connect!
     super
     set_method_timeouts!
@@ -246,6 +244,9 @@ module TimingOutThriftClient
 end
 
 class ThriftClient < AbstractThriftClient
+  # This error is for backwards compatibility only. If defined in
+  # RetryingThriftClient instead, causes the test suite will break.
+  class NoServersAvailable < StandardError; end
   include RetryingThriftClient
   include TimingOutThriftClient
 end
