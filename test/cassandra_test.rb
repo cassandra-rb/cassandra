@@ -342,6 +342,11 @@ class CassandraTest < Test::Unit::TestCase
     @twitter.insert(:Index, 'asdf', {"thing" => {'jkl' => nil} })
   end
 
+  def test_disconnect!
+    @twitter.disconnect!
+    assert_nil @twitter.instance_variable_get(:@client)
+  end
+
   private
 
   def key

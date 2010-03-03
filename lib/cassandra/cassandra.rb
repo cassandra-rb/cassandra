@@ -69,6 +69,11 @@ class Cassandra
     @servers = Array(servers)
   end
 
+  def disconnect!
+    @client.disconnect!
+    @client = nil
+  end
+
   def keyspaces
     @keyspaces ||= client.get_string_list_property("keyspaces")
   end

@@ -23,6 +23,9 @@ class Cassandra
       clear_keyspace!
     end
 
+    def disconnect!
+    end
+
     def clear_keyspace!
       @data = {}
     end
