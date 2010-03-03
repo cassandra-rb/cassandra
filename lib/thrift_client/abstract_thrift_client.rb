@@ -197,7 +197,7 @@ class AbstractThriftClient
     end
 
     def has_timeouts!
-      transport_can_timeout? if @options[:timeout_overrides].any?
+      @options[:timeout_overrides].any? && transport_can_timeout?
     end
 
     def transport_can_timeout?
