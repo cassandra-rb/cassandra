@@ -1,6 +1,6 @@
 require 'rubygems'
 require 'thrift_client'
-require 'json'
+require 'json' unless defined?(JSON)
 require 'simple_uuid'
 include SimpleUUID
 here = File.expand_path(File.dirname(__FILE__))
