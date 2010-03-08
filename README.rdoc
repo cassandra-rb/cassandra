@@ -7,7 +7,7 @@ A Thrift client wrapper that encapsulates some common failover behavior.
 
 Copyright 2009 Twitter, Inc. See included LICENSE file.
 
-The public certificate for this gem is here[http://rubyforge.org/frs/download.php/25331/evan_weaver-original-public_cert.pem].
+The public certificate for this gem is here[http://blog.evanweaver.com/files/evan_weaver-original-public_cert.pem].
 
 == Features
 
