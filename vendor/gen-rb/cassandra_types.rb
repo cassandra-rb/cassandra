@@ -13,8 +13,9 @@ module CassandraThrift
       DCQUORUM = 3
       DCQUORUMSYNC = 4
       ALL = 5
-      VALUE_MAP = {0 => "ZERO", 1 => "ONE", 2 => "QUORUM", 3 => "DCQUORUM", 4 => "DCQUORUMSYNC", 5 => "ALL"}
-      VALID_VALUES = Set.new([ZERO, ONE, QUORUM, DCQUORUM, DCQUORUMSYNC, ALL]).freeze
+      ANY = 6
+      VALUE_MAP = {0 => "ZERO", 1 => "ONE", 2 => "QUORUM", 3 => "DCQUORUM", 4 => "DCQUORUMSYNC", 5 => "ALL", 6 => "ANY"}
+      VALID_VALUES = Set.new([ZERO, ONE, QUORUM, DCQUORUM, DCQUORUMSYNC, ALL, ANY]).freeze
     end
 
     # Basic unit of data within a ColumnFamily.
@@ -166,6 +167,56 @@ module CassandraThrift
 
     end
 
+    # invalid authentication request (user does not exist or credentials invalid)
+    class AuthenticationException < ::Thrift::Exception
+      include ::Thrift::Struct
+      def initialize(message=nil)
+        super()
+        self.why = message
+      end
+
+      def message; why end
+
+      WHY = 1
+
+      ::Thrift::Struct.field_accessor self, :why
+      FIELDS = {
+        WHY => {:type => ::Thrift::Types::STRING, :name => 'why'}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field why is unset!') unless @why
+      end
+
+    end
+
+    # invalid authorization request (user does not have access to keyspace)
+    class AuthorizationException < ::Thrift::Exception
+      include ::Thrift::Struct
+      def initialize(message=nil)
+        super()
+        self.why = message
+      end
+
+      def message; why end
+
+      WHY = 1
+
+      ::Thrift::Struct.field_accessor self, :why
+      FIELDS = {
+        WHY => {:type => ::Thrift::Types::STRING, :name => 'why'}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field why is unset!') unless @why
+      end
+
+    end
+
     # ColumnParent is used when selecting groups of columns from the same ColumnFamily. In directory structure terms, imagine
     # ColumnParent as ColumnPath + '/../'.
     # 
@@ -286,6 +337,37 @@ module CassandraThrift
 
     end
 
+    # The semantics of start keys and tokens are slightly different.
+    # Keys are start-inclusive; tokens are start-exclusive.  Token
+    # ranges may also wrap -- that is, the end token may be less
+    # than the start one.  Thus, a range from keyX to keyX is a
+    # one-element range, but a range from tokenY to tokenY is the
+    # full ring.
+    class KeyRange
+      include ::Thrift::Struct
+      START_KEY = 1
+      END_KEY = 2
+      START_TOKEN = 3
+      END_TOKEN = 4
+      COUNT = 5
+
+      ::Thrift::Struct.field_accessor self, :start_key, :end_key, :start_token, :end_token, :count
+      FIELDS = {
+        START_KEY => {:type => ::Thrift::Types::STRING, :name => 'start_key', :optional => true},
+        END_KEY => {:type => ::Thrift::Types::STRING, :name => 'end_key', :optional => true},
+        START_TOKEN => {:type => ::Thrift::Types::STRING, :name => 'start_token', :optional => true},
+        END_TOKEN => {:type => ::Thrift::Types::STRING, :name => 'end_token', :optional => true},
+        COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field count is unset!') unless @count
+      end
+
+    end
+
     # A KeySlice is key followed by the data it maps to. A collection of KeySlice is returned by the get_range_slice operation.
     # 
     # @param key. a row key
@@ -307,6 +389,89 @@ module CassandraThrift
       def validate
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field key is unset!') unless @key
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field columns is unset!') unless @columns
+      end
+
+    end
+
+    class Deletion
+      include ::Thrift::Struct
+      TIMESTAMP = 1
+      SUPER_COLUMN = 2
+      PREDICATE = 3
+
+      ::Thrift::Struct.field_accessor self, :timestamp, :super_column, :predicate
+      FIELDS = {
+        TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
+        SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :optional => true},
+        PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate, :optional => true}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field timestamp is unset!') unless @timestamp
+      end
+
+    end
+
+    # A Mutation is either an insert, represented by filling column_or_supercolumn, or a deletion, represented by filling the deletion attribute.
+    # @param column_or_supercolumn. An insert to a column or supercolumn
+    # @param deletion. A deletion of a column or supercolumn
+    class Mutation
+      include ::Thrift::Struct
+      COLUMN_OR_SUPERCOLUMN = 1
+      DELETION = 2
+
+      ::Thrift::Struct.field_accessor self, :column_or_supercolumn, :deletion
+      FIELDS = {
+        COLUMN_OR_SUPERCOLUMN => {:type => ::Thrift::Types::STRUCT, :name => 'column_or_supercolumn', :class => CassandraThrift::ColumnOrSuperColumn, :optional => true},
+        DELETION => {:type => ::Thrift::Types::STRUCT, :name => 'deletion', :class => CassandraThrift::Deletion, :optional => true}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+      end
+
+    end
+
+    class TokenRange
+      include ::Thrift::Struct
+      START_TOKEN = 1
+      END_TOKEN = 2
+      ENDPOINTS = 3
+
+      ::Thrift::Struct.field_accessor self, :start_token, :end_token, :endpoints
+      FIELDS = {
+        START_TOKEN => {:type => ::Thrift::Types::STRING, :name => 'start_token'},
+        END_TOKEN => {:type => ::Thrift::Types::STRING, :name => 'end_token'},
+        ENDPOINTS => {:type => ::Thrift::Types::LIST, :name => 'endpoints', :element => {:type => ::Thrift::Types::STRING}}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field start_token is unset!') unless @start_token
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field end_token is unset!') unless @end_token
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field endpoints is unset!') unless @endpoints
+      end
+
+    end
+
+    # Authentication requests can contain any data, dependent on the AuthenticationBackend used
+    class AuthenticationRequest
+      include ::Thrift::Struct
+      CREDENTIALS = 1
+
+      ::Thrift::Struct.field_accessor self, :credentials
+      FIELDS = {
+        CREDENTIALS => {:type => ::Thrift::Types::MAP, :name => 'credentials', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field credentials is unset!') unless @credentials
       end
 
     end
