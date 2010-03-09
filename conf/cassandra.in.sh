@@ -18,34 +18,30 @@
 CASSANDRA_CONF=$CASSANDRA_CONF
 
 # This can be the path to a jar file, or a directory containing the 
-# compiled classes.
+# compiled classes. NOTE: This isn't needed by the startup script,
+# it's just used here in constructing the classpath.
 cassandra_bin=$CASSANDRA_HOME/build/classes
 
 # The java classpath (required)
-CLASSPATH=$CASSANDRA_CONF:$cassandra_bin
+CLASSPATH=$CASSANDRA_CONF:$CASSANDRA_BIN
 
-for jar in $CASSANDRA_HOME/lib/*.jar; do
+for jar in $CASSANDRA_HOME/lib/*.jar $CASSANDRA_HOME/build/lib/jars/*.jar; do
     CLASSPATH=$CLASSPATH:$jar
 done
-
-echo "CASSANDRA_HOME: $CASSANDRA_HOME"
-echo "CASSANDRA_CONF: $CASSANDRA_CONF"
 
 # Arguments to pass to the JVM
 JVM_OPTS=" \
         -ea \
-        -Xdebug \
-        -Xrunjdwp:transport=dt_socket,server=y,address=8888,suspend=n \
-        -Xms512M \
+        -Xms128M \
         -Xmx1G \
-        -XX:SurvivorRatio=8 \
         -XX:TargetSurvivorRatio=90 \
         -XX:+AggressiveOpts \
         -XX:+UseParNewGC \
         -XX:+UseConcMarkSweepGC \
-        -XX:CMSInitiatingOccupancyFraction=1 \
         -XX:+CMSParallelRemarkEnabled \
         -XX:+HeapDumpOnOutOfMemoryError \
+        -XX:SurvivorRatio=128 \
+        -XX:MaxTenuringThreshold=0 \
         -Dcom.sun.management.jmxremote.port=8080 \
         -Dcom.sun.management.jmxremote.ssl=false \
         -Dcom.sun.management.jmxremote.authenticate=false"
