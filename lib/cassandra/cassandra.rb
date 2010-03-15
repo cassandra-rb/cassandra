@@ -121,8 +121,8 @@ class Cassandra
   # FIXME May not currently delete all records without multiple calls. Waiting
   # for ranged remove support in Cassandra.
   def clear_column_family!(column_family, options = {})
-    while (keys = get_range(column_family, :count => 100)).length > 0
-      keys.each { |key| remove(column_family, key, options) }
+    each_key(column_family) do |key|
+      remove(column_family, key, options)
     end
   end
 
@@ -210,14 +210,7 @@ class Cassandra
   # to be partitioned with OrderPreservingHash. Supports the <tt>:start</tt>,
   # <tt>:finish</tt>, and <tt>:consistency</tt> options.
   def count_range(column_family, options = {})
-    count = 0
-    l = []
-    start_key = options[:start]
-    while (l = get_range(column_family, options.merge(:count => 1000, :start => start_key))).size > 0
-      count += l.size
-      start_key = l.last.succ
-    end
-    count
+    get_range(column_family, options).select{|r| r.columns.length > 0}.compact.length
   end
 
   # Open a batch operation and yield. Inserts and deletes will be queued until
@@ -289,4 +282,5 @@ class Cassandra
     port = @servers.first.split(':').last
     ips.map{|ip| "#{ip}:#{port}" }
   end
+
 end

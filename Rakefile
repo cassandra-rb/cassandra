@@ -16,7 +16,7 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
 end
 
 CASSANDRA_HOME = "#{ENV['HOME']}/cassandra"
-DIST_URL = "http://github.com/downloads/ryanking/cassandra/apache-cassandra-incubating-0.5.0.2010-02-21-bin.tar.gz"
+DIST_URL = "http://apache.osuosl.org/incubator/cassandra/0.6.0/apache-cassandra-0.6.0-beta2-bin.tar.gz"
 DIST_FILE = DIST_URL.split('/').last
 
 directory CASSANDRA_HOME
@@ -26,9 +26,9 @@ desc "Start Cassandra"
 task :cassandra => [:java, File.join(CASSANDRA_HOME, 'server'), File.join(CASSANDRA_HOME, 'test', 'data')] do
   env = ""
   if !ENV["CASSANDRA_INCLUDE"]
-    env << "CASSANDRA_INCLUDE=#{Dir.pwd}/conf/cassandra.in.sh "
+    env << "CASSANDRA_INCLUDE=#{File.expand_path(Dir.pwd)}/conf/cassandra.in.sh "
     env << "CASSANDRA_HOME=#{CASSANDRA_HOME}/server "
-    env << "CASSANDRA_CONF=#{Dir.pwd}/conf"
+    env << "CASSANDRA_CONF=#{File.expand_path(Dir.pwd)}/conf"
   end
 
   Dir.chdir(File.join(CASSANDRA_HOME, 'server')) do
@@ -39,7 +39,10 @@ end
 file File.join(CASSANDRA_HOME, 'server') => File.join(CASSANDRA_HOME, DIST_FILE) do
   Dir.chdir(CASSANDRA_HOME) do
     sh "tar xzvf #{DIST_FILE}"
-    sh "mv #{DIST_FILE.split('.')[0..2].join('.')} server"
+    sh "mv #{DIST_FILE.split('.')[0..2].join('.').sub('-bin', '')} server"
+    Dir.chdir('server') do
+      sh "ant ivy-retrieve"
+    end
   end
 end
 
