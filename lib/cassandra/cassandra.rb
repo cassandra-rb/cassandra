@@ -93,10 +93,50 @@ class Cassandra
     column_family, _, _, options = extract_and_validate_params(column_family, key, [options], WRITE_DEFAULTS)
 
     timestamp = options[:timestamp] || Time.stamp
-    cfmap = hash_to_cfmap(column_family, hash, timestamp)
-    mutation = [:insert, [key, cfmap, options[:consistency]]]
+    mutation_map = if is_super(column_family)
+      {
+        key => {
+          column_family => hash.collect{|k,v| _super_insert_mutation(column_family, k, v, timestamp) }
+        }
+      }
+    else
+      {
+        key => {
+          column_family => hash.collect{|k,v| _standard_insert_mutation(column_family, k, v, timestamp)}
+        }
+      }
+    end
 
-    @batch ? @batch << mutation : _insert(*mutation[1])
+    @batch ? @batch << [mutation_map, options[:consistency]] : _mutate(mutation_map, options[:consistency])
+  end
+
+  def _standard_insert_mutation(column_family, column_name, value, timestamp)
+    CassandraThrift::Mutation.new(
+      :column_or_supercolumn => CassandraThrift::ColumnOrSuperColumn.new(
+        :column => CassandraThrift::Column.new(
+          :name      => column_name_class(column_family).new(column_name).to_s,
+          :value     => value,
+          :timestamp => timestamp
+        )
+      )
+    )
+  end
+
+  def _super_insert_mutation(column_family, super_column_name, sub_columns, timestamp)
+    CassandraThrift::Mutation.new(:column_or_supercolumn => 
+      CassandraThrift::ColumnOrSuperColumn.new(
+        :super_column => CassandraThrift::SuperColumn.new(
+          :name => column_name_class(column_family).new(super_column_name).to_s,
+          :columns => sub_columns.collect { |sub_column_name, sub_column_value|
+            CassandraThrift::Column.new(
+              :name      => sub_column_name_class(column_family).new(sub_column_name).to_s,
+              :value     => sub_column_value.to_s,
+              :timestamp => timestamp
+            )
+          }
+        )
+      )
+    )
   end
 
   ## Delete
@@ -227,10 +267,10 @@ class Cassandra
 
     @batch.each do |mutation|
       case mutation.first
-      when :insert
-        _insert(*mutation[1])
       when :remove
         _remove(*mutation[1])
+      else
+        _mutate(*mutation)
       end
     end
   ensure

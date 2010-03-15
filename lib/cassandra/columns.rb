@@ -104,5 +104,6 @@ class Cassandra
       end
       h
     end
+
   end
 end

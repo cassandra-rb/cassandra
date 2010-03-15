@@ -4,8 +4,8 @@ class Cassandra
   module Protocol #:nodoc:
     private
 
-    def _insert(key, cfmap, consistency_level)
-      @client.batch_insert(@keyspace, key, cfmap, consistency_level)
+    def _mutate(mutation_map, consistency_level)
+      @client.batch_mutate(@keyspace, mutation_map, consistency_level)
     end
 
     def _remove(key, column_path, timestamp, consistency_level)
