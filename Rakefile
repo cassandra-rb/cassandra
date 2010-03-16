@@ -15,7 +15,7 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
   end
 end
 
-CASSANDRA_HOME = "#{ENV['HOME']}/cassandra"
+CASSANDRA_HOME = ENV['CASSANDRA_HOME'] || "#{ENV['HOME']}/cassandra"
 DIST_URL = "http://apache.osuosl.org/incubator/cassandra/0.6.0/apache-cassandra-0.6.0-beta2-bin.tar.gz"
 DIST_FILE = DIST_URL.split('/').last
 
