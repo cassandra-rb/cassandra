@@ -110,35 +110,7 @@ class Cassandra
     @batch ? @batch << [mutation_map, options[:consistency]] : _mutate(mutation_map, options[:consistency])
   end
 
-  def _standard_insert_mutation(column_family, column_name, value, timestamp)
-    CassandraThrift::Mutation.new(
-      :column_or_supercolumn => CassandraThrift::ColumnOrSuperColumn.new(
-        :column => CassandraThrift::Column.new(
-          :name      => column_name_class(column_family).new(column_name).to_s,
-          :value     => value,
-          :timestamp => timestamp
-        )
-      )
-    )
-  end
-
-  def _super_insert_mutation(column_family, super_column_name, sub_columns, timestamp)
-    CassandraThrift::Mutation.new(:column_or_supercolumn => 
-      CassandraThrift::ColumnOrSuperColumn.new(
-        :super_column => CassandraThrift::SuperColumn.new(
-          :name => column_name_class(column_family).new(super_column_name).to_s,
-          :columns => sub_columns.collect { |sub_column_name, sub_column_value|
-            CassandraThrift::Column.new(
-              :name      => sub_column_name_class(column_family).new(sub_column_name).to_s,
-              :value     => sub_column_value.to_s,
-              :timestamp => timestamp
-            )
-          }
-        )
-      )
-    )
-  end
-
+  
   ## Delete
 
   # _mutate the element at the column_family:key:[column]:[sub_column]
