@@ -93,12 +93,24 @@ class Cassandra
     column_family, _, _, options = extract_and_validate_params(column_family, key, [options], WRITE_DEFAULTS)
 
     timestamp = options[:timestamp] || Time.stamp
-    cfmap = hash_to_cfmap(column_family, hash, timestamp)
-    mutation = [:insert, [key, cfmap, options[:consistency]]]
+    mutation_map = if is_super(column_family)
+      {
+        key => {
+          column_family => hash.collect{|k,v| _super_insert_mutation(column_family, k, v, timestamp) }
+        }
+      }
+    else
+      {
+        key => {
+          column_family => hash.collect{|k,v| _standard_insert_mutation(column_family, k, v, timestamp)}
+        }
+      }
+    end
 
-    @batch ? @batch << mutation : _insert(*mutation[1])
+    @batch ? @batch << [mutation_map, options[:consistency]] : _mutate(mutation_map, options[:consistency])
   end
 
+  
   ## Delete
 
   # _mutate the element at the column_family:key:[column]:[sub_column]
@@ -121,8 +133,8 @@ class Cassandra
   # FIXME May not currently delete all records without multiple calls. Waiting
   # for ranged remove support in Cassandra.
   def clear_column_family!(column_family, options = {})
-    while (keys = get_range(column_family, :count => 100)).length > 0
-      keys.each { |key| remove(column_family, key, options) }
+    each_key(column_family) do |key|
+      remove(column_family, key, options)
     end
   end
 
@@ -210,14 +222,7 @@ class Cassandra
   # to be partitioned with OrderPreservingHash. Supports the <tt>:start</tt>,
   # <tt>:finish</tt>, and <tt>:consistency</tt> options.
   def count_range(column_family, options = {})
-    count = 0
-    l = []
-    start_key = options[:start]
-    while (l = get_range(column_family, options.merge(:count => 1000, :start => start_key))).size > 0
-      count += l.size
-      start_key = l.last.succ
-    end
-    count
+    get_range(column_family, options).select{|r| r.columns.length > 0}.compact.length
   end
 
   # Open a batch operation and yield. Inserts and deletes will be queued until
@@ -234,10 +239,10 @@ class Cassandra
 
     @batch.each do |mutation|
       case mutation.first
-      when :insert
-        _insert(*mutation[1])
       when :remove
         _remove(*mutation[1])
+      else
+        _mutate(*mutation)
       end
     end
   ensure
@@ -289,4 +294,5 @@ class Cassandra
     port = @servers.first.split(':').last
     ips.map{|ip| "#{ip}:#{port}" }
   end
+
 end

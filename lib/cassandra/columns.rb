@@ -71,38 +71,36 @@ class Cassandra
           c.value
         end
       end
-      hash    
+      hash
     end
 
-    def hash_to_cfmap(column_family, hash, timestamp)
-      h = Hash.new
-      if is_super(column_family)
-        h[column_family] = hash.collect do |super_column_name, sub_columns|
-          CassandraThrift::ColumnOrSuperColumn.new(
-            :super_column => CassandraThrift::SuperColumn.new(
-              :name => column_name_class(column_family).new(super_column_name).to_s,
-              :columns => sub_columns.collect { |sub_column_name, sub_column_value|
-                CassandraThrift::Column.new(
-                  :name      => sub_column_name_class(column_family).new(sub_column_name).to_s,
-                  :value     => sub_column_value.to_s,
-                  :timestamp => timestamp
-                )
-              }
-            )
+    def _standard_insert_mutation(column_family, column_name, value, timestamp)
+      CassandraThrift::Mutation.new(
+        :column_or_supercolumn => CassandraThrift::ColumnOrSuperColumn.new(
+          :column => CassandraThrift::Column.new(
+            :name      => column_name_class(column_family).new(column_name).to_s,
+            :value     => value,
+            :timestamp => timestamp
           )
-        end
-      else
-        h[column_family] = hash.collect do |column_name, value|
-          CassandraThrift::ColumnOrSuperColumn.new(
-            :column => CassandraThrift::Column.new(
-              :name      => column_name_class(column_family).new(column_name).to_s,
-              :value     => value,
-              :timestamp => timestamp
-            )
+        )
+      )
+    end
+
+    def _super_insert_mutation(column_family, super_column_name, sub_columns, timestamp)
+      CassandraThrift::Mutation.new(:column_or_supercolumn => 
+        CassandraThrift::ColumnOrSuperColumn.new(
+          :super_column => CassandraThrift::SuperColumn.new(
+            :name => column_name_class(column_family).new(super_column_name).to_s,
+            :columns => sub_columns.collect { |sub_column_name, sub_column_value|
+              CassandraThrift::Column.new(
+                :name      => sub_column_name_class(column_family).new(sub_column_name).to_s,
+                :value     => sub_column_value.to_s,
+                :timestamp => timestamp
+              )
+            }
           )
-        end
-      end
-      h
+        )
+      )
     end
   end
 end
