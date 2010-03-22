@@ -17,7 +17,16 @@ module Thrift
     end
 
     def open
+      fiber = Fiber.current
       @connection = EventMachineConnection.connect(@host, @port, @timeout)
+      @connection.callback do
+        fiber.resume
+      end
+      @connection.errback do
+        fiber.resume
+      end
+      Fiber.yield
+      @connection
     end
 
     def close
@@ -56,7 +65,6 @@ module Thrift
     def initialize(host, port=9090)
       @host, @port = host, port
       @index = 0
-      @reconnecting = false
       @connected = false
       @buf = ''
     end
@@ -69,6 +77,7 @@ module Thrift
     end
 
     def blocking_read(size)
+      raise IOError, "lost connection to #{@host}:#{@port}" unless @connected
       trap do
         if can_read?(size)
           yank(size)
@@ -103,20 +112,15 @@ module Thrift
     end
 
     def connection_completed
-      @reconnecting = false
       @connected = true
       succeed
     end
 
     def unbind
-      # If we disconnect, try to reconnect
-      if @connected or !@reconnecting
-        EM.add_timer(1) { 
-          # XXX Connect timeout?
-          reconnect @host, @port 
-        }
+      if @connected
         @connected = false
-        @reconnecting = true
+      else
+        fail
       end
     end
 
