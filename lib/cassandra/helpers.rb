@@ -19,8 +19,10 @@ class Cassandra
       column, sub_column = args[0], args[1]
       klass, sub_klass = column_name_class(column_family), sub_column_name_class(column_family)
       range_class = column ? sub_klass : klass
-      options[:start] = options[:start] ? range_class.new(options[:start]).to_s : ""
-      options[:finish] = options[:finish] ? range_class.new(options[:finish]).to_s : ""
+
+      [:start, :finish].each do |opt|
+        options[opt] = options[opt] ? range_class.new(options[opt]).to_s : ''
+      end
 
       [column_family, s_map(column, klass), s_map(sub_column, sub_klass), options]
     end
