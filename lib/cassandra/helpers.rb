@@ -21,7 +21,7 @@ class Cassandra
       range_class = column ? sub_klass : klass
 
       [:start, :finish].each do |opt|
-        options[opt] = options.key?(opt) ? (options[opt] != '' ? range_class.new(options[opt]).to_s : options[opt]) : ''
+        options[opt] = options[opt] ? range_class.new(options[opt]).to_s : ''
       end
 
       [column_family, s_map(column, klass), s_map(sub_column, sub_klass), options]
