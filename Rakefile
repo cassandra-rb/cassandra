@@ -15,7 +15,8 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
   end
 end
 
-CASSANDRA_HOME = "#{ENV['HOME']}/cassandra"
+CASSANDRA_HOME = ENV['CASSANDRA_HOME'] || "#{ENV['HOME']}/cassandra"
+DOWNLOAD_DIR = "/tmp"
 DIST_URL = "http://apache.osuosl.org/incubator/cassandra/0.6.0/apache-cassandra-0.6.0-beta2-bin.tar.gz"
 DIST_FILE = DIST_URL.split('/').last
 
@@ -36,9 +37,9 @@ task :cassandra => [:java, File.join(CASSANDRA_HOME, 'server'), File.join(CASSAN
   end
 end
 
-file File.join(CASSANDRA_HOME, 'server') => File.join(CASSANDRA_HOME, DIST_FILE) do
+file File.join(CASSANDRA_HOME, 'server') => File.join(DOWNLOAD_DIR, DIST_FILE) do
   Dir.chdir(CASSANDRA_HOME) do
-    sh "tar xzvf #{DIST_FILE}"
+    sh "tar xzf #{DIST_FILE}"
     sh "mv #{DIST_FILE.split('.')[0..2].join('.').sub('-bin', '')} server"
     Dir.chdir('server') do
       sh "ant ivy-retrieve"
@@ -46,9 +47,9 @@ file File.join(CASSANDRA_HOME, 'server') => File.join(CASSANDRA_HOME, DIST_FILE)
   end
 end
 
-file File.join(CASSANDRA_HOME, DIST_FILE) => CASSANDRA_HOME do
+file File.join(DOWNLOAD_DIR, DIST_FILE) => CASSANDRA_HOME do
   puts "downloading"
-  cmd = "curl -L -o #{File.join(CASSANDRA_HOME, DIST_FILE)} #{DIST_URL}"
+  cmd = "curl -L -o #{File.join(DOWNLOAD_DIR, DIST_FILE)} #{DIST_URL}"
   sh cmd
 end
 
