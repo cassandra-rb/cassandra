@@ -26,6 +26,7 @@ module Thrift
         fiber.resume
       end
       Fiber.yield
+      raise IOError, "Unable to connect to #{@host}:#{@port}" unless connection.connected?
       @connection
     end
 
@@ -65,32 +66,30 @@ module Thrift
     def initialize(host, port=9090)
       @host, @port = host, port
       @index = 0
-      @connected = false
+      @disconnected = 'not connected'
       @buf = ''
     end
 
     def close
       trap do
-        @connected = false
+        @disconnected = 'closed'
         close_connection(true)
       end
     end
 
     def blocking_read(size)
-      raise IOError, "lost connection to #{@host}:#{@port}" unless @connected
-      trap do
-        if can_read?(size)
-          yank(size)
-        else
-          raise ArgumentError, "Unexpected state" if @size or @callback
+      raise IOError, "lost connection to #{@host}:#{@port}: #{@disconnected}" if @disconnected
+      if can_read?(size)
+        yank(size)
+      else
+        raise ArgumentError, "Unexpected state" if @size or @callback
 
-          fiber = Fiber.current
-          @size = size
-          @callback = proc { |data|
-            fiber.resume(data)
-          }
-          Fiber.yield
-        end
+        fiber = Fiber.current
+        @size = size
+        @callback = proc { |data|
+          fiber.resume(data)
+        }
+        Fiber.yield
       end
     end
 
@@ -108,17 +107,17 @@ module Thrift
     end
 
     def connected?
-      @connected
+      !@disconnected
     end
 
     def connection_completed
-      @connected = true
+      @disconnected = nil
       succeed
     end
 
     def unbind
-      if @connected
-        @connected = false
+      if !@disconnected
+        @disconnected = 'unbound'
       else
         fail
       end
