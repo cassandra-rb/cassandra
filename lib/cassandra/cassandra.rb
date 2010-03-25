@@ -24,6 +24,8 @@ For write methods, valid option parameters are:
 <tt>:timestamp </tt>:: The transaction timestamp. Defaults to the current time in milliseconds. This is used for conflict resolution by the server; you normally never need to change it.
 <tt>:consistency</tt>:: See above.
 
+For the initial client instantiation, you may also pass in <tt>:thrift_client<tt> with a ThriftClient subclass attached. On connection, that class will be used instead of the default ThriftClient class, allowing you to add additional behavior to the connection (e.g. query logging).
+
 =end rdoc
 
 class Cassandra
@@ -53,10 +55,11 @@ class Cassandra
   }.freeze
   
   THRIFT_DEFAULTS = {
-    :transport_wrapper => Thrift::BufferedTransport
+    :transport_wrapper => Thrift::BufferedTransport,
+    :thrift_client => ThriftClient
   }.freeze
 
-  attr_reader :keyspace, :servers, :schema, :thrift_client_options
+  attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client
 
   # Create a new Cassandra instance and open the connection.
   def initialize(keyspace, servers = "127.0.0.1:9160", thrift_client_options = {})
@@ -64,7 +67,7 @@ class Cassandra
     @column_name_class = {}
     @sub_column_name_class = {}
     @thrift_client_options = THRIFT_DEFAULTS.merge(thrift_client_options)
-
+    @thrift_client = @thrift_client_options[:thrift_client]
     @keyspace = keyspace
     @servers = Array(servers)
   end
@@ -286,7 +289,7 @@ class Cassandra
   end
 
   def new_client
-    ThriftClient.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
+    thrift_client.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
   end
 
   def all_nodes
