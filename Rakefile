@@ -17,7 +17,7 @@ end
 
 CASSANDRA_HOME = ENV['CASSANDRA_HOME'] || "#{ENV['HOME']}/cassandra"
 DOWNLOAD_DIR = "/tmp"
-DIST_URL = "http://apache.osuosl.org/cassandra/0.6.0/apache-cassandra-0.6.0-beta3-bin.tar.gz"
+DIST_URL = "http://apache.osuosl.org/incubator/cassandra/0.6.0/apache-cassandra-0.6.0-beta2-bin.tar.gz"
 DIST_FILE = DIST_URL.split('/').last
 
 directory CASSANDRA_HOME
@@ -39,8 +39,7 @@ end
 
 file File.join(CASSANDRA_HOME, 'server') => File.join(DOWNLOAD_DIR, DIST_FILE) do
   Dir.chdir(CASSANDRA_HOME) do
-    dist = File.join(DOWNLOAD_DIR, DIST_FILE)
-    sh "tar xzf #{dist}"
+    sh "tar xzf #{DIST_FILE}"
     sh "mv #{DIST_FILE.split('.')[0..2].join('.').sub('-bin', '')} server"
     Dir.chdir('server') do
       sh "ant ivy-retrieve"
