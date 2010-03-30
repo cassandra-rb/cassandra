@@ -1,3 +1,5 @@
+v0.8.1 Adding the ability to compose ThriftClient classes.
+
 v0.8.0 Compatibility with Cassandra 0.6 betas (no longer compatible with 0.5); assorted bugfixes.
 
 v0.7.6 Bugfixes.
