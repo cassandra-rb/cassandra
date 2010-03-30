@@ -56,10 +56,10 @@ class Cassandra
   
   THRIFT_DEFAULTS = {
     :transport_wrapper => Thrift::BufferedTransport,
-    :thrift_client => ThriftClient
+    :thrift_client_class => ThriftClient
   }.freeze
 
-  attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client
+  attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client_class
 
   # Create a new Cassandra instance and open the connection.
   def initialize(keyspace, servers = "127.0.0.1:9160", thrift_client_options = {})
@@ -67,7 +67,7 @@ class Cassandra
     @column_name_class = {}
     @sub_column_name_class = {}
     @thrift_client_options = THRIFT_DEFAULTS.merge(thrift_client_options)
-    @thrift_client = @thrift_client_options[:thrift_client]
+    @thrift_client_class = @thrift_client_options[:thrift_client_class]
     @keyspace = keyspace
     @servers = Array(servers)
   end
@@ -289,7 +289,7 @@ class Cassandra
   end
 
   def new_client
-    thrift_client.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
+    thrift_client_class.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
   end
 
   def all_nodes
