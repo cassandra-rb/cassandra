@@ -26,6 +26,10 @@ class AbstractThriftClient
     end
   end
 
+  def inspect
+    "<#{self.class}(#{client_class}) @current_server=#{@current_server}>"
+  end
+
   # Force the client to connect to the server. Not necessary to be
   # called as the connection will be made on the first RPC method
   # call.

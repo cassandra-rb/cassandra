@@ -21,6 +21,11 @@ class ThriftClientTest < Test::Unit::TestCase
     Process.wait
   end
 
+  def test_inspect
+    client = ThriftClient.new(Greeter::Client, @servers.last, @options)
+    assert_equal "<ThriftClient(Greeter::Client) @current_server=127.0.0.1:1463>", client.inspect
+  end
+
   def test_live_server
     assert_nothing_raised do
       ThriftClient.new(Greeter::Client, @servers.last, @options).greeting("someone")
