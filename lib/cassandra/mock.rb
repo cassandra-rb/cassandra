@@ -1,6 +1,6 @@
 require 'nokogiri'
 
-class UUID
+class SimpleUUID::UUID
   def >=(other)
     (self <=> other) >= 0
   end
@@ -286,7 +286,7 @@ class Cassandra
       when "org.apache.cassandra.db.marshal.UTF8Type"
         column_name
       when "org.apache.cassandra.db.marshal.TimeUUIDType"
-        UUID.new(column_name)
+        SimpleUUID::UUID.new(column_name)
       when "org.apache.cassandra.db.marshal.LongType"
         Long.new(column_name)
       else

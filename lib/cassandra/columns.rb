@@ -21,7 +21,7 @@ class Cassandra
       property =~ /.*\.(.*?)$/
       case $1
       when "LongType" then Long
-      when "LexicalUUIDType", "TimeUUIDType" then UUID
+      when "LexicalUUIDType", "TimeUUIDType" then SimpleUUID::UUID
       else 
         String # UTF8, Ascii, Bytes, anything else
       end
