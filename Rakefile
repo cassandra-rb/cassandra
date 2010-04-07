@@ -39,7 +39,7 @@ end
 
 file File.join(CASSANDRA_HOME, 'server') => File.join(DOWNLOAD_DIR, DIST_FILE) do
   Dir.chdir(CASSANDRA_HOME) do
-    sh "tar xzf #{DIST_FILE}"
+    sh "tar xzf #{File.join(DOWNLOAD_DIR, DIST_FILE)} -C #{CASSANDRA_HOME}"
     sh "mv #{DIST_FILE.split('.')[0..2].join('.').sub('-bin', '')} server"
     Dir.chdir('server') do
       sh "ant ivy-retrieve"
