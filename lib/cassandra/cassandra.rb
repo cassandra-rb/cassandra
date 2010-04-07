@@ -6,7 +6,7 @@ Create a new Cassandra client instance. Accepts a keyspace name, and optional ho
 
 You can then make calls to the server via the <tt>client</tt> instance.
 
-  client.insert(:UserRelationships, "5", {"user_timeline" => {UUID.new => "1"}})
+  client.insert(:UserRelationships, "5", {"user_timeline" => {SimpleUUID::UUID.new => "1"}})
   client.get(:UserRelationships, "5", "user_timeline")
 
 For read methods, valid option parameters are:

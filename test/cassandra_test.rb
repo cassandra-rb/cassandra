@@ -13,7 +13,7 @@ class CassandraTest < Test::Unit::TestCase
     @blogs_long = Cassandra.new('MultiblogLong')
     @blogs_long.clear_keyspace!
 
-    @uuids = (0..6).map {|i| UUID.new(Time.at(2**(24+i))) }
+    @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
     @longs = (0..6).map {|i| Long.new(Time.at(2**(24+i))) }
   end
 
