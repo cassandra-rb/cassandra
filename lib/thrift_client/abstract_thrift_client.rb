@@ -89,12 +89,13 @@ class AbstractThriftClient
       :randomize_server_list => true,
       :retries => nil,
       :server_retry_period => 1,
-      :server_max_requests => nil
+      :server_max_requests => nil,
+      :retry_overrides => {}
     }.freeze
 
     def initialize(client_class, servers, options = {})
       super
-      @options = RETRYING_DEFAULTS.merge(@options)
+      @options = RETRYING_DEFAULTS.merge(@options) # @options is set by super
       @retries = options[:retries] || @server_list.size
       @request_count = 0
       @max_requests = @options[:server_max_requests]
@@ -150,7 +151,7 @@ class AbstractThriftClient
       super
     rescue *@options[:exception_classes] => e
       disconnect_on_error!
-      tries ||= @retries
+      tries ||= (@options[:retry_overrides][method_name.to_sym] || @retries)
       tries -= 1
       tries == 0 ? handle_exception(e, method_name, args) : retry
     end
