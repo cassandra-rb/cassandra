@@ -154,12 +154,12 @@
    ~ disk.  Keep the data disks and the CommitLog disks separate for best
    ~ performance
   -->
-  <CommitLogDirectory>/var/lib/cassandra/commitlog</CommitLogDirectory>
+  <CommitLogDirectory>data/cassandra/commitlog</CommitLogDirectory>
   <DataFileDirectories>
-      <DataFileDirectory>/var/lib/cassandra/data</DataFileDirectory>
+      <DataFileDirectory>data/cassandra/data</DataFileDirectory>
   </DataFileDirectories>
-  <CalloutLocation>/var/lib/cassandra/callouts</CalloutLocation>
-  <StagingFileDirectory>/var/lib/cassandra/staging</StagingFileDirectory>
+  <CalloutLocation>data/cassandra/callouts</CalloutLocation>
+  <StagingFileDirectory>data/cassandra/staging</StagingFileDirectory>
 
 
   <!--
