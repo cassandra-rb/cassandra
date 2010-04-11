@@ -60,4 +60,14 @@ class CassandraMockTest < CassandraTest
     @twitter.insert(:Statuses, 'a', {:text => 'foo'})
     assert_equal ['a'], @twitter.get_range(:Statuses, :count => 1)
   end
+
+  def test_inserting_array_for_indices
+    @twitter.insert(:TimelinishThings, 'a', ['1','2'])
+    row = @twitter.get(:TimelinishThings, 'a')
+    assert_equal({'1' => nil, '2' => nil}, row)
+
+    assert_raises(ArgumentError) {
+      @twitter.insert(:UserRelationships, 'a', ['u1','u2'])
+    }
+  end
 end

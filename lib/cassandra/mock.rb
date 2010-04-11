@@ -34,35 +34,31 @@ class Cassandra
       @data[column_family.to_sym] = OrderedHash.new
     end
 
-    def insert(column_family, key, hash, options = {})
+    def insert(column_family, key, hash_or_array, options = {})
       if @batch
-        @batch << [:insert, column_family, key, hash, options]
+        @batch << [:insert, column_family, key, hash_or_array, options]
       else
         raise ArgumentError if key.nil?
         if column_family_type(column_family) == 'Standard'
-          insert_standard(column_family, key, hash)
+          insert_standard(column_family, key, hash_or_array)
         else
-          insert_super(column_family, key, hash)
+          insert_super(column_family, key, hash_or_array)
         end
       end
     end
 
-    def insert_standard(column_family, key, hash)
-      if cf(column_family)[key]
-        cf(column_family)[key] = merge_and_sort(cf(column_family)[key], hash)
-      else
-        cf(column_family)[key] = OrderedHash[hash.sort{|a,b| a[0] <=> b[0]}]
-      end
+    def insert_standard(column_family, key, hash_or_array)
+      old = cf(column_family)[key] || OrderedHash.new
+      cf(column_family)[key] = merge_and_sort(old, hash_or_array)
     end
 
     def insert_super(column_family, key, hash)
+      raise ArgumentError unless hash.is_a?(Hash)
       cf(column_family)[key] ||= OrderedHash.new
+
       hash.keys.each do |sub_key|
-        if cf(column_family)[key][sub_key]
-          cf(column_family)[key][sub_key] = merge_and_sort(cf(column_family)[key][sub_key], hash[sub_key])
-        else
-          cf(column_family)[key][sub_key] = OrderedHash[hash[sub_key].sort{|a,b| a[0] <=> b[0]}]
-        end
+        old = cf(column_family)[key][sub_key] || OrderedHash.new
+        cf(column_family)[key][sub_key] = merge_and_sort(old, hash[sub_key])
       end
     end
 
@@ -303,6 +299,9 @@ class Cassandra
     end
 
     def merge_and_sort(old_stuff, new_stuff)
+      if new_stuff.is_a?(Array)
+        new_stuff = new_stuff.inject({}){|h,k| h[k] = nil; h }
+      end
       OrderedHash[old_stuff.merge(new_stuff).sort{|a,b| a[0] <=> b[0]}]
     end
 
