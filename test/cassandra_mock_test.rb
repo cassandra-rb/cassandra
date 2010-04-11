@@ -45,7 +45,9 @@ class CassandraMockTest < CassandraTest
       "UserAudits"=>{
         "CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type", 
         "Type"=>"Standard"},
-      "Users"=>{"CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type", "Type"=>"Standard"}
+      "Users"=>{"CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type", "Type"=>"Standard"},
+      "TimelinishThings"=>
+        {"CompareWith"=>"org.apache.cassandra.db.marshal.BytesType", "Type"=>"Standard"}
     }
     stuff = @twitter.send(:schema_for_keyspace, 'Twitter')
     data.keys.each do |k|

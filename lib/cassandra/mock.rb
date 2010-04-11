@@ -244,7 +244,7 @@ class Cassandra
         if cf['CompareWith']
           ret[cf['Name']]['CompareWith'] = 'org.apache.cassandra.db.marshal.' + cf['CompareWith']
         end
-        if cf['ColumnType']
+        if cf['ColumnType'] == 'Super'
           ret[cf['Name']]['Type'] = 'Super'
         else
           ret[cf['Name']]['Type'] = 'Standard'
@@ -283,15 +283,14 @@ class Cassandra
       end
 
       case klass
-      when "org.apache.cassandra.db.marshal.UTF8Type"
+      when "org.apache.cassandra.db.marshal.UTF8Type", "org.apache.cassandra.db.marshal.BytesType"
         column_name
       when "org.apache.cassandra.db.marshal.TimeUUIDType"
         SimpleUUID::UUID.new(column_name)
       when "org.apache.cassandra.db.marshal.LongType"
         Long.new(column_name)
       else
-        p klass
-        raise
+        raise "Unknown column family type: #{klass.inspect}"
       end
     end
 
