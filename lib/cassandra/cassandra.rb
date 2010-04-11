@@ -66,10 +66,15 @@ class Cassandra
     @is_super = {}
     @column_name_class = {}
     @sub_column_name_class = {}
+    @auto_discover_nodes = true
     @thrift_client_options = THRIFT_DEFAULTS.merge(thrift_client_options)
     @thrift_client_class = @thrift_client_options[:thrift_client_class]
     @keyspace = keyspace
     @servers = Array(servers)
+  end
+
+  def disable_node_auto_discovery!
+    @auto_discover_nodes = false
   end
 
   def disconnect!
@@ -293,9 +298,13 @@ class Cassandra
   end
 
   def all_nodes
-    ips = ::JSON.parse(new_client.get_string_property('token map')).values
-    port = @servers.first.split(':').last
-    ips.map{|ip| "#{ip}:#{port}" }
+    if @auto_discover_nodes
+      ips = ::JSON.parse(new_client.get_string_property('token map')).values
+      port = @servers.first.split(':').last
+      ips.map{|ip| "#{ip}:#{port}" }
+    else
+      @servers
+    end
   end
 
 end
