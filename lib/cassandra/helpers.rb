@@ -5,13 +5,13 @@ class Cassandra
       column_family = column_family.to_s
       # Keys
       [keys].flatten.each do |key|
-        raise ArgumentError, "Key #{key.inspect} must be a String for #{calling_method}" unless key.is_a?(String)
+        raise ArgumentError, "Key #{key.inspect} must be a String for #{caller[2].inspect}." unless key.is_a?(String)
       end
 
       # Options
       if args.last.is_a?(Hash)
         extras = args.last.keys - options.keys
-        raise ArgumentError, "Invalid options #{extras.inspect[1..-2]} for #{calling_method}" if extras.any?
+        raise ArgumentError, "Invalid options #{extras.inspect[1..-2]} for #{caller[1]}" if extras.any?
         options.merge!(args.pop)      
       end
 
