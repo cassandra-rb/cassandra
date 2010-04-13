@@ -1,3 +1,5 @@
+v0.8.2 Renamed :thrift_client_class option, UUID fix, 0.6 update, fixing cassanda install, much Mock fixes
+
 v0.8.1 Adding the ability to compose ThriftClient classes.
 
 v0.8.0 Compatibility with Cassandra 0.6 betas (no longer compatible with 0.5); assorted bugfixes.
