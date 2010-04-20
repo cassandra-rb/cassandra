@@ -17,7 +17,7 @@ end
 
 CASSANDRA_HOME = ENV['CASSANDRA_HOME'] || "#{ENV['HOME']}/cassandra"
 DOWNLOAD_DIR = "/tmp"
-DIST_URL = "http://mirrors.kahuki.com/apache/cassandra/0.6.0/apache-cassandra-0.6.0-rc1-bin.tar.gz"
+DIST_URL = "http://archive.apache.org/dist/cassandra/0.6.1/apache-cassandra-0.6.1-bin.tar.gz"
 DIST_FILE = DIST_URL.split('/').last
 
 directory CASSANDRA_HOME
