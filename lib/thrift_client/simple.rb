@@ -100,7 +100,8 @@ class ThriftClient
           s.read(len)
         when I64
           hi, lo = s.read(8).unpack("NN")
-          (hi << 32) | lo
+          rv = (hi << 32) | lo
+          (rv >= (1 << 63)) ? (rv - (1 << 64)) : rv
         when LIST
           read_list(s)
         when MAP
@@ -114,7 +115,15 @@ class ThriftClient
         when StructType
           read_struct(s, type.struct_class)
         else
-          s.read(SIZES[type]).unpack(FORMATS[type]).first
+          rv = s.read(SIZES[type]).unpack(FORMATS[type]).first
+          case type
+          when I16
+            (rv >= (1 << 15)) ? (rv - (1 << 16)) : rv
+          when I32
+            (rv >= (1 << 31)) ? (rv - (1 << 32)) : rv
+          else
+            rv
+          end
         end
       end
 
