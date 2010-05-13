@@ -213,7 +213,11 @@ class Cassandra
   def exists?(column_family, key, *columns_and_options)
     column_family, column, sub_column, options = 
       extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
-    _multiget(column_family, [key], column, sub_column, 1, nil, nil, nil, options[:consistency])[key]
+    if column
+      _multiget(column_family, [key], column, sub_column, 1, nil, nil, nil, options[:consistency])[key]
+    else
+      _multiget(column_family, [key], nil, nil, 1, '', '', false, options[:consistency])[key]
+    end
   end
 
   # Return a list of keys in the column_family you request. Requires the
