@@ -4,7 +4,7 @@ A Ruby client for the Cassandra distributed database.
 
 == License
 
-Copyright 2009 Twitter, Inc. See included LICENSE file. Portions copyright 2004-2009 David Heinemeier Hansson, and used with permission.
+Copyright 2009, 2010 Twitter, Inc. See included LICENSE file. Portions copyright 2004-2009 David Heinemeier Hansson, and used with permission.
 
 == Features
 
