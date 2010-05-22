@@ -18,22 +18,32 @@ module CassandraThrift
       VALID_VALUES = Set.new([ZERO, ONE, QUORUM, DCQUORUM, DCQUORUMSYNC, ALL, ANY]).freeze
     end
 
+    module AccessLevel
+      NONE = 0
+      READONLY = 16
+      READWRITE = 32
+      FULL = 64
+      VALUE_MAP = {0 => "NONE", 16 => "READONLY", 32 => "READWRITE", 64 => "FULL"}
+      VALID_VALUES = Set.new([NONE, READONLY, READWRITE, FULL]).freeze
+    end
+
     # Basic unit of data within a ColumnFamily.
-    # @param name. A column name can act both as structure (a label) or as data (like value). Regardless, the name of the column
-    #        is used as a key to its value.
-    # @param value. Some data
-    # @param timestamp. Used to record when data was sent to be written.
+    # @param name, the name by which this column is set and retrieved.  Maximum 64KB long.
+    # @param value. The data associated with the name.  Maximum 2GB long, but in practice you should limit it to small numbers of MB (since Thrift must read the full value into memory to operate on it).
+    # @param timestamp. The highest timestamp associated with the given column name is the one whose value the system will converge to.  No other assumptions are made about what the timestamp represents, but using microseconds-since-epoch is customary.
+    # @param ttl. An optional, positive delay (in seconds) after which the column will be automatically deleted.
     class Column
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       NAME = 1
       VALUE = 2
       TIMESTAMP = 3
+      TTL = 4
 
-      ::Thrift::Struct.field_accessor self, :name, :value, :timestamp
       FIELDS = {
-        NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
-        VALUE => {:type => ::Thrift::Types::STRING, :name => 'value'},
-        TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'}
+        NAME => {:type => ::Thrift::Types::STRING, :name => 'name', :binary => true},
+        VALUE => {:type => ::Thrift::Types::STRING, :name => 'value', :binary => true},
+        TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
+        TTL => {:type => ::Thrift::Types::I32, :name => 'ttl', :optional => true}
       }
 
       def struct_fields; FIELDS; end
@@ -44,6 +54,7 @@ module CassandraThrift
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field timestamp is unset!') unless @timestamp
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # A named list of columns.
@@ -51,13 +62,12 @@ module CassandraThrift
     # @param columns. A collection of standard Columns.  The columns within a super column are defined in an adhoc manner.
     #                 Columns within a super column do not have to have matching structures (similarly named child columns).
     class SuperColumn
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       NAME = 1
       COLUMNS = 2
 
-      ::Thrift::Struct.field_accessor self, :name, :columns
       FIELDS = {
-        NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
+        NAME => {:type => ::Thrift::Types::STRING, :name => 'name', :binary => true},
         COLUMNS => {:type => ::Thrift::Types::LIST, :name => 'columns', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::Column}}
       }
 
@@ -68,6 +78,7 @@ module CassandraThrift
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field columns is unset!') unless @columns
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # Methods for fetching rows/records from Cassandra will return either a single instance of ColumnOrSuperColumn or a list
@@ -79,11 +90,10 @@ module CassandraThrift
     # @param column. The Column returned by get() or get_slice().
     # @param super_column. The SuperColumn returned by get() or get_slice().
     class ColumnOrSuperColumn
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       COLUMN = 1
       SUPER_COLUMN = 2
 
-      ::Thrift::Struct.field_accessor self, :column, :super_column
       FIELDS = {
         COLUMN => {:type => ::Thrift::Types::STRUCT, :name => 'column', :class => CassandraThrift::Column, :optional => true},
         SUPER_COLUMN => {:type => ::Thrift::Types::STRUCT, :name => 'super_column', :class => CassandraThrift::SuperColumn, :optional => true}
@@ -94,11 +104,12 @@ module CassandraThrift
       def validate
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # A specific column was requested that does not exist.
     class NotFoundException < ::Thrift::Exception
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
 
       FIELDS = {
 
@@ -109,12 +120,13 @@ module CassandraThrift
       def validate
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # Invalid request could mean keyspace or column family does not exist, required parameters are missing, or a parameter is malformed.
     # why contains an associated error message.
     class InvalidRequestException < ::Thrift::Exception
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       def initialize(message=nil)
         super()
         self.why = message
@@ -124,7 +136,6 @@ module CassandraThrift
 
       WHY = 1
 
-      ::Thrift::Struct.field_accessor self, :why
       FIELDS = {
         WHY => {:type => ::Thrift::Types::STRING, :name => 'why'}
       }
@@ -135,11 +146,12 @@ module CassandraThrift
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field why is unset!') unless @why
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # Not all the replicas required could be created and/or read.
     class UnavailableException < ::Thrift::Exception
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
 
       FIELDS = {
 
@@ -150,11 +162,12 @@ module CassandraThrift
       def validate
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # RPC timeout was exceeded.  either a node failed mid-operation, or load was too high, or the requested op was too large.
     class TimedOutException < ::Thrift::Exception
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
 
       FIELDS = {
 
@@ -165,11 +178,12 @@ module CassandraThrift
       def validate
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
-    # invalid authentication request (user does not exist or credentials invalid)
+    # invalid authentication request (invalid keyspace, user does not exist, or credentials invalid)
     class AuthenticationException < ::Thrift::Exception
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       def initialize(message=nil)
         super()
         self.why = message
@@ -179,7 +193,6 @@ module CassandraThrift
 
       WHY = 1
 
-      ::Thrift::Struct.field_accessor self, :why
       FIELDS = {
         WHY => {:type => ::Thrift::Types::STRING, :name => 'why'}
       }
@@ -190,11 +203,12 @@ module CassandraThrift
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field why is unset!') unless @why
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # invalid authorization request (user does not have access to keyspace)
     class AuthorizationException < ::Thrift::Exception
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       def initialize(message=nil)
         super()
         self.why = message
@@ -204,7 +218,6 @@ module CassandraThrift
 
       WHY = 1
 
-      ::Thrift::Struct.field_accessor self, :why
       FIELDS = {
         WHY => {:type => ::Thrift::Types::STRING, :name => 'why'}
       }
@@ -215,6 +228,7 @@ module CassandraThrift
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field why is unset!') unless @why
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # ColumnParent is used when selecting groups of columns from the same ColumnFamily. In directory structure terms, imagine
@@ -222,14 +236,13 @@ module CassandraThrift
     # 
     # See also <a href="cassandra.html#Struct_ColumnPath">ColumnPath</a>
     class ColumnParent
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       COLUMN_FAMILY = 3
       SUPER_COLUMN = 4
 
-      ::Thrift::Struct.field_accessor self, :column_family, :super_column
       FIELDS = {
         COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
-        SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :optional => true}
+        SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :binary => true, :optional => true}
       }
 
       def struct_fields; FIELDS; end
@@ -238,6 +251,7 @@ module CassandraThrift
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field column_family is unset!') unless @column_family
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # The ColumnPath is the path to a single column in Cassandra. It might make sense to think of ColumnPath and
@@ -249,16 +263,15 @@ module CassandraThrift
     # @param super_column. The super column name.
     # @param column. The column name.
     class ColumnPath
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       COLUMN_FAMILY = 3
       SUPER_COLUMN = 4
       COLUMN = 5
 
-      ::Thrift::Struct.field_accessor self, :column_family, :super_column, :column
       FIELDS = {
         COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'},
-        SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :optional => true},
-        COLUMN => {:type => ::Thrift::Types::STRING, :name => 'column', :optional => true}
+        SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :binary => true, :optional => true},
+        COLUMN => {:type => ::Thrift::Types::STRING, :name => 'column', :binary => true, :optional => true}
       }
 
       def struct_fields; FIELDS; end
@@ -267,6 +280,7 @@ module CassandraThrift
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field column_family is unset!') unless @column_family
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # A slice range is a structure that stores basic range, ordering and limit information for a query that will return
@@ -277,25 +291,27 @@ module CassandraThrift
     #               must a valid value under the rules of the Comparator defined for the given ColumnFamily.
     # @param finish. The column name to stop the slice at. This attribute is not required, though there is no default value,
     #                and can be safely set to an empty byte array to not stop until 'count' results are seen. Otherwise, it
-    #                must also be a value value to the ColumnFamily Comparator.
+    #                must also be a valid value to the ColumnFamily Comparator.
     # @param reversed. Whether the results should be ordered in reversed order. Similar to ORDER BY blah DESC in SQL.
     # @param count. How many keys to return. Similar to LIMIT 100 in SQL. May be arbitrarily large, but Thrift will
     #               materialize the whole result into memory before returning it to the client, so be aware that you may
     #               be better served by iterating through slices by passing the last value of one call in as the 'start'
     #               of the next instead of increasing 'count' arbitrarily large.
+    # @param bitmasks. A list of OR-ed binary AND masks applied to the result set.
     class SliceRange
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       START = 1
       FINISH = 2
       REVERSED = 3
       COUNT = 4
+      BITMASKS = 5
 
-      ::Thrift::Struct.field_accessor self, :start, :finish, :reversed, :count
       FIELDS = {
-        START => {:type => ::Thrift::Types::STRING, :name => 'start'},
-        FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
+        START => {:type => ::Thrift::Types::STRING, :name => 'start', :binary => true},
+        FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish', :binary => true},
         REVERSED => {:type => ::Thrift::Types::BOOL, :name => 'reversed', :default => false},
-        COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
+        COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100},
+        BITMASKS => {:type => ::Thrift::Types::LIST, :name => 'bitmasks', :element => {:type => ::Thrift::Types::STRING, :binary => true}, :optional => true}
       }
 
       def struct_fields; FIELDS; end
@@ -307,6 +323,7 @@ module CassandraThrift
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field count is unset!') unless @count
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # A SlicePredicate is similar to a mathematic predicate (see http://en.wikipedia.org/wiki/Predicate_(mathematical_logic)),
@@ -320,13 +337,12 @@ module CassandraThrift
     #                     and 'Jim' you can pass those column names as a list to fetch all three at once.
     # @param slice_range. A SliceRange describing how to range, order, and/or limit the slice.
     class SlicePredicate
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       COLUMN_NAMES = 1
       SLICE_RANGE = 2
 
-      ::Thrift::Struct.field_accessor self, :column_names, :slice_range
       FIELDS = {
-        COLUMN_NAMES => {:type => ::Thrift::Types::LIST, :name => 'column_names', :element => {:type => ::Thrift::Types::STRING}, :optional => true},
+        COLUMN_NAMES => {:type => ::Thrift::Types::LIST, :name => 'column_names', :element => {:type => ::Thrift::Types::STRING, :binary => true}, :optional => true},
         SLICE_RANGE => {:type => ::Thrift::Types::STRUCT, :name => 'slice_range', :class => CassandraThrift::SliceRange, :optional => true}
       }
 
@@ -335,6 +351,7 @@ module CassandraThrift
       def validate
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # The semantics of start keys and tokens are slightly different.
@@ -344,17 +361,16 @@ module CassandraThrift
     # one-element range, but a range from tokenY to tokenY is the
     # full ring.
     class KeyRange
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       START_KEY = 1
       END_KEY = 2
       START_TOKEN = 3
       END_TOKEN = 4
       COUNT = 5
 
-      ::Thrift::Struct.field_accessor self, :start_key, :end_key, :start_token, :end_token, :count
       FIELDS = {
-        START_KEY => {:type => ::Thrift::Types::STRING, :name => 'start_key', :optional => true},
-        END_KEY => {:type => ::Thrift::Types::STRING, :name => 'end_key', :optional => true},
+        START_KEY => {:type => ::Thrift::Types::STRING, :name => 'start_key', :binary => true, :optional => true},
+        END_KEY => {:type => ::Thrift::Types::STRING, :name => 'end_key', :binary => true, :optional => true},
         START_TOKEN => {:type => ::Thrift::Types::STRING, :name => 'start_token', :optional => true},
         END_TOKEN => {:type => ::Thrift::Types::STRING, :name => 'end_token', :optional => true},
         COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
@@ -366,6 +382,7 @@ module CassandraThrift
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field count is unset!') unless @count
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # A KeySlice is key followed by the data it maps to. A collection of KeySlice is returned by the get_range_slice operation.
@@ -374,13 +391,12 @@ module CassandraThrift
     # @param columns. List of data represented by the key. Typically, the list is pared down to only the columns specified by
     #                 a SlicePredicate.
     class KeySlice
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       KEY = 1
       COLUMNS = 2
 
-      ::Thrift::Struct.field_accessor self, :key, :columns
       FIELDS = {
-        KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+        KEY => {:type => ::Thrift::Types::STRING, :name => 'key', :binary => true},
         COLUMNS => {:type => ::Thrift::Types::LIST, :name => 'columns', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}}
       }
 
@@ -391,18 +407,18 @@ module CassandraThrift
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field columns is unset!') unless @columns
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     class Deletion
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       TIMESTAMP = 1
       SUPER_COLUMN = 2
       PREDICATE = 3
 
-      ::Thrift::Struct.field_accessor self, :timestamp, :super_column, :predicate
       FIELDS = {
         TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
-        SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :optional => true},
+        SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :binary => true, :optional => true},
         PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate, :optional => true}
       }
 
@@ -412,17 +428,17 @@ module CassandraThrift
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field timestamp is unset!') unless @timestamp
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # A Mutation is either an insert, represented by filling column_or_supercolumn, or a deletion, represented by filling the deletion attribute.
     # @param column_or_supercolumn. An insert to a column or supercolumn
     # @param deletion. A deletion of a column or supercolumn
     class Mutation
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       COLUMN_OR_SUPERCOLUMN = 1
       DELETION = 2
 
-      ::Thrift::Struct.field_accessor self, :column_or_supercolumn, :deletion
       FIELDS = {
         COLUMN_OR_SUPERCOLUMN => {:type => ::Thrift::Types::STRUCT, :name => 'column_or_supercolumn', :class => CassandraThrift::ColumnOrSuperColumn, :optional => true},
         DELETION => {:type => ::Thrift::Types::STRUCT, :name => 'deletion', :class => CassandraThrift::Deletion, :optional => true}
@@ -433,15 +449,15 @@ module CassandraThrift
       def validate
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     class TokenRange
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       START_TOKEN = 1
       END_TOKEN = 2
       ENDPOINTS = 3
 
-      ::Thrift::Struct.field_accessor self, :start_token, :end_token, :endpoints
       FIELDS = {
         START_TOKEN => {:type => ::Thrift::Types::STRING, :name => 'start_token'},
         END_TOKEN => {:type => ::Thrift::Types::STRING, :name => 'end_token'},
@@ -456,14 +472,14 @@ module CassandraThrift
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field endpoints is unset!') unless @endpoints
       end
 
+      ::Thrift::Struct.generate_accessors self
     end
 
     # Authentication requests can contain any data, dependent on the AuthenticationBackend used
     class AuthenticationRequest
-      include ::Thrift::Struct
+      include ::Thrift::Struct, ::Thrift::Struct_Union
       CREDENTIALS = 1
 
-      ::Thrift::Struct.field_accessor self, :credentials
       FIELDS = {
         CREDENTIALS => {:type => ::Thrift::Types::MAP, :name => 'credentials', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}}
       }
@@ -474,6 +490,67 @@ module CassandraThrift
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field credentials is unset!') unless @credentials
       end
 
+      ::Thrift::Struct.generate_accessors self
+    end
+
+    class CfDef
+      include ::Thrift::Struct, ::Thrift::Struct_Union
+      TABLE = 1
+      NAME = 2
+      COLUMN_TYPE = 3
+      COMPARATOR_TYPE = 4
+      SUBCOMPARATOR_TYPE = 5
+      COMMENT = 6
+      ROW_CACHE_SIZE = 7
+      PRELOAD_ROW_CACHE = 8
+      KEY_CACHE_SIZE = 9
+
+      FIELDS = {
+        TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+        NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
+        COLUMN_TYPE => {:type => ::Thrift::Types::STRING, :name => 'column_type', :default => %q"Standard", :optional => true},
+        COMPARATOR_TYPE => {:type => ::Thrift::Types::STRING, :name => 'comparator_type', :default => %q"BytesType", :optional => true},
+        SUBCOMPARATOR_TYPE => {:type => ::Thrift::Types::STRING, :name => 'subcomparator_type', :default => %q"", :optional => true},
+        COMMENT => {:type => ::Thrift::Types::STRING, :name => 'comment', :default => %q"", :optional => true},
+        ROW_CACHE_SIZE => {:type => ::Thrift::Types::DOUBLE, :name => 'row_cache_size', :default => 0, :optional => true},
+        PRELOAD_ROW_CACHE => {:type => ::Thrift::Types::BOOL, :name => 'preload_row_cache', :default => false, :optional => true},
+        KEY_CACHE_SIZE => {:type => ::Thrift::Types::DOUBLE, :name => 'key_cache_size', :default => 200000, :optional => true}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field table is unset!') unless @table
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field name is unset!') unless @name
+      end
+
+      ::Thrift::Struct.generate_accessors self
+    end
+
+    class KsDef
+      include ::Thrift::Struct, ::Thrift::Struct_Union
+      NAME = 1
+      STRATEGY_CLASS = 2
+      REPLICATION_FACTOR = 3
+      CF_DEFS = 5
+
+      FIELDS = {
+        NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
+        STRATEGY_CLASS => {:type => ::Thrift::Types::STRING, :name => 'strategy_class'},
+        REPLICATION_FACTOR => {:type => ::Thrift::Types::I32, :name => 'replication_factor'},
+        CF_DEFS => {:type => ::Thrift::Types::LIST, :name => 'cf_defs', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::CfDef}}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field name is unset!') unless @name
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field strategy_class is unset!') unless @strategy_class
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field replication_factor is unset!') unless @replication_factor
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field cf_defs is unset!') unless @cf_defs
+      end
+
+      ::Thrift::Struct.generate_accessors self
     end
 
   end
