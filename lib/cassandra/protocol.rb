@@ -74,7 +74,7 @@ class Cassandra
     def _get_range(column_family, start, finish, count, consistency)
       column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family)
       predicate = CassandraThrift::SlicePredicate.new(:slice_range => CassandraThrift::SliceRange.new(:start => '', :finish => ''))
-      range = CassandraThrift::KeyRange.new(:start_key => start, :end_key => finish)
+      range = CassandraThrift::KeyRange.new(:start_key => start, :end_key => finish, :count => count)
       client.get_range_slices(@keyspace, column_parent, predicate, range, 1)
     end
     
