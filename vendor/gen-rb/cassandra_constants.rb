@@ -7,6 +7,6 @@
 require 'cassandra_types'
 
   module CassandraThrift
-    VERSION = %q"6.1.0"
+    VERSION = %q"7.0.0"
 
 end
