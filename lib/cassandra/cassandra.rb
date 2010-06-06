@@ -261,37 +261,34 @@ class Cassandra
     @batch = nil
   end
 
-  def add_column_family(cf)
-    if (res = @client.system_add_column_family(@keyspace, cf.cf_def))
-      @schema = nil
-    end
+  def add_column_family(cf_def)
+    @schema = nil if (res = client.system_add_column_family(@keyspace, cf_def))
     res
   end
   
   def drop_column_family(cf_name)
-    if (res = @client.system_drop_column_family(@keyspace, cf_name))
-      @schema = nil
-    end
+    @schema = nil if (res = client.system_drop_column_family(@keyspace, cf_name))
     res 
   end
   
   def rename_column_family(old_name, new_name)
-    if (res = @client.system_rename_column_family(old_name, new_name))
-      @schema = nil
-    end
+    @schema = nil if (res = client.system_rename_column_family(old_name, new_name))
     res
   end
   
-  def self.add_keyspace(ks)
-    ; # CassandraThrift::Cassandra::Client.system_add_keyspace(ks)
+  def add_keyspace(ks_def)
+    @keyspaces = nil if (res = client.system_add_keyspace(ks_def))
+    res
   end
   
-  def self.drop_keyspace(keyspace)
-    ; # CassandraThrift::Cassandra::Client.system_drop_keyspace(keyspace)
+  def drop_keyspace(ks_name)
+    @keyspaces = nil if (res = client.system_drop_keyspace(ks_name))
+    res
   end
   
-  def self.rename_keyspace(old_name, new_name)
-    ; # CassandraThrift::Cassandra::Client.system_rename_keyspace(old_name, new_name)
+  def rename_keyspace(old_name, new_name)
+    @keyspaces = nil if (res = client.system_rename_keyspace(old_name, new_name))
+    res
   end
   
   protected
