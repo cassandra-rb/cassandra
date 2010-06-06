@@ -19,4 +19,6 @@ require 'cassandra/columns'
 require 'cassandra/protocol'
 require 'cassandra/cassandra'
 require 'cassandra/constants'
+require 'cassandra/column_family'
+require 'cassandra/keyspace'
 require 'cassandra/debug' if ENV['DEBUG']

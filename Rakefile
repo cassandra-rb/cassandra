@@ -75,5 +75,5 @@ task :thrift do
   system(
     "cd vendor &&
     rm -rf gen-rb &&
-    thrift -gen rb #{CASSANDRA_HOME}/server/interface/cassandra.thrift")
+    thrift -gen rb #{CASSANDRA_HOME}/interface/cassandra.thrift")
 end

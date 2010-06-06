@@ -10,11 +10,13 @@ conf/storage-conf.xml
 lib/cassandra.rb
 lib/cassandra/array.rb
 lib/cassandra/cassandra.rb
+lib/cassandra/column_family.rb
 lib/cassandra/columns.rb
 lib/cassandra/comparable.rb
 lib/cassandra/constants.rb
 lib/cassandra/debug.rb
 lib/cassandra/helpers.rb
+lib/cassandra/keyspace.rb
 lib/cassandra/long.rb
 lib/cassandra/mock.rb
 lib/cassandra/ordered_hash.rb
@@ -24,6 +26,7 @@ test/cassandra_client_test.rb
 test/cassandra_mock_test.rb
 test/cassandra_test.rb
 test/comparable_types_test.rb
+test/eventmachine_test.rb
 test/ordered_hash_test.rb
 test/test_helper.rb
 vendor/gen-rb/cassandra.rb
