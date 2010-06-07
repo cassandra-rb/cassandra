@@ -66,7 +66,7 @@ class Cassandra
     @is_super = {}
     @column_name_class = {}
     @sub_column_name_class = {}
-    @auto_discover_nodes = false
+    @auto_discover_nodes = true
     @thrift_client_options = THRIFT_DEFAULTS.merge(thrift_client_options)
     @thrift_client_class = @thrift_client_options[:thrift_client_class]
     @keyspace = keyspace
@@ -333,7 +333,8 @@ class Cassandra
 
   def all_nodes
     if @auto_discover_nodes
-      ips = ::JSON.parse(new_client.get_string_property('token map')).values
+      #ips = ::JSON.parse(new_client.get_string_property('token map')).values
+      ips = new_client.describe_ring(@keyspace).values
       port = @servers.first.split(':').last
       ips.map{|ip| "#{ip}:#{port}" }
     else
