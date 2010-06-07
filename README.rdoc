@@ -30,9 +30,17 @@ WARNING: Don't use the test folder for your data, as it will get overwritten whe
 
 == Usage
 
-Now, start IRb and require the library:
+Now, start IRb and require the library, which defaults to version 0.6 of the Cassandra API:
 
   require 'cassandra'
+
+Alternatively, you can specify a version of the Cassandra API to use:
+
+  require 'cassandra/0.6'
+
+or
+
+  require 'cassandra/0.7'
 
 Connect to a server and keyspace:
 
