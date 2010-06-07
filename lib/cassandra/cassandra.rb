@@ -262,12 +262,12 @@ class Cassandra
   end
 
   def add_column_family(cf_def)
-    @schema = nil if (res = client.system_add_column_family(@keyspace, cf_def))
+    @schema = nil if (res = client.system_add_column_family(cf_def))
     res
   end
   
   def drop_column_family(cf_name)
-    @schema = nil if (res = client.system_drop_column_family(@keyspace, cf_name))
+    @schema = nil if (res = client.system_drop_column_family(cf_name))
     res 
   end
   
