@@ -25,6 +25,7 @@ require 'cassandra/long'
 require 'cassandra/ordered_hash'
 require 'cassandra/columns'
 require "cassandra/#{Cassandra.VERSION}/protocol"
+require "cassandra/cassandra"
 require "cassandra/#{Cassandra.VERSION}/cassandra"
 unless Cassandra.VERSION.eql?("0.6")
   require "cassandra/#{Cassandra.VERSION}/column_family"
