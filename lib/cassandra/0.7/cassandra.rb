@@ -97,7 +97,7 @@ class Cassandra
     rescue Thrift::TransportException => te
       puts "Timed out: #{te.inspect}"
     end
-    @keyspace = "system" if ks_name.eql?(@keyspace)
+    keyspace = "system" if ks_name.eql?(@keyspace)
     @keyspaces = nil 
     res
   end
@@ -110,7 +110,7 @@ class Cassandra
     rescue Thrift::TransportException => te
       puts "Timed out: #{te.inspect}"
     end
-    @keyspace = "system" if old_name.eql?(@keyspace)
+    keyspace = new_name if old_name.eql?(@keyspace)
     @keyspaces = nil 
     res
   end
