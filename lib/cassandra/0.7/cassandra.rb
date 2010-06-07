@@ -48,32 +48,70 @@ class Cassandra
 ### Read
 
   def add_column_family(cf_def)
-    @schema = nil if (res = client.system_add_column_family(cf_def))
+    begin
+      res = client.system_add_column_family(cf_def)
+    rescue CassandraThrift::TimedOutException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @schema = nil
     res
   end
   
   def drop_column_family(cf_name)
-    @schema = nil if (res = client.system_drop_column_family(@keyspace, cf_name))
+    begin
+      res = client.system_drop_column_family(@keyspace, cf_name)
+    rescue CassandraThrift::TimedOutException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @schema = nil
     res 
   end
   
   def rename_column_family(old_name, new_name)
-    @schema = nil if (res = client.system_rename_column_family(@keyspace, old_name, new_name))
+    begin
+      res = client.system_rename_column_family(@keyspace, old_name, new_name)
+    rescue CassandraThrift::TimedOutException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @schema = nil
     res
   end
   
   def add_keyspace(ks_def)
-    @keyspaces = nil if (res = client.system_add_keyspace(ks_def))
+    begin
+      res = client.system_add_keyspace(ks_def)
+    rescue CassandraThrift::TimedOutException => toe
+      puts "Timed out: #{toe.inspect}"
+    rescue Thrift::TransportException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @keyspaces = nil 
     res
   end
   
   def drop_keyspace(ks_name)
-    @keyspaces = nil if (res = client.system_drop_keyspace(ks_name))
+    begin
+      res = client.system_drop_keyspace(ks_name)
+    rescue CassandraThrift::TimedOutException => toe
+      puts "Timed out: #{toe.inspect}"
+    rescue Thrift::TransportException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @keyspace = "system" if ks_name.eql?(@keyspace)
+    @keyspaces = nil 
     res
   end
   
   def rename_keyspace(old_name, new_name)
-    @keyspaces = nil if (res = client.system_rename_keyspace(old_name, new_name))
+    begin
+      res = client.system_rename_keyspace(old_name, new_name)
+    rescue CassandraThrift::TimedOutException => toe
+      puts "Timed out: #{toe.inspect}"
+    rescue Thrift::TransportException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @keyspace = "system" if old_name.eql?(@keyspace)
+    @keyspaces = nil 
     res
   end
   
@@ -99,7 +137,7 @@ class Cassandra
   end
 
   def all_nodes
-    if @auto_discover_nodes
+    if @auto_discover_nodes && !@keyspace.eql?("system")
       ips = (new_client.describe_ring(@keyspace).map {|range| range.endpoints}).flatten
       port = @servers.first.split(':').last
       ips.map{|ip| "#{ip}:#{port}" }
