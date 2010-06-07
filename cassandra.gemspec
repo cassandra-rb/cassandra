@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0.8") if s.respond_to? :required_rubygems_version=
   s.authors = ["Evan Weaver, Ryan King"]
-  s.date = %q{2010-06-06}
+  s.date = %q{2010-06-07}
   s.default_executable = %q{cassandra_helper}
   s.description = %q{A Ruby client for the Cassandra distributed database.}
   s.email = %q{}
