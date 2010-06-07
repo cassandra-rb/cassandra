@@ -86,6 +86,11 @@ class Cassandra
     @keyspaces ||= client.describe_keyspaces()
   end
 
+  def keyspace=(ks)
+    client.set_keyspace(ks) if check_keyspace(ks)
+    @schema = nil; @keyspace = ks
+  end
+  
   def inspect
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       schema(false).map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
@@ -262,13 +267,12 @@ class Cassandra
   end
 
   def add_column_family(cf_def)
-    client.set_keyspace(@keyspace)
     @schema = nil if (res = client.system_add_column_family(cf_def))
     res
   end
   
   def drop_column_family(cf_name)
-    @schema = nil if (res = client.system_drop_column_family(cf_name))
+    @schema = nil if (res = client.system_drop_column_family(@keyspace, cf_name))
     res 
   end
   
@@ -312,20 +316,22 @@ class Cassandra
   end
 
   def client
-    reconnect! if @client.nil?
+    if @client.nil? || @client.current_server.nil?
+      reconnect!
+      @client.set_keyspace(@keyspace) if check_keyspace
+    end
     @client
   end
 
   def reconnect!
     @servers = all_nodes
     @client = new_client
-    client.set_keyspace(@keyspace) if check_keyspace
   end
 
-  def check_keyspace    
-    unless (keyspaces = client.describe_keyspaces()).include?(@keyspace)
-      raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
-    end
+  def check_keyspace(ks = @keyspace)
+    !(unless (keyspaces = client.describe_keyspaces()).include?(ks)
+      raise AccessError, "Keyspace #{ks.inspect} not found. Available: #{keyspaces.inspect}"
+    end)
   end
 
   def new_client
@@ -334,7 +340,6 @@ class Cassandra
 
   def all_nodes
     if @auto_discover_nodes
-      #ips = ::JSON.parse(new_client.get_string_property('token map')).values
       ips = (new_client.describe_ring(@keyspace).map {|range| range.endpoints}).flatten
       port = @servers.first.split(':').last
       ips.map{|ip| "#{ip}:#{port}" }
