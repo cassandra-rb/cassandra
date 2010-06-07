@@ -91,6 +91,30 @@ class Cassandra
     @schema = nil; @keyspace = ks
   end
   
+  def schema(load=true)
+    if !load && !@schema
+      []
+    else
+      @schema ||= client.describe_keyspace(@keyspace)
+    end
+  end
+  
+  def schema_agreement?
+    client.check_schema_agreement().length == 1
+  end
+  
+  def version
+    client.describe_version()
+  end
+  
+  def cluster_name
+    @cluster_name ||= client.describe_cluster_name()
+  end
+  
+  def ring
+    client.describe_ring(@keyspace)
+  end
+  
   def inspect
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       schema(false).map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
@@ -141,22 +165,17 @@ class Cassandra
     @batch ? @batch << mutation : _remove(*mutation[1])
   end
 
-  # Remove all rows in the column family you request. Supports options
-  # <tt>:consistency</tt> and <tt>:timestamp</tt>.
-  # FIXME May not currently delete all records without multiple calls. Waiting
-  # for ranged remove support in Cassandra.
-  def clear_column_family!(column_family, options = {})
-    each_key(column_family) do |key|
-      remove(column_family, key, options)
-    end
+  # Remove all rows in the column family you request.
+  def truncate!(column_family)
+    #each_key(column_family) do |key|
+    #  remove(column_family, key, options)
+    #end
+    client.truncate(@keyspace, column_family)
   end
 
-  # Remove all rows in the keyspace. Supports options <tt>:consistency</tt> and
-  # <tt>:timestamp</tt>.
-  # FIXME May not currently delete all records without multiple calls. Waiting
-  # for ranged remove support in Cassandra.
-  def clear_keyspace!(options = {})
-    schema.keys.each { |column_family| clear_column_family!(column_family, options) }
+  # Remove all rows in the keyspace.
+  def clear_keyspace!
+    schema.keys.each { |column_family| truncate!(column_family) }
   end
 
 ### Read
@@ -277,7 +296,7 @@ class Cassandra
   end
   
   def rename_column_family(old_name, new_name)
-    @schema = nil if (res = client.system_rename_column_family(old_name, new_name))
+    @schema = nil if (res = client.system_rename_column_family(@keyspace, old_name, new_name))
     res
   end
   
@@ -305,14 +324,6 @@ class Cassandra
   # Roll up queued mutations, to improve atomicity.
   def compact_mutations!
     #TODO re-do this rollup
-  end
-
-  def schema(load=true)
-    if !load && !@schema
-      []
-    else
-      @schema ||= client.describe_keyspace(@keyspace)
-    end
   end
 
   def client
