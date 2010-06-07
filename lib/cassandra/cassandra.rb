@@ -66,7 +66,7 @@ class Cassandra
     @is_super = {}
     @column_name_class = {}
     @sub_column_name_class = {}
-    @auto_discover_nodes = true
+    @auto_discover_nodes = false
     @thrift_client_options = THRIFT_DEFAULTS.merge(thrift_client_options)
     @thrift_client_class = @thrift_client_options[:thrift_client_class]
     @keyspace = keyspace
@@ -83,7 +83,7 @@ class Cassandra
   end
 
   def keyspaces
-    @keyspaces ||= client.get_string_list_property("keyspaces")
+    @keyspaces ||= client.describe_keyspaces()
   end
 
   def inspect
@@ -321,8 +321,8 @@ class Cassandra
     check_keyspace
   end
 
-  def check_keyspace
-    unless (keyspaces = client.get_string_list_property("keyspaces")).include?(@keyspace)
+  def check_keyspace    
+    unless (keyspaces = client.describe_keyspaces()).include?(@keyspace)
       raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
     end
   end
