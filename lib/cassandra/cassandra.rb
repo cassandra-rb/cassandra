@@ -262,6 +262,7 @@ class Cassandra
   end
 
   def add_column_family(cf_def)
+    client.set_keyspace(@keyspace)
     @schema = nil if (res = client.system_add_column_family(cf_def))
     res
   end
@@ -318,7 +319,7 @@ class Cassandra
   def reconnect!
     @servers = all_nodes
     @client = new_client
-    check_keyspace
+    client.set_keyspace(@keyspace) if check_keyspace
   end
 
   def check_keyspace    
@@ -334,7 +335,7 @@ class Cassandra
   def all_nodes
     if @auto_discover_nodes
       #ips = ::JSON.parse(new_client.get_string_property('token map')).values
-      ips = new_client.describe_ring(@keyspace).values
+      ips = (new_client.describe_ring(@keyspace).map {|range| range.endpoints}).flatten
       port = @servers.first.split(':').last
       ips.map{|ip| "#{ip}:#{port}" }
     else
