@@ -37,7 +37,7 @@ class Cassandra
     #each_key(column_family) do |key|
     #  remove(column_family, key, options)
     #end
-    client.truncate(@keyspace, column_family)
+    client.truncate(column_family)
   end
 
   # Remove all rows in the keyspace.
@@ -59,7 +59,7 @@ class Cassandra
   
   def drop_column_family(cf_name)
     begin
-      res = client.system_drop_column_family(@keyspace, cf_name)
+      res = client.system_drop_column_family(cf_name)
     rescue CassandraThrift::TimedOutException => te
       puts "Timed out: #{te.inspect}"
     end
@@ -69,7 +69,7 @@ class Cassandra
   
   def rename_column_family(old_name, new_name)
     begin
-      res = client.system_rename_column_family(@keyspace, old_name, new_name)
+      res = client.system_rename_column_family(old_name, new_name)
     rescue CassandraThrift::TimedOutException => te
       puts "Timed out: #{te.inspect}"
     end
