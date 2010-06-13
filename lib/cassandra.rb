@@ -24,6 +24,7 @@ require 'cassandra/comparable'
 require 'cassandra/long'
 require 'cassandra/ordered_hash'
 require 'cassandra/columns'
+require "cassandra/#{Cassandra.VERSION}/columns"
 require "cassandra/#{Cassandra.VERSION}/protocol"
 require "cassandra/cassandra"
 require "cassandra/#{Cassandra.VERSION}/cassandra"
