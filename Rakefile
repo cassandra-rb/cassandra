@@ -30,6 +30,10 @@ task :cassandra => [:java, File.join(CASSANDRA_HOME, 'server'), File.join(CASSAN
     env << "CASSANDRA_INCLUDE=#{File.expand_path(Dir.pwd)}/conf/cassandra.in.sh "
     env << "CASSANDRA_HOME=#{CASSANDRA_HOME}/server "
     env << "CASSANDRA_CONF=#{File.expand_path(Dir.pwd)}/conf"
+  else
+    env << "CASSANDRA_INCLUDE=#{ENV['CASSANDRA_INCLUDE']} "
+    env << "CASSANDRA_HOME=#{ENV['CASSANDRA_HOME']} "
+    env << "CASSANDRA_CONF=#{ENV['CASSANDRA_CONF']}"
   end
 
   Dir.chdir(File.join(CASSANDRA_HOME, 'server')) do
@@ -65,7 +69,7 @@ namespace :data do
   desc "Reset test data"
   task :reset do
     puts "Resetting test data"
-    system("rm -rf #{File.join(CASSANDRA_HOME, 'test', 'data')}")
+    sh("rm -rf #{File.join(CASSANDRA_HOME, 'server', 'data')}")
   end
 end
 
