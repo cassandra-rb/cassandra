@@ -354,12 +354,19 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_nil_sub_column_value
-    @twitter.insert(:Index, 'asdf', {"thing" => {'jkl' => nil} })
+    @twitter.insert(:Index, 'asdf', {"thing" => {'jkl' => ''} })
   end
 
   def test_disconnect!
     @twitter.disconnect!
     assert_nil @twitter.instance_variable_get(:@client)
+  end
+
+  def test_super_allows_for_non_string_values_while_normal_does_not
+    columns = {'user_timelines' => {@uuids[4] => '4', @uuids[5] => '5'}}
+
+    @twitter.insert(:StatusRelationships, key, columns)
+    @twitter.insert(:Statuses, key, { 'body' => '1' })
   end
 
   private

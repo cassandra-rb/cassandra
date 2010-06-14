@@ -94,7 +94,7 @@ class Cassandra
             :columns => sub_columns.collect { |sub_column_name, sub_column_value|
               CassandraThrift::Column.new(
                 :name      => sub_column_name_class(column_family).new(sub_column_name).to_s,
-                :value     => sub_column_value.to_s,
+                :value     => sub_column_value,
                 :timestamp => timestamp
               )
             }
