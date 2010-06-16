@@ -3,6 +3,10 @@
 Create a new Cassandra client instance. Accepts a keyspace name, and optional host and port.
 
   client = Cassandra.new('twitter', '127.0.0.1:9160')
+  
+If the server requires authentication, you must authenticate before make calls
+
+  client.login!('username','password')
 
 You can then make calls to the server via the <tt>client</tt> instance.
 
@@ -84,6 +88,12 @@ class Cassandra
 
   def keyspaces
     @keyspaces ||= client.get_string_list_property("keyspaces")
+  end
+  
+  def login!(username, password)
+    auth_request = CassandraThrift::AuthenticationRequest.new
+    auth_request.credentials = {'username' => username, 'password' => password}
+    client.login(@keyspace, auth_request)
   end
 
   def inspect

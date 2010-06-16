@@ -38,6 +38,10 @@ Connect to a server and keyspace:
 
   client = Cassandra.new('Twitter', '127.0.0.1:9160')
 
+Login on server if the keyspace require authentication:
+
+  client.login!('username','password')
+
 Insert into a column family. You can insert a `Cassandra::OrderedHash`, or a regular Hash, if order doesn't matter:
 
   client.insert(:Users, "5", {'screen_name' => "buttonscat"})
