@@ -63,7 +63,7 @@ class Cassandra
     :thrift_client_class => ThriftClient
   }.freeze
 
-  attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client_class
+  attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client_class, :auth_request
 
   # Create a new Cassandra instance and open the connection.
   def initialize(keyspace, servers = "127.0.0.1:9160", thrift_client_options = {})
@@ -91,9 +91,9 @@ class Cassandra
   end
   
   def login!(username, password)
-    auth_request = CassandraThrift::AuthenticationRequest.new
-    auth_request.credentials = {'username' => username, 'password' => password}
-    client.login(@keyspace, auth_request)
+    @auth_request = CassandraThrift::AuthenticationRequest.new
+    @auth_request.credentials = {'username' => username, 'password' => password}
+    client.login(@keyspace, @auth_request)
   end
 
   def inspect
@@ -298,6 +298,7 @@ class Cassandra
   def reconnect!
     @servers = all_nodes
     @client = new_client
+    @client.login(@keyspace, @auth_request) if @auth_request 
     check_keyspace
   end
 
