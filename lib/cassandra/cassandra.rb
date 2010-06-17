@@ -3,6 +3,10 @@
 Create a new Cassandra client instance. Accepts a keyspace name, and optional host and port.
 
   client = Cassandra.new('twitter', '127.0.0.1:9160')
+  
+If the server requires authentication, you must authenticate before make calls
+
+  client.login!('username','password')
 
 You can then make calls to the server via the <tt>client</tt> instance.
 
@@ -59,7 +63,7 @@ class Cassandra
     :thrift_client_class => ThriftClient
   }.freeze
 
-  attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client_class
+  attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client_class, :auth_request
 
   # Create a new Cassandra instance and open the connection.
   def initialize(keyspace, servers = "127.0.0.1:9160", thrift_client_options = {})
@@ -86,6 +90,11 @@ class Cassandra
     @keyspaces ||= client.describe_keyspaces()
   end
   
+  def login!(username, password)
+    @auth_request = CassandraThrift::AuthenticationRequest.new
+    @auth_request.credentials = {'username' => username, 'password' => password}
+    client.login(@keyspace, @auth_request)
+  end
   
   def inspect
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
@@ -254,7 +263,7 @@ class Cassandra
   def compact_mutations!
     #TODO re-do this rollup
   end
-  
+
   def new_client
     thrift_client_class.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
   end
