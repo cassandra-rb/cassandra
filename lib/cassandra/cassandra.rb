@@ -95,7 +95,7 @@ class Cassandra
     @auth_request.credentials = {'username' => username, 'password' => password}
     client.login(@keyspace, @auth_request)
   end
-
+  
   def inspect
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       schema(false).map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
@@ -298,10 +298,10 @@ class Cassandra
   def reconnect!
     @servers = all_nodes
     @client = new_client
-    @client.login(@keyspace, @auth_request) if @auth_request 
     check_keyspace
+    @client.login(@keyspace, @auth_request) if @auth_request
   end
-
+  
   def check_keyspace
     unless (keyspaces = client.get_string_list_property("keyspaces")).include?(@keyspace)
       raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
