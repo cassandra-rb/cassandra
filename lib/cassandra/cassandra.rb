@@ -3,6 +3,10 @@
 Create a new Cassandra client instance. Accepts a keyspace name, and optional host and port.
 
   client = Cassandra.new('twitter', '127.0.0.1:9160')
+  
+If the server requires authentication, you must authenticate before make calls
+
+  client.login!('username','password')
 
 You can then make calls to the server via the <tt>client</tt> instance.
 
@@ -59,7 +63,7 @@ class Cassandra
     :thrift_client_class => ThriftClient
   }.freeze
 
-  attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client_class
+  attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client_class, :auth_request
 
   # Create a new Cassandra instance and open the connection.
   def initialize(keyspace, servers = "127.0.0.1:9160", thrift_client_options = {})
@@ -85,7 +89,13 @@ class Cassandra
   def keyspaces
     @keyspaces ||= client.get_string_list_property("keyspaces")
   end
-
+  
+  def login!(username, password)
+    @auth_request = CassandraThrift::AuthenticationRequest.new
+    @auth_request.credentials = {'username' => username, 'password' => password}
+    client.login(@keyspace, @auth_request)
+  end
+  
   def inspect
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       schema(false).map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
@@ -289,8 +299,9 @@ class Cassandra
     @servers = all_nodes
     @client = new_client
     check_keyspace
+    @client.login(@keyspace, @auth_request) if @auth_request
   end
-
+  
   def check_keyspace
     unless (keyspaces = client.get_string_list_property("keyspaces")).include?(@keyspace)
       raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
