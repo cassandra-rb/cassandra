@@ -525,8 +525,9 @@ module CassandraThrift
       ROW_CACHE_SIZE = 9
       PRELOAD_ROW_CACHE = 10
       KEY_CACHE_SIZE = 11
+      READ_REPAIR_CHANCE = 12
 
-      ::Thrift::Struct.field_accessor self, :table, :name, :column_type, :clock_type, :comparator_type, :subcomparator_type, :reconciler, :comment, :row_cache_size, :preload_row_cache, :key_cache_size
+      ::Thrift::Struct.field_accessor self, :table, :name, :column_type, :clock_type, :comparator_type, :subcomparator_type, :reconciler, :comment, :row_cache_size, :preload_row_cache, :key_cache_size, :read_repair_chance
       FIELDS = {
         TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
         NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
@@ -538,7 +539,8 @@ module CassandraThrift
         COMMENT => {:type => ::Thrift::Types::STRING, :name => 'comment', :default => %q"", :optional => true},
         ROW_CACHE_SIZE => {:type => ::Thrift::Types::DOUBLE, :name => 'row_cache_size', :default => 0, :optional => true},
         PRELOAD_ROW_CACHE => {:type => ::Thrift::Types::BOOL, :name => 'preload_row_cache', :default => false, :optional => true},
-        KEY_CACHE_SIZE => {:type => ::Thrift::Types::DOUBLE, :name => 'key_cache_size', :default => 200000, :optional => true}
+        KEY_CACHE_SIZE => {:type => ::Thrift::Types::DOUBLE, :name => 'key_cache_size', :default => 200000, :optional => true},
+        READ_REPAIR_CHANCE => {:type => ::Thrift::Types::DOUBLE, :name => 'read_repair_chance', :default => 1, :optional => true}
       }
 
       def struct_fields; FIELDS; end
