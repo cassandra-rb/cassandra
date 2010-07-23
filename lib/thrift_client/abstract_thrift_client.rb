@@ -19,7 +19,7 @@ class AbstractThriftClient
 
     @client_methods = []
     @client_class.instance_methods.each do |method_name|
-      if method_name =~ /^recv_(.*)$/
+      if method_name != 'send_message' && method_name =~ /^send_(.*)$/
         instance_eval("def #{$1}(*args); handled_proxy(:'#{$1}', *args); end", __FILE__, __LINE__)
         @client_methods << $1
       end
@@ -55,8 +55,11 @@ class AbstractThriftClient
     handle_exception(e, method_name, args)
   end
 
+  def post_connect(method_name); end
+
   def proxy(method_name, *args)
     connect! unless @client
+    post_connect(method_name)
     send_rpc(method_name, *args)
   end
 
@@ -184,17 +187,10 @@ class AbstractThriftClient
       @options = TIMINGOUT_DEFAULTS.merge(@options)
     end
 
-    def connect!
-      super
-      set_method_timeouts!
-    end
-
     private
-    def set_method_timeouts!
+    def post_connect(method_name)
       return unless has_timeouts?
-      @client_methods.each do |method_name|
-        @client.timeout = @options[:timeout_overrides][method_name.to_sym] || @options[:timeout]
-      end
+      @client.timeout = @options[:timeout_overrides][method_name.to_sym] || @options[:timeout]
     end
 
     def has_timeouts?
