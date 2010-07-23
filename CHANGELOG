@@ -1,3 +1,5 @@
+v0.4.4 Default to 0 retries rather than the number of servers.
+
 v0.4.3 Bug fixes: handle_exception could be called more than once. Integer types are read signed.
 
 v0.4.2 Allow per-method overrides of retries. Fix several bugs with EventMachine.
