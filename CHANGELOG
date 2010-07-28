@@ -1,10 +1,12 @@
-v0.4.4 Default to 0 retries rather than the number of servers.
+v0.4.5. Fix broken retries.
 
-v0.4.3 Bug fixes: handle_exception could be called more than once. Integer types are read signed.
+v0.4.4. Default to 0 retries rather than the number of servers.
 
-v0.4.2 Allow per-method overrides of retries. Fix several bugs with EventMachine.
+v0.4.3. Bug fixes: handle_exception could be called more than once. Integer types are read signed.
 
-v0.4.1 Making ThriftClient decoratable. Able to add new functionality a class definition.
+v0.4.2. Allow per-method overrides of retries. Fix several bugs with EventMachine.
+
+v0.4.1. Making ThriftClient decoratable. Able to add new functionality a class definition.
 
 v0.4.0. Add new EventMachine transport.  This requires two layers of transport
 configurability:
