@@ -153,7 +153,7 @@ class AbstractThriftClient
       disconnect_on_error!
       tries ||= (@options[:retry_overrides][method_name.to_sym] || @retries) + 1
       tries -= 1
-      tries >= 0 ? raise : retry
+      tries > 0 ? retry : raise
     end
 
     def send_rpc(method_name, *args)
