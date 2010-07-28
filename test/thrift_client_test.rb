@@ -71,7 +71,6 @@ class ThriftClientTest < Test::Unit::TestCase
       # connection error happens. it will be called every try (so, retries + 1)
       singleton_class.send :define_method, :disconnect_on_error! do |*args|
         times_called += 1; super
-        super
       end
 
       assert_raises(Thrift::TransportException) { client.greeting("someone") }
