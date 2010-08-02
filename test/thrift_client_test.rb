@@ -60,9 +60,9 @@ class ThriftClientTest < Test::Unit::TestCase
   end
 
   def test_retries_correct_number_of_times
-    stub_server(@socket) do |socket|
+    stub_server(@port) do |socket|
       opts = @options.merge(:timeout => @timeout, :retries => 4, :server_retry_period => nil)
-      client = ThriftClient.new(Greeter::Client, "127.0.0.1:#{@socket}", opts)
+      client = ThriftClient.new(Greeter::Client, "127.0.0.1:#{@port}", opts)
       times_called = 0
 
       singleton_class = (class << client; self end)
