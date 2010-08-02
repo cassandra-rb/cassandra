@@ -21,3 +21,4 @@ test/simple_test.rb
 test/test_helper.rb
 test/thrift_client_http_test.rb
 test/thrift_client_test.rb
+thrift_client.gemspec

@@ -59,6 +59,25 @@ class ThriftClientTest < Test::Unit::TestCase
     assert_equal 1, times_called
   end
 
+  def test_retries_correct_number_of_times
+    stub_server(@socket) do |socket|
+      opts = @options.merge(:timeout => @timeout, :retries => 4, :server_retry_period => nil)
+      client = ThriftClient.new(Greeter::Client, "127.0.0.1:#{@socket}", opts)
+      times_called = 0
+
+      singleton_class = (class << client; self end)
+
+      # disconnect_on_error! is called every time a server related
+      # connection error happens. it will be called every try (so, retries + 1)
+      singleton_class.send :define_method, :disconnect_on_error! do |*args|
+        times_called += 1; super
+      end
+
+      assert_raises(Thrift::TransportException) { client.greeting("someone") }
+      assert_equal opts[:retries] + 1, times_called
+    end
+  end
+
   def test_dont_raise_with_defaults
     client = ThriftClient.new(Greeter::Client, @servers.first, @options.merge(:raise => false, :defaults => {:greeting => 1}))
     assert_equal 1, client.greeting

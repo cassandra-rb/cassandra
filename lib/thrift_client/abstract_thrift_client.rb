@@ -90,7 +90,7 @@ class AbstractThriftClient
     RETRYING_DEFAULTS = {
       :exception_classes => DISCONNECT_ERRORS,
       :randomize_server_list => true,
-      :retries => nil,
+      :retries => 0,
       :server_retry_period => 1,
       :server_max_requests => nil,
       :retry_overrides => {}
@@ -99,7 +99,7 @@ class AbstractThriftClient
     def initialize(client_class, servers, options = {})
       super
       @options = RETRYING_DEFAULTS.merge(@options) # @options is set by super
-      @retries = options[:retries] || @server_list.size
+      @retries = @options[:retries]
       @request_count = 0
       @max_requests = @options[:server_max_requests]
       @retry_period = @options[:server_retry_period]
@@ -154,9 +154,9 @@ class AbstractThriftClient
       super
     rescue *@options[:exception_classes] => e
       disconnect_on_error!
-      tries ||= (@options[:retry_overrides][method_name.to_sym] || @retries)
+      tries ||= (@options[:retry_overrides][method_name.to_sym] || @retries) + 1
       tries -= 1
-      tries == 0 ? raise : retry
+      tries > 0 ? retry : raise
     end
 
     def send_rpc(method_name, *args)
