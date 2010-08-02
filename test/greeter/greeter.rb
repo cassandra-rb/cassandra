@@ -25,6 +25,13 @@ module Greeter
       raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'greeting failed: unknown result')
     end
 
+    def yo(name)
+      send_yo(name)
+    end
+
+    def send_yo(name)
+      send_message('yo', Yo_args, :name => name)
+    end
   end
 
   class Processor
@@ -35,6 +42,12 @@ module Greeter
       result = Greeting_result.new()
       result.success = @handler.greeting(args.name)
       write_result(result, oprot, 'greeting', seqid)
+    end
+
+    def process_yo(seqid, iprot, oprot)
+      args = read_args(iprot, Yo_args)
+      @handler.yo(args.name)
+      return
     end
 
   end
@@ -64,6 +77,36 @@ module Greeter
     ::Thrift::Struct.field_accessor self, :success
     FIELDS = {
       SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'}
+    }
+
+    def struct_fields; FIELDS; end
+
+    def validate
+    end
+
+  end
+
+  class Yo_args
+    include ::Thrift::Struct
+    NAME = 1
+
+    ::Thrift::Struct.field_accessor self, :name
+    FIELDS = {
+      NAME => {:type => ::Thrift::Types::STRING, :name => 'name'}
+    }
+
+    def struct_fields; FIELDS; end
+
+    def validate
+    end
+
+  end
+
+  class Yo_result
+    include ::Thrift::Struct
+
+    FIELDS = {
+
     }
 
     def struct_fields; FIELDS; end
