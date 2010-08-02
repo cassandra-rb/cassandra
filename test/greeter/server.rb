@@ -3,6 +3,10 @@ module Greeter
     def greeting(name)
       "hello there #{name}!"
     end
+
+    def yo(name)
+      #whee
+    end
   end
 
   class Server

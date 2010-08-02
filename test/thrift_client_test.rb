@@ -4,7 +4,7 @@ class ThriftClientTest < Test::Unit::TestCase
 
   def setup
     @servers = ["127.0.0.1:1461", "127.0.0.1:1462", "127.0.0.1:1463"]
-    @socket = 1461
+    @port = 1461
     @timeout = 0.2
     @options = {:protocol_extra_params => [false]}
     @pid = Process.fork do
@@ -94,10 +94,10 @@ class ThriftClientTest < Test::Unit::TestCase
   end
 
   def test_framed_transport_timeout
-    stub_server(@socket) do |socket|
+    stub_server(@port) do |socket|
       measurement = Benchmark.measure do
         assert_raises(Thrift::TransportException) do
-          ThriftClient.new(Greeter::Client, "127.0.0.1:#{@socket}",
+          ThriftClient.new(Greeter::Client, "127.0.0.1:#{@port}",
             @options.merge(:timeout => @timeout)
           ).greeting("someone")
         end
@@ -107,10 +107,10 @@ class ThriftClientTest < Test::Unit::TestCase
   end
 
   def test_buffered_transport_timeout
-    stub_server(@socket) do |socket|
+    stub_server(@port) do |socket|
       measurement = Benchmark.measure do
         assert_raises(Thrift::TransportException) do
-          ThriftClient.new(Greeter::Client, "127.0.0.1:#{@socket}",
+          ThriftClient.new(Greeter::Client, "127.0.0.1:#{@port}",
             @options.merge(:timeout => @timeout, :transport_wrapper => Thrift::BufferedTransport)
           ).greeting("someone")
         end
@@ -122,10 +122,10 @@ class ThriftClientTest < Test::Unit::TestCase
   def test_buffered_transport_timeout_override
     # FIXME Large timeout values always are applied twice for some bizarre reason
     log_timeout = @timeout * 4
-    stub_server(@socket) do |socket|
+    stub_server(@port) do |socket|
       measurement = Benchmark.measure do
         assert_raises(Thrift::TransportException) do
-          ThriftClient.new(Greeter::Client, "127.0.0.1:#{@socket}",
+          ThriftClient.new(Greeter::Client, "127.0.0.1:#{@port}",
             @options.merge(:timeout => @timeout, :timeout_overrides => {:greeting => log_timeout}, :transport_wrapper => Thrift::BufferedTransport)
           ).greeting("someone")
         end
@@ -146,6 +146,12 @@ class ThriftClientTest < Test::Unit::TestCase
     assert_raises(ThriftClient::NoServersAvailable) { client.greeting("someone") }
     sleep 1.1
     assert_raises(ThriftClient::NoServersAvailable) { client.greeting("someone") }
+  end
+
+  def test_oneway_method
+    client = ThriftClient.new(Greeter::Client, @servers, @options.merge(:server_max_requests => 2))
+    response = client.yo("dude")
+    assert_equal response, ''
   end
 
   def test_server_max_requests_with_downed_servers
