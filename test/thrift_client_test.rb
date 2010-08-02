@@ -150,8 +150,9 @@ class ThriftClientTest < Test::Unit::TestCase
 
   def test_oneway_method
     client = ThriftClient.new(Greeter::Client, @servers, @options.merge(:server_max_requests => 2))
-    response = client.yo("dude")
-    assert_equal response, ''
+    assert_nothing_raised do
+      response = client.yo("dude")
+    end
   end
 
   def test_server_max_requests_with_downed_servers
