@@ -3,19 +3,20 @@ class Cassandra
   module Columns #:nodoc:
     private
 
-    def _standard_insert_mutation(column_family, column_name, value, timestamp)
+    def _standard_insert_mutation(column_family, column_name, value, timestamp, ttl = nil)
       CassandraThrift::Mutation.new(
         :column_or_supercolumn => CassandraThrift::ColumnOrSuperColumn.new(
           :column => CassandraThrift::Column.new(
             :name      => column_name_class(column_family).new(column_name).to_s,
             :value     => value,
-            :clock     => CassandraThrift::Clock.new(:timestamp => timestamp)
+            :clock     => CassandraThrift::Clock.new(:timestamp => timestamp),
+            :ttl       => ttl
           )
         )
       )
     end
 
-    def _super_insert_mutation(column_family, super_column_name, sub_columns, timestamp)
+    def _super_insert_mutation(column_family, super_column_name, sub_columns, timestamp, ttl = nil)
       CassandraThrift::Mutation.new(:column_or_supercolumn => 
         CassandraThrift::ColumnOrSuperColumn.new(
           :super_column => CassandraThrift::SuperColumn.new(
@@ -24,7 +25,8 @@ class Cassandra
               CassandraThrift::Column.new(
                 :name      => sub_column_name_class(column_family).new(sub_column_name).to_s,
                 :value     => sub_column_value.to_s,
-                :clock     => CassandraThrift::Clock.new(:timestamp => timestamp)
+                :clock     => CassandraThrift::Clock.new(:timestamp => timestamp),
+                :ttl       => ttl
               )
             }
           )

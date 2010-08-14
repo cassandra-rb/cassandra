@@ -47,7 +47,8 @@ class Cassandra
   WRITE_DEFAULTS = {
     :count => 1000,
     :timestamp => nil,
-    :consistency => Consistency::ONE
+    :consistency => Consistency::ONE,
+    :ttl => nil
   }.freeze
 
   READ_DEFAULTS = {
@@ -105,8 +106,8 @@ class Cassandra
 ### Write
 
   # Insert a row for a key. Pass a flat hash for a regular column family, and
-  # a nested hash for a super column family. Supports the <tt>:consistency</tt>
-  # and <tt>:timestamp</tt> options.
+  # a nested hash for a super column family. Supports the <tt>:consistency</tt>,
+  # <tt>:timestamp</tt> and <tt>:ttl</tt> options.
   def insert(column_family, key, hash, options = {})
     column_family, _, _, options = extract_and_validate_params(column_family, key, [options], WRITE_DEFAULTS)
 
@@ -114,13 +115,13 @@ class Cassandra
     mutation_map = if is_super(column_family)
       {
         key => {
-          column_family => hash.collect{|k,v| _super_insert_mutation(column_family, k, v, timestamp) }
+          column_family => hash.collect{|k,v| _super_insert_mutation(column_family, k, v, timestamp, options[:ttl]) }
         }
       }
     else
       {
         key => {
-          column_family => hash.collect{|k,v| _standard_insert_mutation(column_family, k, v, timestamp)}
+          column_family => hash.collect{|k,v| _standard_insert_mutation(column_family, k, v, timestamp, options[:ttl])}
         }
       }
     end
