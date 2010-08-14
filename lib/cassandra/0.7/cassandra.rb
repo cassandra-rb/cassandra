@@ -1,8 +1,15 @@
 class Cassandra
+  def self.DEFAULT_TRANSPORT_WRAPPER
+    Thrift::FramedTransport
+  end
 
   def keyspace=(ks)
     client.set_keyspace(ks) if check_keyspace(ks)
     @schema = nil; @keyspace = ks
+  end
+  
+  def keyspaces
+    client.describe_keyspaces.map {|k| k.name}
   end
   
   def schema(load=true)
@@ -29,6 +36,9 @@ class Cassandra
     client.describe_ring(@keyspace)
   end
 
+  def partitioner
+    client.describe_partitioner()
+  end
   
   ## Delete
 
@@ -131,8 +141,8 @@ class Cassandra
   end
 
   def check_keyspace(ks = @keyspace)
-    !(unless (keyspaces = client.describe_keyspaces()).include?(ks)
-      raise AccessError, "Keyspace #{ks.inspect} not found. Available: #{keyspaces.inspect}"
+    !(unless (_keyspaces = keyspaces()).include?(ks)
+      raise AccessError, "Keyspace #{ks.inspect} not found. Available: #{_keyspaces.inspect}"
     end)
   end
 

@@ -1,4 +1,7 @@
 class Cassandra
+  def self.DEFAULT_TRANSPORT_WRAPPER
+    Thrift::BufferedTransport
+  end
   
   ## Delete
 

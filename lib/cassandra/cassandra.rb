@@ -71,6 +71,7 @@ class Cassandra
     @column_name_class = {}
     @sub_column_name_class = {}
     @auto_discover_nodes = true
+    thrift_client_options[:transport_wrapper] ||= Cassandra.DEFAULT_TRANSPORT_WRAPPER
     @thrift_client_options = THRIFT_DEFAULTS.merge(thrift_client_options)
     @thrift_client_class = @thrift_client_options[:thrift_client_class]
     @keyspace = keyspace
