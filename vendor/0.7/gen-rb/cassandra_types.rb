@@ -18,6 +18,12 @@ module CassandraThrift
       VALID_VALUES = Set.new([ZERO, ONE, QUORUM, DCQUORUM, DCQUORUMSYNC, ALL, ANY]).freeze
     end
 
+    module IndexOperator
+      EQ = 0
+      VALUE_MAP = {0 => "EQ"}
+      VALID_VALUES = Set.new([EQ]).freeze
+    end
+
     module AccessLevel
       NONE = 0
       READONLY = 16
@@ -25,6 +31,12 @@ module CassandraThrift
       FULL = 64
       VALUE_MAP = {0 => "NONE", 16 => "READONLY", 32 => "READWRITE", 64 => "FULL"}
       VALID_VALUES = Set.new([NONE, READONLY, READWRITE, FULL]).freeze
+    end
+
+    module IndexType
+      KEYS = 0
+      VALUE_MAP = {0 => "KEYS"}
+      VALID_VALUES = Set.new([KEYS]).freeze
     end
 
     # Encapsulate types of conflict resolution.
@@ -312,26 +324,23 @@ module CassandraThrift
     #                and can be safely set to an empty byte array to not stop until 'count' results are seen. Otherwise, it
     #                must also be a valid value to the ColumnFamily Comparator.
     # @param reversed. Whether the results should be ordered in reversed order. Similar to ORDER BY blah DESC in SQL.
-    # @param count. How many keys to return. Similar to LIMIT 100 in SQL. May be arbitrarily large, but Thrift will
+    # @param count. How many columns to return. Similar to LIMIT in SQL. May be arbitrarily large, but Thrift will
     #               materialize the whole result into memory before returning it to the client, so be aware that you may
     #               be better served by iterating through slices by passing the last value of one call in as the 'start'
     #               of the next instead of increasing 'count' arbitrarily large.
-    # @param bitmasks. A list of OR-ed binary AND masks applied to the result set.
     class SliceRange
       include ::Thrift::Struct
       START = 1
       FINISH = 2
       REVERSED = 3
       COUNT = 4
-      BITMASKS = 5
 
-      ::Thrift::Struct.field_accessor self, :start, :finish, :reversed, :count, :bitmasks
+      ::Thrift::Struct.field_accessor self, :start, :finish, :reversed, :count
       FIELDS = {
         START => {:type => ::Thrift::Types::STRING, :name => 'start'},
         FINISH => {:type => ::Thrift::Types::STRING, :name => 'finish'},
         REVERSED => {:type => ::Thrift::Types::BOOL, :name => 'reversed', :default => false},
-        COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100},
-        BITMASKS => {:type => ::Thrift::Types::LIST, :name => 'bitmasks', :element => {:type => ::Thrift::Types::STRING}, :optional => true}
+        COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
       }
 
       def struct_fields; FIELDS; end
@@ -369,6 +378,55 @@ module CassandraThrift
       def struct_fields; FIELDS; end
 
       def validate
+      end
+
+    end
+
+    class IndexExpression
+      include ::Thrift::Struct
+      COLUMN_NAME = 1
+      OP = 2
+      VALUE = 3
+
+      ::Thrift::Struct.field_accessor self, :column_name, :op, :value
+      FIELDS = {
+        COLUMN_NAME => {:type => ::Thrift::Types::STRING, :name => 'column_name'},
+        OP => {:type => ::Thrift::Types::I32, :name => 'op', :enum_class => CassandraThrift::IndexOperator},
+        VALUE => {:type => ::Thrift::Types::STRING, :name => 'value'}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field column_name is unset!') unless @column_name
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field op is unset!') unless @op
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field value is unset!') unless @value
+        unless @op.nil? || CassandraThrift::IndexOperator::VALID_VALUES.include?(@op)
+          raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field op!')
+        end
+      end
+
+    end
+
+    class IndexClause
+      include ::Thrift::Struct
+      EXPRESSIONS = 1
+      START_KEY = 2
+      COUNT = 3
+
+      ::Thrift::Struct.field_accessor self, :expressions, :start_key, :count
+      FIELDS = {
+        EXPRESSIONS => {:type => ::Thrift::Types::LIST, :name => 'expressions', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::IndexExpression}},
+        START_KEY => {:type => ::Thrift::Types::STRING, :name => 'start_key'},
+        COUNT => {:type => ::Thrift::Types::I32, :name => 'count', :default => 100}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field expressions is unset!') unless @expressions
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field start_key is unset!') unless @start_key
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field count is unset!') unless @count
       end
 
     end
@@ -425,6 +483,26 @@ module CassandraThrift
       def validate
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field key is unset!') unless @key
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field columns is unset!') unless @columns
+      end
+
+    end
+
+    class KeyCount
+      include ::Thrift::Struct
+      KEY = 1
+      COUNT = 2
+
+      ::Thrift::Struct.field_accessor self, :key, :count
+      FIELDS = {
+        KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+        COUNT => {:type => ::Thrift::Types::I32, :name => 'count'}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field key is unset!') unless @key
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field count is unset!') unless @count
       end
 
     end
@@ -512,9 +590,36 @@ module CassandraThrift
 
     end
 
+    class ColumnDef
+      include ::Thrift::Struct
+      NAME = 1
+      VALIDATION_CLASS = 2
+      INDEX_TYPE = 3
+      INDEX_NAME = 4
+
+      ::Thrift::Struct.field_accessor self, :name, :validation_class, :index_type, :index_name
+      FIELDS = {
+        NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
+        VALIDATION_CLASS => {:type => ::Thrift::Types::STRING, :name => 'validation_class'},
+        INDEX_TYPE => {:type => ::Thrift::Types::I32, :name => 'index_type', :optional => true, :enum_class => CassandraThrift::IndexType},
+        INDEX_NAME => {:type => ::Thrift::Types::STRING, :name => 'index_name', :optional => true}
+      }
+
+      def struct_fields; FIELDS; end
+
+      def validate
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field name is unset!') unless @name
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field validation_class is unset!') unless @validation_class
+        unless @index_type.nil? || CassandraThrift::IndexType::VALID_VALUES.include?(@index_type)
+          raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field index_type!')
+        end
+      end
+
+    end
+
     class CfDef
       include ::Thrift::Struct
-      TABLE = 1
+      KEYSPACE = 1
       NAME = 2
       COLUMN_TYPE = 3
       CLOCK_TYPE = 4
@@ -526,10 +631,12 @@ module CassandraThrift
       PRELOAD_ROW_CACHE = 10
       KEY_CACHE_SIZE = 11
       READ_REPAIR_CHANCE = 12
+      COLUMN_METADATA = 13
+      GC_GRACE_SECONDS = 14
 
-      ::Thrift::Struct.field_accessor self, :table, :name, :column_type, :clock_type, :comparator_type, :subcomparator_type, :reconciler, :comment, :row_cache_size, :preload_row_cache, :key_cache_size, :read_repair_chance
+      ::Thrift::Struct.field_accessor self, :keyspace, :name, :column_type, :clock_type, :comparator_type, :subcomparator_type, :reconciler, :comment, :row_cache_size, :preload_row_cache, :key_cache_size, :read_repair_chance, :column_metadata, :gc_grace_seconds
       FIELDS = {
-        TABLE => {:type => ::Thrift::Types::STRING, :name => 'table'},
+        KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
         NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
         COLUMN_TYPE => {:type => ::Thrift::Types::STRING, :name => 'column_type', :default => %q"Standard", :optional => true},
         CLOCK_TYPE => {:type => ::Thrift::Types::STRING, :name => 'clock_type', :default => %q"Timestamp", :optional => true},
@@ -540,13 +647,15 @@ module CassandraThrift
         ROW_CACHE_SIZE => {:type => ::Thrift::Types::DOUBLE, :name => 'row_cache_size', :default => 0, :optional => true},
         PRELOAD_ROW_CACHE => {:type => ::Thrift::Types::BOOL, :name => 'preload_row_cache', :default => false, :optional => true},
         KEY_CACHE_SIZE => {:type => ::Thrift::Types::DOUBLE, :name => 'key_cache_size', :default => 200000, :optional => true},
-        READ_REPAIR_CHANCE => {:type => ::Thrift::Types::DOUBLE, :name => 'read_repair_chance', :default => 1, :optional => true}
+        READ_REPAIR_CHANCE => {:type => ::Thrift::Types::DOUBLE, :name => 'read_repair_chance', :default => 1, :optional => true},
+        COLUMN_METADATA => {:type => ::Thrift::Types::LIST, :name => 'column_metadata', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnDef}, :optional => true},
+        GC_GRACE_SECONDS => {:type => ::Thrift::Types::I32, :name => 'gc_grace_seconds', :optional => true}
       }
 
       def struct_fields; FIELDS; end
 
       def validate
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field table is unset!') unless @table
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field keyspace is unset!') unless @keyspace
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field name is unset!') unless @name
       end
 
@@ -556,13 +665,15 @@ module CassandraThrift
       include ::Thrift::Struct
       NAME = 1
       STRATEGY_CLASS = 2
-      REPLICATION_FACTOR = 3
+      STRATEGY_OPTIONS = 3
+      REPLICATION_FACTOR = 4
       CF_DEFS = 5
 
-      ::Thrift::Struct.field_accessor self, :name, :strategy_class, :replication_factor, :cf_defs
+      ::Thrift::Struct.field_accessor self, :name, :strategy_class, :strategy_options, :replication_factor, :cf_defs
       FIELDS = {
         NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
         STRATEGY_CLASS => {:type => ::Thrift::Types::STRING, :name => 'strategy_class'},
+        STRATEGY_OPTIONS => {:type => ::Thrift::Types::MAP, :name => 'strategy_options', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}, :optional => true},
         REPLICATION_FACTOR => {:type => ::Thrift::Types::I32, :name => 'replication_factor'},
         CF_DEFS => {:type => ::Thrift::Types::LIST, :name => 'cf_defs', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::CfDef}}
       }

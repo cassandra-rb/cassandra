@@ -81,24 +81,6 @@ require 'cassandra_types'
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_slice failed: unknown result')
           end
 
-          def multiget_slice(keys, column_parent, predicate, consistency_level)
-            send_multiget_slice(keys, column_parent, predicate, consistency_level)
-            return recv_multiget_slice()
-          end
-
-          def send_multiget_slice(keys, column_parent, predicate, consistency_level)
-            send_message('multiget_slice', Multiget_slice_args, :keys => keys, :column_parent => column_parent, :predicate => predicate, :consistency_level => consistency_level)
-          end
-
-          def recv_multiget_slice()
-            result = receive_message(Multiget_slice_result)
-            return result.success unless result.success.nil?
-            raise result.ire unless result.ire.nil?
-            raise result.ue unless result.ue.nil?
-            raise result.te unless result.te.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'multiget_slice failed: unknown result')
-          end
-
           def get_count(key, column_parent, predicate, consistency_level)
             send_get_count(key, column_parent, predicate, consistency_level)
             return recv_get_count()
@@ -115,6 +97,24 @@ require 'cassandra_types'
             raise result.ue unless result.ue.nil?
             raise result.te unless result.te.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_count failed: unknown result')
+          end
+
+          def multiget_slice(keys, column_parent, predicate, consistency_level)
+            send_multiget_slice(keys, column_parent, predicate, consistency_level)
+            return recv_multiget_slice()
+          end
+
+          def send_multiget_slice(keys, column_parent, predicate, consistency_level)
+            send_message('multiget_slice', Multiget_slice_args, :keys => keys, :column_parent => column_parent, :predicate => predicate, :consistency_level => consistency_level)
+          end
+
+          def recv_multiget_slice()
+            result = receive_message(Multiget_slice_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise result.ue unless result.ue.nil?
+            raise result.te unless result.te.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'multiget_slice failed: unknown result')
           end
 
           def multiget_count(keyspace, keys, column_parent, predicate, consistency_level)
@@ -151,6 +151,24 @@ require 'cassandra_types'
             raise result.ue unless result.ue.nil?
             raise result.te unless result.te.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_range_slices failed: unknown result')
+          end
+
+          def get_indexed_slices(column_parent, index_clause, column_predicate, consistency_level)
+            send_get_indexed_slices(column_parent, index_clause, column_predicate, consistency_level)
+            return recv_get_indexed_slices()
+          end
+
+          def send_get_indexed_slices(column_parent, index_clause, column_predicate, consistency_level)
+            send_message('get_indexed_slices', Get_indexed_slices_args, :column_parent => column_parent, :index_clause => index_clause, :column_predicate => column_predicate, :consistency_level => consistency_level)
+          end
+
+          def recv_get_indexed_slices()
+            result = receive_message(Get_indexed_slices_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise result.ue unless result.ue.nil?
+            raise result.te unless result.te.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'get_indexed_slices failed: unknown result')
           end
 
           def insert(key, column_parent, column, consistency_level)
@@ -295,6 +313,21 @@ require 'cassandra_types'
             return result.success unless result.success.nil?
             raise result.ire unless result.ire.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_ring failed: unknown result')
+          end
+
+          def describe_partitioner()
+            send_describe_partitioner()
+            return recv_describe_partitioner()
+          end
+
+          def send_describe_partitioner()
+            send_message('describe_partitioner', Describe_partitioner_args)
+          end
+
+          def recv_describe_partitioner()
+            result = receive_message(Describe_partitioner_result)
+            return result.success unless result.success.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_partitioner failed: unknown result')
           end
 
           def describe_keyspace(keyspace)
@@ -485,21 +518,6 @@ require 'cassandra_types'
             write_result(result, oprot, 'get_slice', seqid)
           end
 
-          def process_multiget_slice(seqid, iprot, oprot)
-            args = read_args(iprot, Multiget_slice_args)
-            result = Multiget_slice_result.new()
-            begin
-              result.success = @handler.multiget_slice(args.keys, args.column_parent, args.predicate, args.consistency_level)
-            rescue CassandraThrift::InvalidRequestException => ire
-              result.ire = ire
-            rescue CassandraThrift::UnavailableException => ue
-              result.ue = ue
-            rescue CassandraThrift::TimedOutException => te
-              result.te = te
-            end
-            write_result(result, oprot, 'multiget_slice', seqid)
-          end
-
           def process_get_count(seqid, iprot, oprot)
             args = read_args(iprot, Get_count_args)
             result = Get_count_result.new()
@@ -513,6 +531,21 @@ require 'cassandra_types'
               result.te = te
             end
             write_result(result, oprot, 'get_count', seqid)
+          end
+
+          def process_multiget_slice(seqid, iprot, oprot)
+            args = read_args(iprot, Multiget_slice_args)
+            result = Multiget_slice_result.new()
+            begin
+              result.success = @handler.multiget_slice(args.keys, args.column_parent, args.predicate, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            rescue CassandraThrift::UnavailableException => ue
+              result.ue = ue
+            rescue CassandraThrift::TimedOutException => te
+              result.te = te
+            end
+            write_result(result, oprot, 'multiget_slice', seqid)
           end
 
           def process_multiget_count(seqid, iprot, oprot)
@@ -543,6 +576,21 @@ require 'cassandra_types'
               result.te = te
             end
             write_result(result, oprot, 'get_range_slices', seqid)
+          end
+
+          def process_get_indexed_slices(seqid, iprot, oprot)
+            args = read_args(iprot, Get_indexed_slices_args)
+            result = Get_indexed_slices_result.new()
+            begin
+              result.success = @handler.get_indexed_slices(args.column_parent, args.index_clause, args.column_predicate, args.consistency_level)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            rescue CassandraThrift::UnavailableException => ue
+              result.ue = ue
+            rescue CassandraThrift::TimedOutException => te
+              result.te = te
+            end
+            write_result(result, oprot, 'get_indexed_slices', seqid)
           end
 
           def process_insert(seqid, iprot, oprot)
@@ -644,6 +692,13 @@ require 'cassandra_types'
               result.ire = ire
             end
             write_result(result, oprot, 'describe_ring', seqid)
+          end
+
+          def process_describe_partitioner(seqid, iprot, oprot)
+            args = read_args(iprot, Describe_partitioner_args)
+            result = Describe_partitioner_result.new()
+            result.success = @handler.describe_partitioner()
+            write_result(result, oprot, 'describe_partitioner', seqid)
           end
 
           def process_describe_keyspace(seqid, iprot, oprot)
@@ -908,57 +963,6 @@ require 'cassandra_types'
 
         end
 
-        class Multiget_slice_args
-          include ::Thrift::Struct
-          KEYS = 1
-          COLUMN_PARENT = 2
-          PREDICATE = 3
-          CONSISTENCY_LEVEL = 4
-
-          ::Thrift::Struct.field_accessor self, :keys, :column_parent, :predicate, :consistency_level
-          FIELDS = {
-            KEYS => {:type => ::Thrift::Types::LIST, :name => 'keys', :element => {:type => ::Thrift::Types::STRING}},
-            COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
-            PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate},
-            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field keys is unset!') unless @keys
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field column_parent is unset!') unless @column_parent
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field predicate is unset!') unless @predicate
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field consistency_level is unset!') unless @consistency_level
-            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
-              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
-            end
-          end
-
-        end
-
-        class Multiget_slice_result
-          include ::Thrift::Struct
-          SUCCESS = 0
-          IRE = 1
-          UE = 2
-          TE = 3
-
-          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
-          FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}}},
-            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
-            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
-            TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
-        end
-
         class Get_count_args
           include ::Thrift::Struct
           KEY = 1
@@ -998,6 +1002,57 @@ require 'cassandra_types'
           ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::I32, :name => 'success'},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
+            TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Multiget_slice_args
+          include ::Thrift::Struct
+          KEYS = 1
+          COLUMN_PARENT = 2
+          PREDICATE = 3
+          CONSISTENCY_LEVEL = 4
+
+          ::Thrift::Struct.field_accessor self, :keys, :column_parent, :predicate, :consistency_level
+          FIELDS = {
+            KEYS => {:type => ::Thrift::Types::LIST, :name => 'keys', :element => {:type => ::Thrift::Types::STRING}},
+            COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
+            PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field keys is unset!') unless @keys
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field column_parent is unset!') unless @column_parent
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field predicate is unset!') unless @predicate
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field consistency_level is unset!') unless @consistency_level
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Multiget_slice_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+          UE = 2
+          TE = 3
+
+          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}}},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
             UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
             TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
@@ -1094,6 +1149,57 @@ require 'cassandra_types'
         end
 
         class Get_range_slices_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+          UE = 2
+          TE = 3
+
+          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::KeySlice}},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
+            UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
+            TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Get_indexed_slices_args
+          include ::Thrift::Struct
+          COLUMN_PARENT = 1
+          INDEX_CLAUSE = 2
+          COLUMN_PREDICATE = 3
+          CONSISTENCY_LEVEL = 4
+
+          ::Thrift::Struct.field_accessor self, :column_parent, :index_clause, :column_predicate, :consistency_level
+          FIELDS = {
+            COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
+            INDEX_CLAUSE => {:type => ::Thrift::Types::STRUCT, :name => 'index_clause', :class => CassandraThrift::IndexClause},
+            COLUMN_PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'column_predicate', :class => CassandraThrift::SlicePredicate},
+            CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field column_parent is unset!') unless @column_parent
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field index_clause is unset!') unless @index_clause
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field column_predicate is unset!') unless @column_predicate
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field consistency_level is unset!') unless @consistency_level
+            unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
+              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
+            end
+          end
+
+        end
+
+        class Get_indexed_slices_result
           include ::Thrift::Struct
           SUCCESS = 0
           IRE = 1
@@ -1342,7 +1448,7 @@ require 'cassandra_types'
 
           ::Thrift::Struct.field_accessor self, :success
           FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::SET, :name => 'success', :element => {:type => ::Thrift::Types::STRING}}
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::KsDef}}
           }
 
           def struct_fields; FIELDS; end
@@ -1447,6 +1553,36 @@ require 'cassandra_types'
 
         end
 
+        class Describe_partitioner_args
+          include ::Thrift::Struct
+
+          FIELDS = {
+
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Describe_partitioner_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+
+          ::Thrift::Struct.field_accessor self, :success
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
         class Describe_keyspace_args
           include ::Thrift::Struct
           KEYSPACE = 1
@@ -1471,7 +1607,7 @@ require 'cassandra_types'
 
           ::Thrift::Struct.field_accessor self, :success, :nfe
           FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::MAP, :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}}},
+            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CassandraThrift::KsDef},
             NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException}
           }
 
