@@ -8,7 +8,7 @@ require 'simple_uuid'
 here = File.expand_path(File.dirname(__FILE__))
 
 class Cassandra ; end
-unless Cassandra.methods.include?("VERSION")
+unless Cassandra.respond_to?(:VERSION)
   require "#{here}/cassandra/0.6"
 end
 
