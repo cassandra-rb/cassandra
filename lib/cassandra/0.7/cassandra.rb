@@ -9,7 +9,7 @@ class Cassandra
   end
   
   def keyspaces
-    client.describe_keyspaces.map {|k| k.name}
+    client.describe_keyspaces.to_a
   end
   
   def schema(load=true)
