@@ -1448,7 +1448,7 @@ require 'cassandra_types'
 
           ::Thrift::Struct.field_accessor self, :success
           FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::KsDef}}
+            SUCCESS => {:type => ::Thrift::Types::SET, :name => 'success', :element => {:type => ::Thrift::Types::STRING}}
           }
 
           def struct_fields; FIELDS; end
@@ -1607,7 +1607,7 @@ require 'cassandra_types'
 
           ::Thrift::Struct.field_accessor self, :success, :nfe
           FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CassandraThrift::KsDef},
+            SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::MAP, :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}}},
             NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException}
           }
 
