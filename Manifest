@@ -10,10 +10,12 @@ conf/storage-conf.xml
 lib/cassandra.rb
 lib/cassandra/0.6.rb
 lib/cassandra/0.6/cassandra.rb
+lib/cassandra/0.6/columns.rb
 lib/cassandra/0.6/protocol.rb
 lib/cassandra/0.7.rb
 lib/cassandra/0.7/cassandra.rb
 lib/cassandra/0.7/column_family.rb
+lib/cassandra/0.7/columns.rb
 lib/cassandra/0.7/keyspace.rb
 lib/cassandra/0.7/protocol.rb
 lib/cassandra/array.rb

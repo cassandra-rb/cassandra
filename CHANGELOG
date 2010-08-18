@@ -1,3 +1,5 @@
+v0.10.0 Compatibility with Cassandra 0.7 beta1
+
 v0.9.0 Compatibility with Cassandra 0.7 trunk
 
 v0.8.2 Renamed :thrift_client_class option, UUID fix, 0.6 update, fixing cassanda install, much Mock fixes
