@@ -7,11 +7,11 @@ class Cassandra
     client.set_keyspace(ks) if check_keyspace(ks)
     @schema = nil; @keyspace = ks
   end
-  
+
   def keyspaces
     client.describe_keyspaces.to_a
   end
-  
+
   def schema(load=true)
     if !load && !@schema
       []
@@ -19,19 +19,19 @@ class Cassandra
       @schema ||= client.describe_keyspace(@keyspace)
     end
   end
-  
+
   def schema_agreement?
     client.check_schema_agreement().length == 1
   end
-  
+
   def version
     client.describe_version()
   end
-  
+
   def cluster_name
     @cluster_name ||= client.describe_cluster_name()
   end
-  
+
   def ring
     client.describe_ring(@keyspace)
   end
@@ -39,7 +39,7 @@ class Cassandra
   def partitioner
     client.describe_partitioner()
   end
-  
+
   ## Delete
 
   # Remove all rows in the column family you request.
@@ -66,7 +66,7 @@ class Cassandra
     @schema = nil
     res
   end
-  
+
   def drop_column_family(cf_name)
     begin
       res = client.system_drop_column_family(cf_name)
@@ -74,9 +74,9 @@ class Cassandra
       puts "Timed out: #{te.inspect}"
     end
     @schema = nil
-    res 
+    res
   end
-  
+
   def rename_column_family(old_name, new_name)
     begin
       res = client.system_rename_column_family(old_name, new_name)
@@ -86,7 +86,7 @@ class Cassandra
     @schema = nil
     res
   end
-  
+
   def add_keyspace(ks_def)
     begin
       res = client.system_add_keyspace(ks_def)
@@ -95,10 +95,10 @@ class Cassandra
     rescue Thrift::TransportException => te
       puts "Timed out: #{te.inspect}"
     end
-    @keyspaces = nil 
+    @keyspaces = nil
     res
   end
-  
+
   def drop_keyspace(ks_name)
     begin
       res = client.system_drop_keyspace(ks_name)
@@ -108,10 +108,10 @@ class Cassandra
       puts "Timed out: #{te.inspect}"
     end
     keyspace = "system" if ks_name.eql?(@keyspace)
-    @keyspaces = nil 
+    @keyspaces = nil
     res
   end
-  
+
   def rename_keyspace(old_name, new_name)
     begin
       res = client.system_rename_keyspace(old_name, new_name)
@@ -121,10 +121,10 @@ class Cassandra
       puts "Timed out: #{te.inspect}"
     end
     keyspace = new_name if old_name.eql?(@keyspace)
-    @keyspaces = nil 
+    @keyspaces = nil
     res
   end
-  
+
   protected
 
   def client
