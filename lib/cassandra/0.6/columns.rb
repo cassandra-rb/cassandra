@@ -3,7 +3,7 @@ class Cassandra
   module Columns #:nodoc:
     private
 
-    def _standard_insert_mutation(column_family, column_name, value, timestamp)
+    def _standard_insert_mutation(column_family, column_name, value, timestamp, _=nil)
       CassandraThrift::Mutation.new(
         :column_or_supercolumn => CassandraThrift::ColumnOrSuperColumn.new(
           :column => CassandraThrift::Column.new(
@@ -15,7 +15,7 @@ class Cassandra
       )
     end
 
-    def _super_insert_mutation(column_family, super_column_name, sub_columns, timestamp)
+    def _super_insert_mutation(column_family, super_column_name, sub_columns, timestamp, _=nil)
       CassandraThrift::Mutation.new(:column_or_supercolumn => 
         CassandraThrift::ColumnOrSuperColumn.new(
           :super_column => CassandraThrift::SuperColumn.new(
