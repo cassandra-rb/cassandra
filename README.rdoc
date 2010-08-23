@@ -30,6 +30,16 @@ You can then make calls to the server via the <tt>client</tt> instance as if was
 
 On failures, the client will try the remaining servers in the list before giving up. See ThriftClient for more.
 
+== Timeouts
+
+Timeouts are enforced per-try, so if you have a timeout of n and do m retries, the total time it could take is n*m.
+
+== Connection Handling
+
+The library will shuffle the host list then work its way down this list, only moving to the next host if it received an error or you've doing more than server_max_requests requests with that host (defaults to 0 which means there's no limit).
+
+Servers that throw an error get marked as dead and will only be retried every server_retry_period seconds (at that time all dead servers are retried, no matter long they've been marked as dead).
+
 == Installation
 
 You need Ruby 1.8 or 1.9. If you have those, just run:
