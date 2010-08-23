@@ -3,7 +3,7 @@ require 'rubygems'
 require 'echoe'
 
 Echoe.new("thrift_client") do |p|
-  p.author = "Evan Weaver"
+  p.author = ["Evan Weaver", "Ryan King", "Jeff Hodges"]
   p.project = "fauna"
   p.summary = "A Thrift client wrapper that encapsulates some common failover behavior."
   p.rubygems_version = ">= 0.8"
