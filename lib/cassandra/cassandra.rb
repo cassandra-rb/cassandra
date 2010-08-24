@@ -231,16 +231,16 @@ class Cassandra
     get_range(column_family, options).select{|r| r.columns.length > 0}.compact.length
   end
 
-  # Open a batch operation and yield. Inserts and deletes will be queued until
-  # the block closes, and then sent atomically to the server.  Supports the
-  # <tt>:consistency</tt> option, which overrides the consistency set in
+  # Open a batch operation and yield self. Inserts and deletes will be queued
+  # until the block closes, and then sent atomically to the server.  Supports
+  # the <tt>:consistency</tt> option, which overrides the consistency set in
   # the individual commands.
   def batch(options = {})
     _, _, _, options = 
       extract_and_validate_params(schema.keys.first, "", [options], WRITE_DEFAULTS)
 
     @batch = []
-    yield
+    yield(self)
     compact_mutations!
 
     @batch.each do |mutation|

@@ -3,6 +3,12 @@ class Cassandra
     Thrift::FramedTransport
   end
 
+  def login!(username, password)
+    @auth_request = CassandraThrift::AuthenticationRequest.new
+    @auth_request.credentials = {'username' => username, 'password' => password}
+    client.login(@auth_request)
+  end
+
   def keyspace=(ks)
     client.set_keyspace(ks) if check_keyspace(ks)
     @schema = nil; @keyspace = ks
