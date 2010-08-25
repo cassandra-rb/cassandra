@@ -27,6 +27,7 @@ class CassandraTest < Test::Unit::TestCase
   def test_get_key
     @twitter.insert(:Users, key, {'body' => 'v', 'user' => 'v'})
     assert_equal({'body' => 'v', 'user' => 'v'}, @twitter.get(:Users, key))
+    assert_equal(['body', 'user'].sort, @twitter.get(:Users, key).timestamps.keys.sort)
     assert_equal({}, @twitter.get(:Users, 'bogus'))
   end
 
@@ -42,13 +43,14 @@ class CassandraTest < Test::Unit::TestCase
     hash = OrderedHash['b', '', 'c', '', 'd', '', 'a', '']
     @twitter.insert(:Users, key, hash)
     assert_equal(hash.keys.sort, @twitter.get(:Users, key).keys)
+    assert_equal(hash.timestamps.keys.sort, @twitter.get(:Users, key).timestamps.keys.sort)
     assert_not_equal(hash.keys, @twitter.get(:Users, key).keys)
   end
 
   def test_get_first_time_uuid_column
-    @blogs.insert(:Blogs, key, 
+    @blogs.insert(:Blogs, key,
       {@uuids[0] => 'I like this cat', @uuids[1] => 'Buttons is cuter', @uuids[2] => 'I disagree'})
-    
+
     assert_equal({@uuids[0] => 'I like this cat'}, @blogs.get(:Blogs, key, :count => 1))
     assert_equal({@uuids[2] => 'I disagree'}, @blogs.get(:Blogs, key, :count => 1, :reversed => true))
     assert_equal({}, @blogs.get(:Blogs, 'bogus'))
@@ -62,12 +64,15 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_first_long_column
-    @blogs_long.insert(:Blogs, key, 
+    @blogs_long.insert(:Blogs, key,
       {@longs[0] => 'I like this cat', @longs[1] => 'Buttons is cuter', @longs[2] => 'I disagree'})
 
     assert_equal({@longs[0] => 'I like this cat'}, @blogs_long.get(:Blogs, key, :count => 1))
     assert_equal({@longs[2] => 'I disagree'}, @blogs_long.get(:Blogs, key, :count => 1, :reversed => true))
     assert_equal({}, @blogs_long.get(:Blogs, 'bogus'))
+
+    assert_equal([@longs[0]], @blogs_long.get(:Blogs, key, :count => 1).timestamps.keys)
+    assert_equal([@longs[2]], @blogs_long.get(:Blogs, key, :count => 1, :reversed => true).timestamps.keys)
   end
 
   def test_long_remove_bug
@@ -77,12 +82,15 @@ class CassandraTest < Test::Unit::TestCase
 
     @blogs_long.insert(:Blogs, key, {@longs[0] => 'I really like this cat'})
     assert_equal({@longs[0] => 'I really like this cat'}, @blogs_long.get(:Blogs, key, :count => 1))
+    assert_equal([@longs[0]], @blogs_long.get(:Blogs, key, :count => 1).timestamps.keys)
   end
 
   def test_get_with_count
     @twitter.insert(:Statuses, key, {'1' => 'v', '2' => 'v', '3' => 'v'})
     assert_equal 1, @twitter.get(:Statuses, key, :count => 1).size
     assert_equal 2, @twitter.get(:Statuses, key, :count => 2).size
+    assert_equal 1, @twitter.get(:Statuses, key, :count => 1).timestamps.size
+    assert_equal 2, @twitter.get(:Statuses, key, :count => 2).timestamps.size
   end
 
   def test_get_value
@@ -103,6 +111,7 @@ class CassandraTest < Test::Unit::TestCase
     columns = {'user_timelines' => {@uuids[4] => '4', @uuids[5] => '5'}}
     @twitter.insert(:StatusRelationships, key, columns)
     assert_equal(columns, @twitter.get(:StatusRelationships, key))
+    assert_equal(columns.keys, @twitter.get(:StatusRelationships, key).timestamps.keys)
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus'))
   end
 
@@ -113,6 +122,7 @@ class CassandraTest < Test::Unit::TestCase
     @twitter.insert(:StatusRelationships, key, columns)
 
     assert_equal(columns, @twitter.get(:StatusRelationships, key))
+    assert_equal(columns.keys, @twitter.get(:StatusRelationships, key).timestamps.keys)
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus'))
   end
 
@@ -123,6 +133,10 @@ class CassandraTest < Test::Unit::TestCase
       @twitter.get(:StatusRelationships, key, "user_timelines", :count => 1))
     assert_equal({@uuids[3]  => 'v3'},
       @twitter.get(:StatusRelationships, key, "user_timelines", :count => 1, :reversed => true))
+    assert_equal([@uuids[1]],
+      @twitter.get(:StatusRelationships, key, "user_timelines", :count => 1).timestamps.keys)
+    assert_equal([@uuids[3]],
+      @twitter.get(:StatusRelationships, key, "user_timelines", :count => 1, :reversed => true).timestamps.keys)
   end
 
   def test_get_super_sub_keys_with_ranges
@@ -139,12 +153,16 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({@uuids[1] => 'v1'}, @twitter.get(:StatusRelationships, key, "user_timelines", :finish => @uuids[2], :count => 1))
     assert_equal({@uuids[2] => 'v2'}, @twitter.get(:StatusRelationships, key, "user_timelines", :start => @uuids[2], :count => 1))
     assert_equal 4, @twitter.get(:StatusRelationships, key, "user_timelines", :start => @uuids[2], :finish => @uuids[5]).size
+    assert_equal([@uuids[1]], @twitter.get(:StatusRelationships, key, "user_timelines", :finish => @uuids[2], :count => 1).timestamps.keys)
+    assert_equal([@uuids[2]], @twitter.get(:StatusRelationships, key, "user_timelines", :start => @uuids[2], :count => 1).timestamps.keys)
+    assert_equal 4, @twitter.get(:StatusRelationships, key, "user_timelines", :start => @uuids[2], :finish => @uuids[5]).timestamps.size
   end
 
   def test_get_super_sub_key
     columns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
     assert_equal(columns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
+    assert_equal(columns.keys.sort, @twitter.get(:StatusRelationships, key, 'user_timelines').timestamps.keys.sort)
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus', 'user_timelines'))
     # FIXME Not sure if this is valid
     # assert_nil @twitter.exists?(:StatusRelationships, 'bogus', 'user_timelines')
@@ -167,7 +185,7 @@ class CassandraTest < Test::Unit::TestCase
   #   @twitter.insert(:Statuses, '6', {'body' => '1'})
   #   assert_equal(['3', '4', '5'], @twitter.get_range(:Statuses, :start => '3', :finish => '5'))
   # end
-  
+
   def test_get_range_count
      @twitter.insert(:Statuses, '2', {'body' => '1'})
      @twitter.insert(:Statuses, '3', {'body' => '1'})
@@ -185,11 +203,13 @@ class CassandraTest < Test::Unit::TestCase
     result = @twitter.multi_get(:Users, [key + '1', key + '2', 'bogus'])
     assert_equal expected, result
     assert_equal expected.keys, result.keys
+    assert_equal expected.keys.sort, @twitter.multi_get(:Users, [key + '1', key + '2', 'bogus']).timestamps.keys.sort
 
     expected = OrderedHash[key + '2', {'body' => 'v2', 'user' => 'v2'}, 'bogus', {}, key + '1', {'body' => 'v1', 'user' => 'v1'}]
     result = @twitter.multi_get(:Users, [key + '2', 'bogus', key + '1'])
     assert_equal expected, result
     assert_equal expected.keys, result.keys
+    assert_equal expected.keys.sort, @twitter.multi_get(:Users, [key + '2', 'bogus', key + '1']).timestamps.keys.sort
   end
 
   def test_remove_key
@@ -204,6 +224,7 @@ class CassandraTest < Test::Unit::TestCase
     @twitter.insert(:Statuses, key, {'body' => 'v'})
     @twitter.remove(:Statuses, key, 'body')
     assert_nil @twitter.get(:Statuses, key, 'body')
+    assert_nil @twitter.get(:Statuses, key).timestamps['body']
   end
 
   def test_remove_super_key
@@ -223,6 +244,7 @@ class CassandraTest < Test::Unit::TestCase
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
     @twitter.remove(:StatusRelationships, key, 'user_timelines', columns.keys.first)
     assert_nil @twitter.get(:StatusRelationships, key, 'user_timelines', columns.keys.first)
+    assert_nil @twitter.get(:StatusRelationships, key, 'user_timelines').timestamps[columns.keys.first]
   end
 
   def test_clear_column_family
@@ -236,12 +258,14 @@ class CassandraTest < Test::Unit::TestCase
   def test_insert_key
     @twitter.insert(:Statuses, key, {'body' => 'v', 'user' => 'v'})
     assert_equal({'body' => 'v', 'user' => 'v'}, @twitter.get(:Statuses, key))
+    assert_equal(['body', 'user'], @twitter.get(:Statuses, key).timestamps.keys)
   end
 
   def test_insert_super_key
     columns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
     assert_equal(columns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
+    assert_equal(columns.keys.sort, @twitter.get(:StatusRelationships, key, 'user_timelines').timestamps.keys.sort)
   end
 
   def test_get_columns
@@ -273,6 +297,12 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal(
       OrderedHash[key + '2', ['v2', 'v2'], 'bogus', [nil, nil], key + '1', ['v1', 'v1']],
       @twitter.multi_get_columns(:Users, [key + '2', 'bogus', key + '1'], ['body', 'user']))
+    assert_equal(
+      OrderedHash[key + '1', ['v1', 'v1'], key + '2', ['v2', 'v2'], 'bogus', [nil, nil]].keys.sort,
+      @twitter.multi_get_columns(:Users, [key + '1', key + '2', 'bogus'], ['body', 'user']).timestamps.keys.sort)
+    assert_equal(
+      OrderedHash[key + '2', ['v2', 'v2'], 'bogus', [nil, nil], key + '1', ['v1', 'v1']].keys.sort,
+      @twitter.multi_get_columns(:Users, [key + '2', 'bogus', key + '1'], ['body', 'user']).timestamps.keys.sort)
   end
 
   def test_count_keys
@@ -338,6 +368,11 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({'body' => 'v4', 'user' => 'v4'}, @twitter.get(:Users, k + '4')) # Written
     assert_equal({'body' => 'v'}, @twitter.get(:Statuses, k + '3')) # Written
     assert_equal({}, @twitter.get(:Users, k + '1')) # Removed
+
+    assert_equal({'body' => 'v2', 'user' => 'v2'}.keys.sort, @twitter.get(:Users, k + '2').timestamps.keys.sort) # Written
+    assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}.keys.sort, @twitter.get(:Users, k + '3').timestamps.keys.sort) # Written and compacted
+    assert_equal({'body' => 'v4', 'user' => 'v4'}.keys.sort, @twitter.get(:Users, k + '4').timestamps.keys.sort) # Written
+    assert_equal({'body' => 'v'}.keys.sort, @twitter.get(:Statuses, k + '3').timestamps.keys.sort) # Written
   end
 
   def test_complain_about_nil_key

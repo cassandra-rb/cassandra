@@ -22,7 +22,7 @@ class Cassandra
       case $1
       when "LongType" then Long
       when "LexicalUUIDType", "TimeUUIDType" then SimpleUUID::UUID
-      else 
+      else
         String # UTF8, Ascii, Bytes, anything else
       end
     end
@@ -41,13 +41,13 @@ class Cassandra
     end
 
     def multi_columns_to_hash!(column_family, hash)
-      hash.each do |key, columns| 
+      hash.each do |key, columns|
         hash[key] = columns_to_hash(column_family, columns)
       end
     end
 
     def multi_sub_columns_to_hash!(column_family, hash)
-      hash.each do |key, sub_columns| 
+      hash.each do |key, sub_columns|
         hash[key] = sub_columns_to_hash(column_family, sub_columns)
       end
     end
@@ -64,11 +64,11 @@ class Cassandra
       hash = OrderedHash.new
       Array(columns).each do |c|
         c = c.super_column || c.column if c.is_a?(CassandraThrift::ColumnOrSuperColumn)
-        hash[column_name_class.new(c.name)] = case c
-        when CassandraThrift::SuperColumn            
-          columns_to_hash_for_classes(c.columns, sub_column_name_class) # Pop the class stack, and recurse
+        case c
+        when CassandraThrift::SuperColumn
+          hash.[]=(column_name_class.new(c.name), columns_to_hash_for_classes(c.columns, sub_column_name_class)) # Pop the class stack, and recurse
         when CassandraThrift::Column
-          c.value
+          hash.[]=(column_name_class.new(c.name), c.value, c.timestamp)
         end
       end
       hash
