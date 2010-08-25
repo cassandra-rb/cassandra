@@ -5,7 +5,7 @@ class OrderedHashTestInt < Test::Unit::TestCase
     @keys =   %w( blue   green  red    pink   orange )
     @values = %w( 000099 009900 aa0000 cc0066 cc6633 )
     @hash = Hash.new
-    @ordered_hash = Cassandra::OrderedHashInt.new
+    @ordered_hash = Cassandra::OrderedHash.new
 
     @keys.each_with_index do |key, index|
       @hash[key] = @values[index]
