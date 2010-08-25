@@ -2,9 +2,9 @@
 class Cassandra
   # Hash is ordered in Ruby 1.9!
   if RUBY_VERSION >= '1.9'
-    OrderedHash = ::Hash
+    OrderedHashInt = ::Hash
   else
-    class OrderedHash < Hash #:nodoc:
+    class OrderedHashInt < Hash #:nodoc:
       def initialize(*args, &block)
         super
         @keys = []
@@ -52,7 +52,7 @@ class Cassandra
         end
         super
       end
-      
+
       def delete_if
         super
         sync_keys!
@@ -127,15 +127,74 @@ class Cassandra
         self
       end
 
-      def inspect
-        "#<OrderedHash #{super}>"
-      end
-
     private
 
       def sync_keys!
         @keys.delete_if {|k| !has_key?(k)}
       end
+    end
+  end
+
+  class OrderedHash < OrderedHashInt #:nodoc:
+    def initialize(*args, &block)
+      @timestamps = Hash.new
+      super
+    end
+
+    def initialize_copy(other)
+      @timestamps = other.timestamps
+      super
+    end
+
+    def []=(key, value, timestamp = nil)
+      @timestamps[key] = timestamp
+      super(key, value)
+    end
+
+    def delete(key)
+      @timestamps.delete(key)
+      super
+    end
+
+    def delete_if
+      @timestamps.delete_if
+      super
+    end
+
+    def reject!
+      @timestamps.reject!
+      super
+    end
+
+    def timestamps
+      @timestamps.dup
+    end
+
+    def clear
+      @timestamps.clear
+      super
+    end
+
+    def shift
+      k, v = super
+      @timestamps.delete(k)
+      [k, v]
+    end
+
+    def replace(other)
+      @timestamps = other.timestamps
+      super
+    end
+
+    def inspect
+      "#<OrderedHash #{super}\n#{@timestamps.inspect}>"
+    end
+
+  private
+
+    def sync_keys!
+      @timestamps.delete_if {|k,v| !has_key?(k)}
+      super
     end
   end
 end
