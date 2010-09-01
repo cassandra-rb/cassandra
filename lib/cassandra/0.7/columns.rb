@@ -1,3 +1,16 @@
+# THIS IS FILTHY
+module CassandraThrift
+  class Column
+    def timestamp
+      clock.timestamp
+    end
+    
+    def timestamp=(ts)
+      clock.timestamp = ts
+    end
+  end
+end
+
 class Cassandra
   # A bunch of crap, mostly related to introspecting on column types
   module Columns #:nodoc:
