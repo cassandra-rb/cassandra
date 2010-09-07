@@ -39,7 +39,7 @@ class Cassandra
   end
 
   def ring
-    client.describe_ring(@keyspace)
+    client.describe_ring(@keyspace).uniq
   end
 
   def partitioner
