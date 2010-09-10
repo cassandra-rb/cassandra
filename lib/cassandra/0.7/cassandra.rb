@@ -154,7 +154,7 @@ class Cassandra
 
   def all_nodes
     if @auto_discover_nodes && !@keyspace.eql?("system")
-      ips = (new_client.describe_ring(@keyspace).map {|range| range.endpoints}).flatten
+      ips = (new_client.describe_ring(@keyspace).map {|range| range.endpoints}).flatten.uniq
       port = @servers.first.split(':').last
       ips.map{|ip| "#{ip}:#{port}" }
     else

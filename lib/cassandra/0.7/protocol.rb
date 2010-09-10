@@ -9,7 +9,7 @@ class Cassandra
     end
 
     def _remove(key, column_path, timestamp, consistency_level)
-      client.remove(key, column_path, timestamp, consistency_level)
+      client.remove(key, column_path, CassandraThrift::Clock.new(:timestamp => timestamp), consistency_level)
     end
 
     def _count_columns(column_family, key, super_column, consistency)
