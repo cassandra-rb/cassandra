@@ -87,13 +87,19 @@ class AbstractThriftClient
                          Thrift::TransportException
                         ].freeze
 
+    DEFAULT_WRAPPED_ERRORS = [
+      Thrift::ApplicationException,
+      Thrift::TransportException,
+    ].freeze
+
     RETRYING_DEFAULTS = {
       :exception_classes => DISCONNECT_ERRORS,
       :randomize_server_list => true,
       :retries => 0,
       :server_retry_period => 1,
       :server_max_requests => nil,
-      :retry_overrides => {}
+      :retry_overrides => {},
+      :wrapped_exception_classes => DEFAULT_WRAPPED_ERRORS
     }.freeze
 
     def initialize(client_class, servers, options = {})
@@ -103,6 +109,14 @@ class AbstractThriftClient
       @request_count = 0
       @max_requests = @options[:server_max_requests]
       @retry_period = @options[:server_retry_period]
+      @options[:wrapped_exception_classes].each do |exception_klass|
+        name = exception_klass.to_s.split('::').last
+        klass = begin
+          @client_class.const_get(name)
+        rescue NameError
+          @client_class.const_set(name, Class.new(exception_klass))
+        end
+      end
       rebuild_live_server_list!
     end
 
@@ -156,7 +170,19 @@ class AbstractThriftClient
       disconnect_on_error!
       tries ||= (@options[:retry_overrides][method_name.to_sym] || @retries) + 1
       tries -= 1
-      tries > 0 ? retry : raise
+      if tries > 0 
+        retry
+      else
+        raise_wrapped_error(e)
+      end
+    end
+
+    def raise_wrapped_error(e)
+      if @options[:wrapped_exception_classes].include?(e.class)
+        raise @client_class.const_get(e.class.to_s.split('::').last), e.message, e.backtrace
+      else
+        raise e
+      end
     end
 
     def send_rpc(method_name, *args)
