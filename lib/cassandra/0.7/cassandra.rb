@@ -9,6 +9,12 @@ class Cassandra
     client.login(@auth_request)
   end
 
+  def inspect
+    "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
+      schema(false).cf_defs.map {|cfdef| ":#{cfdef.name} => #{cfdef.column_type}"}.join(', ')
+    }}, @servers=#{servers.inspect}>"
+  end
+
   def keyspace=(ks)
     client.set_keyspace(ks) if check_keyspace(ks)
     @schema = nil; @keyspace = ks
@@ -129,6 +135,30 @@ class Cassandra
     keyspace = new_name if old_name.eql?(@keyspace)
     @keyspaces = nil
     res
+  end
+
+  # Open a batch operation and yield self. Inserts and deletes will be queued
+  # until the block closes, and then sent atomically to the server.  Supports
+  # the <tt>:consistency</tt> option, which overrides the consistency set in
+  # the individual commands.
+  def batch(options = {})
+    _, _, _, options =
+      extract_and_validate_params(schema.cf_defs.first.name, "", [options], WRITE_DEFAULTS)
+
+    @batch = []
+    yield(self)
+    compact_mutations!
+
+    @batch.each do |mutation|
+      case mutation.first
+      when :remove
+        _remove(*mutation[1])
+      else
+        _mutate(*mutation)
+      end
+    end
+  ensure
+    @batch = nil
   end
 
   protected

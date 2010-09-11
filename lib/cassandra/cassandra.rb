@@ -100,7 +100,7 @@ class Cassandra
   
   def inspect
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
-      schema(false).cf_defs.map {|cfdef| ":#{cfdef.name} => #{cfdef.column_type}"}.join(', ')
+      schema(false).map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
     }}, @servers=#{servers.inspect}>"
   end
 
@@ -237,7 +237,7 @@ class Cassandra
   # the individual commands.
   def batch(options = {})
     _, _, _, options = 
-      extract_and_validate_params(schema.cf_defs.first.name, "", [options], WRITE_DEFAULTS)
+      extract_and_validate_params(schema.keys.first, "", [options], WRITE_DEFAULTS)
 
     @batch = []
     yield(self)
