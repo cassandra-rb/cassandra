@@ -15,19 +15,19 @@ class Cassandra
   end
 
   def keyspaces
-    client.describe_keyspaces.to_a
+    client.describe_keyspaces.to_a.collect {|ksdef| ksdef.name }
   end
 
   def schema(load=true)
     if !load && !@schema
-      []
+      Cassandra::Keyspace.new
     else
       @schema ||= client.describe_keyspace(@keyspace)
     end
   end
 
   def schema_agreement?
-    client.check_schema_agreement().length == 1
+    client.describe_schema_versions().length == 1
   end
 
   def version
@@ -58,7 +58,7 @@ class Cassandra
 
   # Remove all rows in the keyspace.
   def clear_keyspace!
-    schema.keys.each { |column_family| truncate!(column_family) }
+    schema.cf_defs.each { |cfdef| truncate!(cfdef.name) }
   end
 
 ### Read

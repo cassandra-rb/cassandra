@@ -5,15 +5,15 @@ class Cassandra
     private
 
     def is_super(column_family)
-      @is_super[column_family] ||= column_family_property(column_family, 'Type') == "Super"
+      @is_super[column_family] ||= column_family_property(column_family, 'column_type') == "Super"
     end
 
     def column_name_class(column_family)
-      @column_name_class[column_family] ||= column_name_class_for_key(column_family, "CompareWith")
+      @column_name_class[column_family] ||= column_name_class_for_key(column_family, "comparator_type")
     end
 
     def sub_column_name_class(column_family)
-      @sub_column_name_class[column_family] ||= column_name_class_for_key(column_family, "CompareSubcolumnsWith")
+      @sub_column_name_class[column_family] ||= column_name_class_for_key(column_family, "subcomparator_type")
     end
 
     def column_name_class_for_key(column_family, comparator_key)
@@ -28,10 +28,11 @@ class Cassandra
     end
 
     def column_family_property(column_family, key)
-      unless schema[column_family]
+      cfdef = schema.cf_defs.find {|cfdef| cfdef.name == column_family }
+      unless cfdef
         raise AccessError, "Invalid column family \"#{column_family}\""
       end
-      schema[column_family][key]
+      cfdef.send(key)
     end
 
     def multi_column_to_hash!(hash)
