@@ -70,7 +70,7 @@ class AbstractThriftClient
     @connection.connect!
     @client = @client_class.new(@options[:protocol].new(@connection.transport, *@options[:protocol_extra_params]))
   rescue Thrift::TransportException, Errno::ECONNREFUSED
-    @transport.close rescue nil
+    @transport.close rescue nil #TODO remove this and get more specific
     retry
   end
 
@@ -81,7 +81,7 @@ class AbstractThriftClient
       @live_server_list.unshift(@current_server)
     end
 
-    @connection.close rescue nil
+    @connection.close rescue nil #TODO
     @client = nil
     @current_server = nil
     @request_count = 0
