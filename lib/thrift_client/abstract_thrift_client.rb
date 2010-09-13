@@ -1,13 +1,4 @@
 class AbstractThriftClient
-  DEFAULTS = {
-    :protocol => Thrift::BinaryProtocol,
-    :protocol_extra_params => [],
-    :transport => Thrift::Socket,
-    :transport_wrapper => Thrift::FramedTransport,
-    :raise => true,
-    :defaults => {}
-  }
-
   DISCONNECT_ERRORS = [
     IOError,
     Thrift::Exception,
@@ -21,17 +12,20 @@ class AbstractThriftClient
     Thrift::TransportException,
   ]
 
-  RETRYING_DEFAULTS = {
+  DEFAULTS = {
+    :protocol => Thrift::BinaryProtocol,
+    :protocol_extra_params => [],
+    :transport => Thrift::Socket,
+    :transport_wrapper => Thrift::FramedTransport,
+    :raise => true,
+    :defaults => {},
     :exception_classes => DISCONNECT_ERRORS,
     :randomize_server_list => true,
     :retries => 0,
     :server_retry_period => 1,
     :server_max_requests => nil,
     :retry_overrides => {},
-    :wrapped_exception_classes => DEFAULT_WRAPPED_ERRORS
-  }
-
-  TIMINGOUT_DEFAULTS = {
+    :wrapped_exception_classes => DEFAULT_WRAPPED_ERRORS,
     :timeout => 1,
     :timeout_overrides => {}
   }
@@ -51,7 +45,6 @@ class AbstractThriftClient
         @client_methods << $1
       end
     end
-    @options = RETRYING_DEFAULTS.merge(@options) # @options is set by super
     @retries = @options[:retries]
     @request_count = 0
     @max_requests = @options[:server_max_requests]
@@ -65,7 +58,6 @@ class AbstractThriftClient
       end
     end
     rebuild_live_server_list!
-    @options = TIMINGOUT_DEFAULTS.merge(@options)
   end
 
   def inspect
