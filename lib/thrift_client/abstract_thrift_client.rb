@@ -45,13 +45,10 @@ class AbstractThriftClient
         @client_methods << $1
       end
     end
-    @retries = @options[:retries]
     @request_count = 0
-    @max_requests = @options[:server_max_requests]
-    @retry_period = @options[:server_retry_period]
     @options[:wrapped_exception_classes].each do |exception_klass|
       name = exception_klass.to_s.split('::').last
-      klass = begin
+      begin
         @client_class.const_get(name)
       rescue NameError
         @client_class.const_set(name, Class.new(exception_klass))
@@ -80,7 +77,7 @@ class AbstractThriftClient
   def disconnect!
     # Keep live servers in the list if we have a retry period. Otherwise,
     # always eject, because we will always re-add them.
-    if @retry_period && @current_server
+    if @options[:server_retry_period] && @current_server
       @live_server_list.unshift(@current_server)
     end
 
@@ -93,8 +90,8 @@ class AbstractThriftClient
   private
 
   def next_server
-    if @retry_period
-      rebuild_live_server_list! if Time.now > @last_rebuild + @retry_period
+    if @options[:server_retry_period]
+      rebuild_live_server_list! if Time.now > @last_rebuild + @options[:server_retry_period]
       raise ThriftClient::NoServersAvailable, "No live servers in #{@server_list.inspect} since #{@last_rebuild.inspect}." if @live_server_list.empty?
     elsif @live_server_list.empty?
       rebuild_live_server_list!
@@ -112,7 +109,7 @@ class AbstractThriftClient
   end
 
   def handled_proxy(method_name, *args)
-    disconnect_on_max! if @max_requests and @request_count >= @max_requests
+    disconnect_on_max! if @options[:server_max_requests] && @request_count >= @options[:server_max_requests]
     begin
       proxy(method_name, *args)
     rescue Exception => e
@@ -131,7 +128,7 @@ class AbstractThriftClient
     send_rpc(method_name, *args)
   rescue *@options[:exception_classes] => e
     disconnect_on_error!
-    tries ||= (@options[:retry_overrides][method_name.to_sym] || @retries) + 1
+    tries ||= (@options[:retry_overrides][method_name.to_sym] || @options[:retries]) + 1
     tries -= 1
     if tries > 0 
       retry
