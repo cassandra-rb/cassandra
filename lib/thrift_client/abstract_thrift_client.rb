@@ -80,17 +80,17 @@ class AbstractThriftClient
 
   module RetryingThriftClient
     DISCONNECT_ERRORS = [
-                         IOError,
-                         Thrift::Exception,
-                         Thrift::ProtocolException,
-                         Thrift::ApplicationException,
-                         Thrift::TransportException
-                        ].freeze
+      IOError,
+      Thrift::Exception,
+      Thrift::ProtocolException,
+      Thrift::ApplicationException,
+      Thrift::TransportException
+    ]
 
     DEFAULT_WRAPPED_ERRORS = [
       Thrift::ApplicationException,
       Thrift::TransportException,
-    ].freeze
+    ]
 
     RETRYING_DEFAULTS = {
       :exception_classes => DISCONNECT_ERRORS,
@@ -100,7 +100,12 @@ class AbstractThriftClient
       :server_max_requests => nil,
       :retry_overrides => {},
       :wrapped_exception_classes => DEFAULT_WRAPPED_ERRORS
-    }.freeze
+    }
+
+    TIMINGOUT_DEFAULTS = {
+      :timeout => 1,
+      :timeout_overrides => {}
+    }
 
     def initialize(client_class, servers, options = {})
       super
@@ -118,6 +123,7 @@ class AbstractThriftClient
         end
       end
       rebuild_live_server_list!
+      @options = TIMINGOUT_DEFAULTS.merge(@options)
     end
 
     def connect!
@@ -200,20 +206,6 @@ class AbstractThriftClient
       @request_count = 0
     end
 
-  end
-
-  module TimingOutThriftClient
-    TIMINGOUT_DEFAULTS = {
-      :timeout => 1,
-      :timeout_overrides => {}
-    }.freeze
-
-    def initialize(client_class, servers, options = {})
-      super
-      @options = TIMINGOUT_DEFAULTS.merge(@options)
-    end
-
-    private
     def post_connect(method_name)
       return unless has_timeouts?
       @client.timeout = @options[:timeout_overrides][method_name.to_sym] || @options[:timeout]

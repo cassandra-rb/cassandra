@@ -17,7 +17,6 @@ class ThriftClient < AbstractThriftClient
   # RetryingThriftClient instead, causes the test suite will break.
   class NoServersAvailable < StandardError; end
   include RetryingThriftClient
-  include TimingOutThriftClient
 
 =begin rdoc
 Create a new ThriftClient instance. Accepts an internal Thrift client class (such as CassandraRb::Client), a list of servers with ports, and optional parameters.
