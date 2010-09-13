@@ -27,8 +27,6 @@ module Thrift
       end
       Fiber.yield
 
-      # Use Thrift::TransportException so the RetryingThriftClient knows to try the next
-      # server instead of raising the error.
       raise Thrift::TransportException, "Unable to connect to #{@host}:#{@port}" unless @connection.connected?
       @connection
     end

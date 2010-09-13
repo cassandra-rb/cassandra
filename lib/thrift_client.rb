@@ -13,10 +13,7 @@ require 'thrift_client/connection'
 require 'thrift_client/abstract_thrift_client'
 
 class ThriftClient < AbstractThriftClient
-  # This error is for backwards compatibility only. If defined in
-  # RetryingThriftClient instead, causes the test suite will break.
   class NoServersAvailable < StandardError; end
-  include RetryingThriftClient
 
 =begin rdoc
 Create a new ThriftClient instance. Accepts an internal Thrift client class (such as CassandraRb::Client), a list of servers with ports, and optional parameters.
