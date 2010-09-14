@@ -47,6 +47,7 @@ class AbstractThriftClient
 
   def initialize(client_class, servers, options = {})
     @options = DEFAULTS.merge(options)
+    @options[:server_retry_period] ||= 0
     @client_class = client_class
     @server_list = Array(servers).collect{|s| Server.new(s)}
     @current_server = @server_list.first
@@ -99,12 +100,8 @@ class AbstractThriftClient
     @server_index ||= 0
     @server_list.length.times do |i|
       cur = (1 + @server_index + i) % @server_list.length
-      if @options[:server_retry_period]
-        if !@server_list[cur].marked_down_at || (@server_list[cur].marked_down_at + @options[:server_retry_period] <= Time.now)
-          @server_index = cur
-          return @server_list[cur]
-        end
-      else
+      if !@server_list[cur].marked_down_at || (@server_list[cur].marked_down_at + @options[:server_retry_period] <= Time.now)
+        @server_index = cur
         return @server_list[cur]
       end
     end
