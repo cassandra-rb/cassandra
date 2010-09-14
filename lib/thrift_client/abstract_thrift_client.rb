@@ -1,4 +1,15 @@
 class AbstractThriftClient
+
+  class Server
+    attr_reader :connection_string
+
+    def initialize(connection_string)
+      @connection_string = connection_string
+    end
+    alias to_s connection_string
+  end
+
+
   DISCONNECT_ERRORS = [
     IOError,
     Thrift::Exception,
@@ -35,7 +46,7 @@ class AbstractThriftClient
   def initialize(client_class, servers, options = {})
     @options = DEFAULTS.merge(options)
     @client_class = client_class
-    @server_list = Array(servers)
+    @server_list = Array(servers).collect{|s| Server.new(s)}
     @current_server = @server_list.first
 
     @client_methods = []
@@ -66,7 +77,7 @@ class AbstractThriftClient
   # call.
   def connect!
     @current_server = next_server
-    @connection = Connection::Factory.create(@options[:transport], @options[:transport_wrapper], @current_server, @options[:timeout])
+    @connection = Connection::Factory.create(@options[:transport], @options[:transport_wrapper], @current_server.connection_string, @options[:timeout])
     @connection.connect!
     @client = @client_class.new(@options[:protocol].new(@connection.transport, *@options[:protocol_extra_params]))
   rescue Thrift::TransportException, Errno::ECONNREFUSED
