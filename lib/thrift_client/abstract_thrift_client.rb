@@ -111,29 +111,28 @@ class AbstractThriftClient
   def handled_proxy(method_name, *args)
     disconnect_on_max! if @options[:server_max_requests] && @request_count >= @options[:server_max_requests]
     begin
-      proxy(method_name, *args)
+      connect! unless @client
+      post_connect(method_name)
+      send_rpc(method_name, *args)
+    rescue *@options[:exception_classes] => e
+      disconnect_on_error!
+      tries ||= (@options[:retry_overrides][method_name.to_sym] || @options[:retries]) + 1
+      tries -= 1
+      if tries > 0
+        retry
+      else
+        raise_or_default(e, method_name)
+      end
     rescue Exception => e
-      handle_exception(e, method_name, args)
+      raise_or_default(e, method_name)
     end
   end
 
-  def handle_exception(e, method_name, args=nil)
-    raise e if @options[:raise]
-    @options[:defaults][method_name.to_sym]
-  end
-
-  def proxy(method_name, *args)
-    connect! unless @client
-    post_connect(method_name)
-    send_rpc(method_name, *args)
-  rescue *@options[:exception_classes] => e
-    disconnect_on_error!
-    tries ||= (@options[:retry_overrides][method_name.to_sym] || @options[:retries]) + 1
-    tries -= 1
-    if tries > 0 
-      retry
-    else
+  def raise_or_default(e, method_name)
+    if @options[:raise]
       raise_wrapped_error(e)
+    else
+      @options[:defaults][method_name.to_sym]
     end
   end
 

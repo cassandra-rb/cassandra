@@ -44,21 +44,6 @@ class ThriftClientTest < Test::Unit::TestCase
     end
   end
 
-  def test_handle_exception_is_called_once_when_retrying
-    client = ThriftClient.new(Greeter::Client, @servers.first, @options.merge(:raise => false, :retries => 1))
-    client.options[:exception_classes] += [ThriftClient::NoServersAvailable]
-    singleton_class = (class << client; self end)
-
-    times_called = 0
-    singleton_class.send :define_method, :handle_exception do |*args|
-      times_called += 1
-      raise IOError
-    end
-
-    assert_raises(IOError) { client.greeting('someone') }
-    assert_equal 1, times_called
-  end
-
   def test_retries_correct_number_of_times
     stub_server(@port) do |socket|
       opts = @options.merge(:timeout => @timeout, :retries => 4, :server_retry_period => nil)
