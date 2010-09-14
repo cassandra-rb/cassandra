@@ -75,7 +75,7 @@ class AbstractThriftClient
   # called as the connection will be made on the first RPC method
   # call.
   def connect!
-    @current_server = next_server
+    @current_server = next_live_server
     @connection = Connection::Factory.create(@options[:transport], @options[:transport_wrapper], @current_server.connection_string, @options[:timeout])
     @connection.connect!
     @client = @client_class.new(@options[:protocol].new(@connection.transport, *@options[:protocol_extra_params]))
@@ -99,7 +99,7 @@ class AbstractThriftClient
 
   private
 
-  def next_server
+  def next_live_server
     if @options[:server_retry_period]
       rebuild_live_server_list! if Time.now > @last_rebuild + @options[:server_retry_period]
       raise ThriftClient::NoServersAvailable, "No live servers in #{@server_list.inspect} since #{@last_rebuild.inspect}." if @live_server_list.empty?
