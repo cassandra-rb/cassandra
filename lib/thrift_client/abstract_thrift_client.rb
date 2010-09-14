@@ -112,8 +112,11 @@ class AbstractThriftClient
     disconnect_on_max! if @options[:server_max_requests] && @request_count >= @options[:server_max_requests]
     begin
       connect! unless @client
-      post_connect(method_name)
-      send_rpc(method_name, *args)
+      if has_timeouts?
+        @client.timeout = @options[:timeout_overrides][method_name.to_sym] || @options[:timeout]
+      end
+      @request_count += 1
+      @client.send(method_name, *args)
     rescue *@options[:exception_classes] => e
       disconnect_on_error!
       tries ||= (@options[:retry_overrides][method_name.to_sym] || @options[:retries]) + 1
@@ -144,11 +147,6 @@ class AbstractThriftClient
     end
   end
 
-  def send_rpc(method_name, *args)
-    @request_count += 1
-    @client.send(method_name, *args)
-  end
-
   def disconnect_on_max!
     @live_server_list.push(@current_server)
     disconnect_on_error!
@@ -161,25 +159,16 @@ class AbstractThriftClient
     @request_count = 0
   end
 
-  def post_connect(method_name)
-    return unless has_timeouts?
-    @client.timeout = @options[:timeout_overrides][method_name.to_sym] || @options[:timeout]
-  end
-
   def has_timeouts?
-    @has_timeouts ||= has_timeouts!
-  end
-
-  def has_timeouts!
-    @options[:timeout_overrides].any? && transport_can_timeout?
+    @has_timeouts ||= @options[:timeout_overrides].any? && transport_can_timeout?
   end
 
   def transport_can_timeout?
-      if (@options[:transport_wrapper] || @options[:transport]).method_defined?(:timeout=)
-        true
-      else
-        warn "ThriftClient: Timeout overrides have no effect with with transport type #{(@options[:transport_wrapper] || @options[:transport])}"
-        false
-      end
+    if (@options[:transport_wrapper] || @options[:transport]).method_defined?(:timeout=)
+      true
+    else
+      warn "ThriftClient: Timeout overrides have no effect with with transport type #{(@options[:transport_wrapper] || @options[:transport])}"
+      false
     end
+  end
 end
