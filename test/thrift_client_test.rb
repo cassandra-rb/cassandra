@@ -32,12 +32,6 @@ class ThriftClientTest < Test::Unit::TestCase
     end
   end
 
-  def test_non_random_fall_through
-    assert_nothing_raised do
-      ThriftClient.new(Greeter::Client, @servers, @options.merge(:randomize_server_list => false)).greeting("someone")
-    end
-  end
-
   def test_dont_raise
     assert_nothing_raised do
       ThriftClient.new(Greeter::Client, @servers.first, @options.merge(:raise => false)).greeting("someone")

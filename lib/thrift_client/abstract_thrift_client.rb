@@ -31,7 +31,6 @@ class AbstractThriftClient
     :raise => true,
     :defaults => {},
     :exception_classes => DISCONNECT_ERRORS,
-    :randomize_server_list => true,
     :retries => 0,
     :server_retry_period => 1,
     :server_max_requests => nil,
@@ -112,11 +111,7 @@ class AbstractThriftClient
 
   def rebuild_live_server_list!
     @last_rebuild = Time.now
-    if @options[:randomize_server_list]
-      @live_server_list = @server_list.sort_by { rand }
-    else
-      @live_server_list = @server_list.dup
-    end
+    @live_server_list = @server_list.sort_by { rand }
   end
 
   def handled_proxy(method_name, *args)
