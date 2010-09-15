@@ -49,7 +49,7 @@ class AbstractThriftClient
     @options = DEFAULTS.merge(options)
     @options[:server_retry_period] ||= 0
     @client_class = client_class
-    @server_list = Array(servers).collect{|s| Server.new(s)}
+    @server_list = Array(servers).collect{|s| Server.new(s)}.sort_by { rand }
     @current_server = @server_list.first
 
     @client_methods = []
