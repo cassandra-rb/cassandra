@@ -82,9 +82,6 @@ class AbstractThriftClient
     @connection = Connection::Factory.create(@options[:transport], @options[:transport_wrapper], @current_server.connection_string, @options[:timeout])
     @connection.connect!
     @client = @client_class.new(@options[:protocol].new(@connection.transport, *@options[:protocol_extra_params]))
-  rescue Thrift::TransportException, Errno::ECONNREFUSED
-    disconnect_on_error!
-    retry
   end
 
   def disconnect!
