@@ -156,7 +156,7 @@ class ThriftClientTest < Test::Unit::TestCase
   end
 
   def test_server_max_requests_with_downed_servers
-    client = ThriftClient.new(Greeter::Client, @servers, @options.merge(:server_max_requests => 2, :retries => 1))
+    client = ThriftClient.new(Greeter::Client, @servers, @options.merge(:server_max_requests => 2, :retries => 2))
     client.greeting("someone")
     internal_client = client.client
     client.greeting("someone")
