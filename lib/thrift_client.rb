@@ -24,7 +24,7 @@ Valid optional parameters are:
 <tt>:protocol_extra_params</tt>:: An array of additional parameters to pass to the protocol initialization call. Defaults to <tt>[]</tt>.
 <tt>:transport</tt>:: Which Thrift transport to use. Defaults to <tt>Thrift::Socket</tt>.
 <tt>:transport_wrapper</tt>:: Which Thrift transport wrapper to use. Defaults to <tt>Thrift::FramedTransport</tt>.
-<tt>:exception_classes</tt>:: Which exceptions to catch and retry when sending a request. Defaults to <tt>[IOError, Thrift::Exception, Thrift::ProtocolException, Thrift::ApplicationException, Thrift::TransportException, NoServersAvailable]</tt>
+<tt>:exception_classes</tt>:: Which exceptions to catch and retry when sending a request. Defaults to <tt>[IOError, Thrift::Exception, Thrift::ApplicationException, Thrift::TransportException, NoServersAvailable]</tt>
 <tt>:raise</tt>:: Whether to reraise errors if no responsive servers are found. Defaults to <tt>true</tt>.
 <tt>:retries</tt>:: How many times to retry a request. Defaults to 0.
 <tt>:server_retry_period</tt>:: How many seconds to wait before trying to reconnect after marking all servers as down. Defaults to <tt>1</tt>. Set to <tt>nil</tt> to retry endlessly.

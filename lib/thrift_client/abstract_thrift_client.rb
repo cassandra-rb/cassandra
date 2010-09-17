@@ -16,7 +16,6 @@ class AbstractThriftClient
   DISCONNECT_ERRORS = [
     IOError,
     Thrift::Exception,
-    Thrift::ProtocolException,
     Thrift::ApplicationException,
     Thrift::TransportException
   ]
