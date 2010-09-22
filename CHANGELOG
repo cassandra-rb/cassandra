@@ -1,3 +1,5 @@
+v0.4.7 fix thrift gem dependency
+
 v0.4.6 Add support for oneway methods.
 
 v0.4.5. Fix broken retries.

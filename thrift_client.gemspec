@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{thrift_client}
-  s.version = "0.4.6"
+  s.version = "0.4.7"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0.8") if s.respond_to? :required_rubygems_version=
   s.authors = ["Evan Weaver, Ryan King, Jeff Hodges"]
-  s.date = %q{2010-08-02}
+  s.date = %q{2010-09-22}
   s.description = %q{A Thrift client wrapper that encapsulates some common failover behavior.}
   s.email = %q{}
   s.extra_rdoc_files = ["CHANGELOG", "LICENSE", "README.rdoc", "lib/thrift_client.rb", "lib/thrift_client/abstract_thrift_client.rb", "lib/thrift_client/connection.rb", "lib/thrift_client/connection/base.rb", "lib/thrift_client/connection/factory.rb", "lib/thrift_client/connection/http.rb", "lib/thrift_client/connection/socket.rb", "lib/thrift_client/event_machine.rb", "lib/thrift_client/simple.rb", "lib/thrift_client/thrift.rb"]
@@ -24,11 +24,11 @@ Gem::Specification.new do |s|
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      s.add_runtime_dependency(%q<thrift>, [">= 0"])
+      s.add_runtime_dependency(%q<thrift>, ["~> 0.2.0"])
     else
-      s.add_dependency(%q<thrift>, [">= 0"])
+      s.add_dependency(%q<thrift>, ["~> 0.2.0"])
     end
   else
-    s.add_dependency(%q<thrift>, [">= 0"])
+    s.add_dependency(%q<thrift>, ["~> 0.2.0"])
   end
 end
