@@ -1,8 +1,21 @@
 class AbstractThriftClient
+
+  class Server
+    attr_reader :connection_string, :marked_down_at
+
+    def initialize(connection_string)
+      @connection_string = connection_string
+    end
+    alias to_s connection_string
+
+    def mark_down!
+      @marked_down_at = Time.now
+    end
+  end
+
   DISCONNECT_ERRORS = [
     IOError,
     Thrift::Exception,
-    Thrift::ProtocolException,
     Thrift::ApplicationException,
     Thrift::TransportException
   ]
@@ -20,7 +33,6 @@ class AbstractThriftClient
     :raise => true,
     :defaults => {},
     :exception_classes => DISCONNECT_ERRORS,
-    :randomize_server_list => true,
     :retries => 0,
     :server_retry_period => 1,
     :server_max_requests => nil,
@@ -34,8 +46,9 @@ class AbstractThriftClient
 
   def initialize(client_class, servers, options = {})
     @options = DEFAULTS.merge(options)
+    @options[:server_retry_period] ||= 0
     @client_class = client_class
-    @server_list = Array(servers)
+    @server_list = Array(servers).collect{|s| Server.new(s)}.sort_by { rand }
     @current_server = @server_list.first
 
     @client_methods = []
@@ -54,7 +67,6 @@ class AbstractThriftClient
         @client_class.const_set(name, Class.new(exception_klass))
       end
     end
-    rebuild_live_server_list!
   end
 
   def inspect
@@ -65,22 +77,13 @@ class AbstractThriftClient
   # called as the connection will be made on the first RPC method
   # call.
   def connect!
-    @current_server = next_server
-    @connection = Connection::Factory.create(@options[:transport], @options[:transport_wrapper], @current_server, @options[:timeout])
+    @current_server = next_live_server
+    @connection = Connection::Factory.create(@options[:transport], @options[:transport_wrapper], @current_server.connection_string, @options[:timeout])
     @connection.connect!
     @client = @client_class.new(@options[:protocol].new(@connection.transport, *@options[:protocol_extra_params]))
-  rescue Thrift::TransportException, Errno::ECONNREFUSED
-    @transport.close rescue nil #TODO remove this and get more specific
-    retry
   end
 
   def disconnect!
-    # Keep live servers in the list if we have a retry period. Otherwise,
-    # always eject, because we will always re-add them.
-    if @options[:server_retry_period] && @current_server
-      @live_server_list.unshift(@current_server)
-    end
-
     @connection.close rescue nil #TODO
     @client = nil
     @current_server = nil
@@ -89,23 +92,16 @@ class AbstractThriftClient
 
   private
 
-  def next_server
-    if @options[:server_retry_period]
-      rebuild_live_server_list! if Time.now > @last_rebuild + @options[:server_retry_period]
-      raise ThriftClient::NoServersAvailable, "No live servers in #{@server_list.inspect} since #{@last_rebuild.inspect}." if @live_server_list.empty?
-    elsif @live_server_list.empty?
-      rebuild_live_server_list!
+  def next_live_server
+    @server_index ||= 0
+    @server_list.length.times do |i|
+      cur = (1 + @server_index + i) % @server_list.length
+      if !@server_list[cur].marked_down_at || (@server_list[cur].marked_down_at + @options[:server_retry_period] <= Time.now)
+        @server_index = cur
+        return @server_list[cur]
+      end
     end
-    @live_server_list.pop
-  end
-
-  def rebuild_live_server_list!
-    @last_rebuild = Time.now
-    if @options[:randomize_server_list]
-      @live_server_list = @server_list.sort_by { rand }
-    else
-      @live_server_list = @server_list.dup
-    end
+    raise ThriftClient::NoServersAvailable, "No live servers in #{@server_list.inspect} since #{@last_rebuild.inspect}."
   end
 
   def handled_proxy(method_name, *args)
@@ -148,15 +144,12 @@ class AbstractThriftClient
   end
 
   def disconnect_on_max!
-    @live_server_list.push(@current_server)
-    disconnect_on_error!
+    disconnect!
   end
 
   def disconnect_on_error!
-    @connection.close rescue nil
-    @client = nil
-    @current_server = nil
-    @request_count = 0
+    @current_server.mark_down!
+    disconnect!
   end
 
   def has_timeouts?

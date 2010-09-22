@@ -1,4 +1,5 @@
 v0.5-dev Add support for wrapping exception, so that Thrift::Foo can become Greeter::Foo.
+Make server_retry_period work the way you expect.
 
 v0.4.7 fix thrift gem dependency
 

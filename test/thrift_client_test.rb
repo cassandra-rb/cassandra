@@ -32,12 +32,6 @@ class ThriftClientTest < Test::Unit::TestCase
     end
   end
 
-  def test_non_random_fall_through
-    assert_nothing_raised do
-      ThriftClient.new(Greeter::Client, @servers, @options.merge(:randomize_server_list => false)).greeting("someone")
-    end
-  end
-
   def test_dont_raise
     assert_nothing_raised do
       ThriftClient.new(Greeter::Client, @servers.first, @options.merge(:raise => false)).greeting("someone")
@@ -76,7 +70,7 @@ class ThriftClientTest < Test::Unit::TestCase
   def test_random_fall_through
     assert_nothing_raised do
       10.times do
-        client = ThriftClient.new(Greeter::Client, @servers, @options)
+        client = ThriftClient.new(Greeter::Client, @servers, @options.merge(:retries => 2))
         client.greeting("someone")
         client.disconnect!
       end
@@ -90,7 +84,7 @@ class ThriftClientTest < Test::Unit::TestCase
   end
 
   def test_no_servers_eventually_raise
-    client = ThriftClient.new(Greeter::Client, @servers[0,2], @options)
+    client = ThriftClient.new(Greeter::Client, @servers[0,2], @options.merge(:retries => 2))
     assert_raises(ThriftClient::NoServersAvailable) do
       client.greeting("someone")
       client.disconnect!
@@ -113,10 +107,11 @@ class ThriftClientTest < Test::Unit::TestCase
   def test_buffered_transport_timeout
     stub_server(@port) do |socket|
       measurement = Benchmark.measure do
+        client = ThriftClient.new(Greeter::Client, "127.0.0.1:#{@port}",
+          @options.merge(:timeout => @timeout, :transport_wrapper => Thrift::BufferedTransport)
+        )
         assert_raises(Greeter::Client::TransportException) do
-          ThriftClient.new(Greeter::Client, "127.0.0.1:#{@port}",
-            @options.merge(:timeout => @timeout, :transport_wrapper => Thrift::BufferedTransport)
-          ).greeting("someone")
+          client.greeting("someone")
         end
       end
       assert((measurement.real > @timeout), "#{measurement.real} < #{@timeout}")
@@ -128,10 +123,11 @@ class ThriftClientTest < Test::Unit::TestCase
     log_timeout = @timeout * 4
     stub_server(@port) do |socket|
       measurement = Benchmark.measure do
+        client = ThriftClient.new(Greeter::Client, "127.0.0.1:#{@port}",
+          @options.merge(:timeout => @timeout, :timeout_overrides => {:greeting => log_timeout}, :transport_wrapper => Thrift::BufferedTransport)
+        )
         assert_raises(Greeter::Client::TransportException) do
-          ThriftClient.new(Greeter::Client, "127.0.0.1:#{@port}",
-            @options.merge(:timeout => @timeout, :timeout_overrides => {:greeting => log_timeout}, :transport_wrapper => Thrift::BufferedTransport)
-          ).greeting("someone")
+          client.greeting("someone")
         end
       end
       assert((measurement.real > log_timeout), "#{measurement.real} < #{log_timeout}")
@@ -139,28 +135,28 @@ class ThriftClientTest < Test::Unit::TestCase
   end
 
   def test_retry_period
-    client = ThriftClient.new(Greeter::Client, @servers[0,2], @options.merge(:server_retry_period => 1))
+    client = ThriftClient.new(Greeter::Client, @servers[0,2], @options.merge(:server_retry_period => 1, :retries => 2))
     assert_raises(ThriftClient::NoServersAvailable) { client.greeting("someone") }
     sleep 1.1
     assert_raises(ThriftClient::NoServersAvailable) { client.greeting("someone") }
   end
 
   def test_client_with_retry_period_drops_servers
-    client = ThriftClient.new(Greeter::Client, @servers[0,2], @options.merge(:server_retry_period => 1))
+    client = ThriftClient.new(Greeter::Client, @servers[0,2], @options.merge(:server_retry_period => 1, :retries => 2))
     assert_raises(ThriftClient::NoServersAvailable) { client.greeting("someone") }
     sleep 1.1
     assert_raises(ThriftClient::NoServersAvailable) { client.greeting("someone") }
   end
 
   def test_oneway_method
-    client = ThriftClient.new(Greeter::Client, @servers, @options.merge(:server_max_requests => 2))
+    client = ThriftClient.new(Greeter::Client, @servers, @options.merge(:server_max_requests => 2, :retries => 2))
     assert_nothing_raised do
       response = client.yo("dude")
     end
   end
 
   def test_server_max_requests_with_downed_servers
-    client = ThriftClient.new(Greeter::Client, @servers, @options.merge(:server_max_requests => 2))
+    client = ThriftClient.new(Greeter::Client, @servers, @options.merge(:server_max_requests => 2, :retries => 2))
     client.greeting("someone")
     internal_client = client.client
     client.greeting("someone")
