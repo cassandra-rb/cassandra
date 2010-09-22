@@ -20,17 +20,12 @@ module CassandraThrift
 
     module IndexOperator
       EQ = 0
-      VALUE_MAP = {0 => "EQ"}
-      VALID_VALUES = Set.new([EQ]).freeze
-    end
-
-    module AccessLevel
-      NONE = 0
-      READONLY = 16
-      READWRITE = 32
-      FULL = 64
-      VALUE_MAP = {0 => "NONE", 16 => "READONLY", 32 => "READWRITE", 64 => "FULL"}
-      VALID_VALUES = Set.new([NONE, READONLY, READWRITE, FULL]).freeze
+      GTE = 1
+      GT = 2
+      LTE = 3
+      LT = 4
+      VALUE_MAP = {0 => "EQ", 1 => "GTE", 2 => "GT", 3 => "LTE", 4 => "LT"}
+      VALID_VALUES = Set.new([EQ, GTE, GT, LTE, LT]).freeze
     end
 
     module IndexType
@@ -572,7 +567,7 @@ module CassandraThrift
 
     end
 
-    # Authentication requests can contain any data, dependent on the AuthenticationBackend used
+    # Authentication requests can contain any data, dependent on the IAuthenticator used
     class AuthenticationRequest
       include ::Thrift::Struct
       CREDENTIALS = 1
@@ -633,8 +628,10 @@ module CassandraThrift
       READ_REPAIR_CHANCE = 12
       COLUMN_METADATA = 13
       GC_GRACE_SECONDS = 14
+      DEFAULT_VALIDATION_CLASS = 15
+      ID = 16
 
-      ::Thrift::Struct.field_accessor self, :keyspace, :name, :column_type, :clock_type, :comparator_type, :subcomparator_type, :reconciler, :comment, :row_cache_size, :preload_row_cache, :key_cache_size, :read_repair_chance, :column_metadata, :gc_grace_seconds
+      ::Thrift::Struct.field_accessor self, :keyspace, :name, :column_type, :clock_type, :comparator_type, :subcomparator_type, :reconciler, :comment, :row_cache_size, :preload_row_cache, :key_cache_size, :read_repair_chance, :column_metadata, :gc_grace_seconds, :default_validation_class, :id
       FIELDS = {
         KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
         NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
@@ -649,7 +646,9 @@ module CassandraThrift
         KEY_CACHE_SIZE => {:type => ::Thrift::Types::DOUBLE, :name => 'key_cache_size', :default => 200000, :optional => true},
         READ_REPAIR_CHANCE => {:type => ::Thrift::Types::DOUBLE, :name => 'read_repair_chance', :default => 1, :optional => true},
         COLUMN_METADATA => {:type => ::Thrift::Types::LIST, :name => 'column_metadata', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnDef}, :optional => true},
-        GC_GRACE_SECONDS => {:type => ::Thrift::Types::I32, :name => 'gc_grace_seconds', :optional => true}
+        GC_GRACE_SECONDS => {:type => ::Thrift::Types::I32, :name => 'gc_grace_seconds', :optional => true},
+        DEFAULT_VALIDATION_CLASS => {:type => ::Thrift::Types::STRING, :name => 'default_validation_class', :optional => true},
+        ID => {:type => ::Thrift::Types::I32, :name => 'id', :optional => true}
       }
 
       def struct_fields; FIELDS; end
