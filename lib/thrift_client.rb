@@ -1,11 +1,6 @@
-if ENV["ANCIENT_THRIFT"]
-  $LOAD_PATH.unshift("/Users/eweaver/p/twitter/rails/vendor/gems/thrift-751142/lib")
-  $LOAD_PATH.unshift("/Users/eweaver/p/twitter/rails/vendor/gems/thrift-751142/ext")
-  require 'thrift'
-else
-  require 'rubygems'
-  require 'thrift'
-end
+require 'rubygems'
+gem 'thrift', '~>0.2.0'
+require 'thrift'
 
 require 'rubygems'
 require 'thrift_client/thrift'
