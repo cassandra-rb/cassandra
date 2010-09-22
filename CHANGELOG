@@ -1,5 +1,7 @@
 v0.5-dev Add support for wrapping exception, so that Thrift::Foo can become Greeter::Foo.
 
+v0.4.7 fix thrift gem dependency
+
 v0.4.6 Add support for oneway methods.
 
 v0.4.5. Fix broken retries.
