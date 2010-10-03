@@ -34,45 +34,23 @@ module CassandraThrift
       VALID_VALUES = Set.new([KEYS]).freeze
     end
 
-    # Encapsulate types of conflict resolution.
-    # 
-    # @param timestamp. User-supplied timestamp. When two columns with this type of clock conflict, the one with the
-    #                   highest timestamp is the one whose value the system will converge to. No other assumptions
-    #                   are made about what the timestamp represents, but using microseconds-since-epoch is customary.
-    class Clock
-      include ::Thrift::Struct
-      TIMESTAMP = 1
-
-      ::Thrift::Struct.field_accessor self, :timestamp
-      FIELDS = {
-        TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'}
-      }
-
-      def struct_fields; FIELDS; end
-
-      def validate
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field timestamp is unset!') unless @timestamp
-      end
-
-    end
-
     # Basic unit of data within a ColumnFamily.
     # @param name, the name by which this column is set and retrieved.  Maximum 64KB long.
     # @param value. The data associated with the name.  Maximum 2GB long, but in practice you should limit it to small numbers of MB (since Thrift must read the full value into memory to operate on it).
-    # @param clock. The clock is used for conflict detection/resolution when two columns with same name need to be compared.
+    # @param timestamp. The timestamp is used for conflict detection/resolution when two columns with same name need to be compared.
     # @param ttl. An optional, positive delay (in seconds) after which the column will be automatically deleted.
     class Column
       include ::Thrift::Struct
       NAME = 1
       VALUE = 2
-      CLOCK = 3
+      TIMESTAMP = 3
       TTL = 4
 
-      ::Thrift::Struct.field_accessor self, :name, :value, :clock, :ttl
+      ::Thrift::Struct.field_accessor self, :name, :value, :timestamp, :ttl
       FIELDS = {
         NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
         VALUE => {:type => ::Thrift::Types::STRING, :name => 'value'},
-        CLOCK => {:type => ::Thrift::Types::STRUCT, :name => 'clock', :class => CassandraThrift::Clock},
+        TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
         TTL => {:type => ::Thrift::Types::I32, :name => 'ttl', :optional => true}
       }
 
@@ -81,7 +59,7 @@ module CassandraThrift
       def validate
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field name is unset!') unless @name
         raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field value is unset!') unless @value
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field clock is unset!') unless @clock
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field timestamp is unset!') unless @timestamp
       end
 
     end
@@ -504,13 +482,13 @@ module CassandraThrift
 
     class Deletion
       include ::Thrift::Struct
-      CLOCK = 1
+      TIMESTAMP = 1
       SUPER_COLUMN = 2
       PREDICATE = 3
 
-      ::Thrift::Struct.field_accessor self, :clock, :super_column, :predicate
+      ::Thrift::Struct.field_accessor self, :timestamp, :super_column, :predicate
       FIELDS = {
-        CLOCK => {:type => ::Thrift::Types::STRUCT, :name => 'clock', :class => CassandraThrift::Clock},
+        TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
         SUPER_COLUMN => {:type => ::Thrift::Types::STRING, :name => 'super_column', :optional => true},
         PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate, :optional => true}
       }
@@ -518,7 +496,7 @@ module CassandraThrift
       def struct_fields; FIELDS; end
 
       def validate
-        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field clock is unset!') unless @clock
+        raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field timestamp is unset!') unless @timestamp
       end
 
     end
@@ -617,10 +595,8 @@ module CassandraThrift
       KEYSPACE = 1
       NAME = 2
       COLUMN_TYPE = 3
-      CLOCK_TYPE = 4
       COMPARATOR_TYPE = 5
       SUBCOMPARATOR_TYPE = 6
-      RECONCILER = 7
       COMMENT = 8
       ROW_CACHE_SIZE = 9
       PRELOAD_ROW_CACHE = 10
@@ -630,17 +606,17 @@ module CassandraThrift
       GC_GRACE_SECONDS = 14
       DEFAULT_VALIDATION_CLASS = 15
       ID = 16
+      MIN_COMPACTION_THRESHOLD = 17
+      MAX_COMPACTION_THRESHOLD = 18
 
-      ::Thrift::Struct.field_accessor self, :keyspace, :name, :column_type, :clock_type, :comparator_type, :subcomparator_type, :reconciler, :comment, :row_cache_size, :preload_row_cache, :key_cache_size, :read_repair_chance, :column_metadata, :gc_grace_seconds, :default_validation_class, :id
+      ::Thrift::Struct.field_accessor self, :keyspace, :name, :column_type, :comparator_type, :subcomparator_type, :comment, :row_cache_size, :preload_row_cache, :key_cache_size, :read_repair_chance, :column_metadata, :gc_grace_seconds, :default_validation_class, :id, :min_compaction_threshold, :max_compaction_threshold
       FIELDS = {
         KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
         NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
         COLUMN_TYPE => {:type => ::Thrift::Types::STRING, :name => 'column_type', :default => %q"Standard", :optional => true},
-        CLOCK_TYPE => {:type => ::Thrift::Types::STRING, :name => 'clock_type', :default => %q"Timestamp", :optional => true},
         COMPARATOR_TYPE => {:type => ::Thrift::Types::STRING, :name => 'comparator_type', :default => %q"BytesType", :optional => true},
-        SUBCOMPARATOR_TYPE => {:type => ::Thrift::Types::STRING, :name => 'subcomparator_type', :default => %q"", :optional => true},
-        RECONCILER => {:type => ::Thrift::Types::STRING, :name => 'reconciler', :default => %q"", :optional => true},
-        COMMENT => {:type => ::Thrift::Types::STRING, :name => 'comment', :default => %q"", :optional => true},
+        SUBCOMPARATOR_TYPE => {:type => ::Thrift::Types::STRING, :name => 'subcomparator_type', :optional => true},
+        COMMENT => {:type => ::Thrift::Types::STRING, :name => 'comment', :optional => true},
         ROW_CACHE_SIZE => {:type => ::Thrift::Types::DOUBLE, :name => 'row_cache_size', :default => 0, :optional => true},
         PRELOAD_ROW_CACHE => {:type => ::Thrift::Types::BOOL, :name => 'preload_row_cache', :default => false, :optional => true},
         KEY_CACHE_SIZE => {:type => ::Thrift::Types::DOUBLE, :name => 'key_cache_size', :default => 200000, :optional => true},
@@ -648,7 +624,9 @@ module CassandraThrift
         COLUMN_METADATA => {:type => ::Thrift::Types::LIST, :name => 'column_metadata', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnDef}, :optional => true},
         GC_GRACE_SECONDS => {:type => ::Thrift::Types::I32, :name => 'gc_grace_seconds', :optional => true},
         DEFAULT_VALIDATION_CLASS => {:type => ::Thrift::Types::STRING, :name => 'default_validation_class', :optional => true},
-        ID => {:type => ::Thrift::Types::I32, :name => 'id', :optional => true}
+        ID => {:type => ::Thrift::Types::I32, :name => 'id', :optional => true},
+        MIN_COMPACTION_THRESHOLD => {:type => ::Thrift::Types::I32, :name => 'min_compaction_threshold', :optional => true},
+        MAX_COMPACTION_THRESHOLD => {:type => ::Thrift::Types::I32, :name => 'max_compaction_threshold', :optional => true}
       }
 
       def struct_fields; FIELDS; end

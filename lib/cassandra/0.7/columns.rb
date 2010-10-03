@@ -1,15 +1,3 @@
-# THIS IS FILTHY
-module CassandraThrift
-  class Column
-    def timestamp
-      clock.timestamp
-    end
-    
-    def timestamp=(ts)
-      clock.timestamp = ts
-    end
-  end
-end
 
 class Cassandra
   # A bunch of crap, mostly related to introspecting on column types
@@ -43,7 +31,7 @@ class Cassandra
           :column => CassandraThrift::Column.new(
             :name      => column_name_class(column_family).new(column_name).to_s,
             :value     => value,
-            :clock     => CassandraThrift::Clock.new(:timestamp => timestamp),
+            :timestamp => timestamp,
             :ttl       => ttl
           )
         )
@@ -59,7 +47,7 @@ class Cassandra
               CassandraThrift::Column.new(
                 :name      => sub_column_name_class(column_family).new(sub_column_name).to_s,
                 :value     => sub_column_value.to_s,
-                :clock     => CassandraThrift::Clock.new(:timestamp => timestamp),
+                :timestamp => timestamp,
                 :ttl       => ttl
               )
             }
