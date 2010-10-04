@@ -11,7 +11,7 @@ class Cassandra
 
   def inspect
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
-      schema(false).cf_defs.map {|cfdef| ":#{cfdef.name} => #{cfdef.column_type}"}.join(', ')
+      Array(schema(false).cf_defs).map {|cfdef| ":#{cfdef.name} => #{cfdef.column_type}"}.join(', ')
     }}, @servers=#{servers.inspect}>"
   end
 

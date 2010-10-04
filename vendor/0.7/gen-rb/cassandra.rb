@@ -187,13 +187,13 @@ require 'cassandra_types'
             return
           end
 
-          def remove(key, column_path, clock, consistency_level)
-            send_remove(key, column_path, clock, consistency_level)
+          def remove(key, column_path, timestamp, consistency_level)
+            send_remove(key, column_path, timestamp, consistency_level)
             recv_remove()
           end
 
-          def send_remove(key, column_path, clock, consistency_level)
-            send_message('remove', Remove_args, :key => key, :column_path => column_path, :clock => clock, :consistency_level => consistency_level)
+          def send_remove(key, column_path, timestamp, consistency_level)
+            send_message('remove', Remove_args, :key => key, :column_path => column_path, :timestamp => timestamp, :consistency_level => consistency_level)
           end
 
           def recv_remove()
@@ -327,6 +327,21 @@ require 'cassandra_types'
             result = receive_message(Describe_partitioner_result)
             return result.success unless result.success.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_partitioner failed: unknown result')
+          end
+
+          def describe_snitch()
+            send_describe_snitch()
+            return recv_describe_snitch()
+          end
+
+          def send_describe_snitch()
+            send_message('describe_snitch', Describe_snitch_args)
+          end
+
+          def recv_describe_snitch()
+            result = receive_message(Describe_snitch_result)
+            return result.success unless result.success.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_snitch failed: unknown result')
           end
 
           def describe_keyspace(keyspace)
@@ -643,7 +658,7 @@ require 'cassandra_types'
             args = read_args(iprot, Remove_args)
             result = Remove_result.new()
             begin
-              @handler.remove(args.key, args.column_path, args.clock, args.consistency_level)
+              @handler.remove(args.key, args.column_path, args.timestamp, args.consistency_level)
             rescue CassandraThrift::InvalidRequestException => ire
               result.ire = ire
             rescue CassandraThrift::UnavailableException => ue
@@ -730,6 +745,13 @@ require 'cassandra_types'
             result = Describe_partitioner_result.new()
             result.success = @handler.describe_partitioner()
             write_result(result, oprot, 'describe_partitioner', seqid)
+          end
+
+          def process_describe_snitch(seqid, iprot, oprot)
+            args = read_args(iprot, Describe_snitch_args)
+            result = Describe_snitch_result.new()
+            result.success = @handler.describe_snitch()
+            write_result(result, oprot, 'describe_snitch', seqid)
           end
 
           def process_describe_keyspace(seqid, iprot, oprot)
@@ -1071,7 +1093,7 @@ require 'cassandra_types'
 
           ::Thrift::Struct.field_accessor self, :keys, :column_parent, :predicate, :consistency_level
           FIELDS = {
-            KEYS => {:type => ::Thrift::Types::SET, :name => 'keys', :element => {:type => ::Thrift::Types::STRING}},
+            KEYS => {:type => ::Thrift::Types::LIST, :name => 'keys', :element => {:type => ::Thrift::Types::STRING}},
             COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
             PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
@@ -1122,7 +1144,7 @@ require 'cassandra_types'
 
           ::Thrift::Struct.field_accessor self, :keys, :column_parent, :predicate, :consistency_level
           FIELDS = {
-            KEYS => {:type => ::Thrift::Types::SET, :name => 'keys', :element => {:type => ::Thrift::Types::STRING}},
+            KEYS => {:type => ::Thrift::Types::LIST, :name => 'keys', :element => {:type => ::Thrift::Types::STRING}},
             COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
             PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
@@ -1319,14 +1341,14 @@ require 'cassandra_types'
           include ::Thrift::Struct
           KEY = 1
           COLUMN_PATH = 2
-          CLOCK = 3
+          TIMESTAMP = 3
           CONSISTENCY_LEVEL = 4
 
-          ::Thrift::Struct.field_accessor self, :key, :column_path, :clock, :consistency_level
+          ::Thrift::Struct.field_accessor self, :key, :column_path, :timestamp, :consistency_level
           FIELDS = {
             KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
             COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => CassandraThrift::ColumnPath},
-            CLOCK => {:type => ::Thrift::Types::STRUCT, :name => 'clock', :class => CassandraThrift::Clock},
+            TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
           }
 
@@ -1335,7 +1357,7 @@ require 'cassandra_types'
           def validate
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field key is unset!') unless @key
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field column_path is unset!') unless @column_path
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field clock is unset!') unless @clock
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field timestamp is unset!') unless @timestamp
             unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
               raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
             end
@@ -1613,6 +1635,36 @@ require 'cassandra_types'
         end
 
         class Describe_partitioner_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+
+          ::Thrift::Struct.field_accessor self, :success
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Describe_snitch_args
+          include ::Thrift::Struct
+
+          FIELDS = {
+
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Describe_snitch_result
           include ::Thrift::Struct
           SUCCESS = 0
 
