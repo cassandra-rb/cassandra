@@ -14,7 +14,7 @@ require 'cassandra_types'
 
           def login(auth_request)
             send_login(auth_request)
-            return recv_login()
+            recv_login()
           end
 
           def send_login(auth_request)
@@ -23,10 +23,9 @@ require 'cassandra_types'
 
           def recv_login()
             result = receive_message(Login_result)
-            return result.success unless result.success.nil?
             raise result.authnx unless result.authnx.nil?
             raise result.authzx unless result.authzx.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'login failed: unknown result')
+            return
           end
 
           def set_keyspace(keyspace)
@@ -117,13 +116,13 @@ require 'cassandra_types'
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'multiget_slice failed: unknown result')
           end
 
-          def multiget_count(keyspace, keys, column_parent, predicate, consistency_level)
-            send_multiget_count(keyspace, keys, column_parent, predicate, consistency_level)
+          def multiget_count(keys, column_parent, predicate, consistency_level)
+            send_multiget_count(keys, column_parent, predicate, consistency_level)
             return recv_multiget_count()
           end
 
-          def send_multiget_count(keyspace, keys, column_parent, predicate, consistency_level)
-            send_message('multiget_count', Multiget_count_args, :keyspace => keyspace, :keys => keys, :column_parent => column_parent, :predicate => predicate, :consistency_level => consistency_level)
+          def send_multiget_count(keys, column_parent, predicate, consistency_level)
+            send_message('multiget_count', Multiget_count_args, :keys => keys, :column_parent => column_parent, :predicate => predicate, :consistency_level => consistency_level)
           end
 
           def recv_multiget_count()
@@ -188,13 +187,13 @@ require 'cassandra_types'
             return
           end
 
-          def remove(key, column_path, clock, consistency_level)
-            send_remove(key, column_path, clock, consistency_level)
+          def remove(key, column_path, timestamp, consistency_level)
+            send_remove(key, column_path, timestamp, consistency_level)
             recv_remove()
           end
 
-          def send_remove(key, column_path, clock, consistency_level)
-            send_message('remove', Remove_args, :key => key, :column_path => column_path, :clock => clock, :consistency_level => consistency_level)
+          def send_remove(key, column_path, timestamp, consistency_level)
+            send_message('remove', Remove_args, :key => key, :column_path => column_path, :timestamp => timestamp, :consistency_level => consistency_level)
           end
 
           def recv_remove()
@@ -238,20 +237,20 @@ require 'cassandra_types'
             return
           end
 
-          def check_schema_agreement()
-            send_check_schema_agreement()
-            return recv_check_schema_agreement()
+          def describe_schema_versions()
+            send_describe_schema_versions()
+            return recv_describe_schema_versions()
           end
 
-          def send_check_schema_agreement()
-            send_message('check_schema_agreement', Check_schema_agreement_args)
+          def send_describe_schema_versions()
+            send_message('describe_schema_versions', Describe_schema_versions_args)
           end
 
-          def recv_check_schema_agreement()
-            result = receive_message(Check_schema_agreement_result)
+          def recv_describe_schema_versions()
+            result = receive_message(Describe_schema_versions_result)
             return result.success unless result.success.nil?
             raise result.ire unless result.ire.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'check_schema_agreement failed: unknown result')
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_schema_versions failed: unknown result')
           end
 
           def describe_keyspaces()
@@ -330,6 +329,21 @@ require 'cassandra_types'
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_partitioner failed: unknown result')
           end
 
+          def describe_snitch()
+            send_describe_snitch()
+            return recv_describe_snitch()
+          end
+
+          def send_describe_snitch()
+            send_message('describe_snitch', Describe_snitch_args)
+          end
+
+          def recv_describe_snitch()
+            result = receive_message(Describe_snitch_result)
+            return result.success unless result.success.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_snitch failed: unknown result')
+          end
+
           def describe_keyspace(keyspace)
             send_describe_keyspace(keyspace)
             return recv_describe_keyspace()
@@ -346,13 +360,13 @@ require 'cassandra_types'
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_keyspace failed: unknown result')
           end
 
-          def describe_splits(keyspace, cfName, start_token, end_token, keys_per_split)
-            send_describe_splits(keyspace, cfName, start_token, end_token, keys_per_split)
+          def describe_splits(cfName, start_token, end_token, keys_per_split)
+            send_describe_splits(cfName, start_token, end_token, keys_per_split)
             return recv_describe_splits()
           end
 
-          def send_describe_splits(keyspace, cfName, start_token, end_token, keys_per_split)
-            send_message('describe_splits', Describe_splits_args, :keyspace => keyspace, :cfName => cfName, :start_token => start_token, :end_token => end_token, :keys_per_split => keys_per_split)
+          def send_describe_splits(cfName, start_token, end_token, keys_per_split)
+            send_message('describe_splits', Describe_splits_args, :cfName => cfName, :start_token => start_token, :end_token => end_token, :keys_per_split => keys_per_split)
           end
 
           def recv_describe_splits()
@@ -457,6 +471,38 @@ require 'cassandra_types'
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'system_rename_keyspace failed: unknown result')
           end
 
+          def system_update_keyspace(ks_def)
+            send_system_update_keyspace(ks_def)
+            return recv_system_update_keyspace()
+          end
+
+          def send_system_update_keyspace(ks_def)
+            send_message('system_update_keyspace', System_update_keyspace_args, :ks_def => ks_def)
+          end
+
+          def recv_system_update_keyspace()
+            result = receive_message(System_update_keyspace_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'system_update_keyspace failed: unknown result')
+          end
+
+          def system_update_column_family(cf_def)
+            send_system_update_column_family(cf_def)
+            return recv_system_update_column_family()
+          end
+
+          def send_system_update_column_family(cf_def)
+            send_message('system_update_column_family', System_update_column_family_args, :cf_def => cf_def)
+          end
+
+          def recv_system_update_column_family()
+            result = receive_message(System_update_column_family_result)
+            return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
+            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'system_update_column_family failed: unknown result')
+          end
+
         end
 
         class Processor
@@ -466,7 +512,7 @@ require 'cassandra_types'
             args = read_args(iprot, Login_args)
             result = Login_result.new()
             begin
-              result.success = @handler.login(args.auth_request)
+              @handler.login(args.auth_request)
             rescue CassandraThrift::AuthenticationException => authnx
               result.authnx = authnx
             rescue CassandraThrift::AuthorizationException => authzx
@@ -552,7 +598,7 @@ require 'cassandra_types'
             args = read_args(iprot, Multiget_count_args)
             result = Multiget_count_result.new()
             begin
-              result.success = @handler.multiget_count(args.keyspace, args.keys, args.column_parent, args.predicate, args.consistency_level)
+              result.success = @handler.multiget_count(args.keys, args.column_parent, args.predicate, args.consistency_level)
             rescue CassandraThrift::InvalidRequestException => ire
               result.ire = ire
             rescue CassandraThrift::UnavailableException => ue
@@ -612,7 +658,7 @@ require 'cassandra_types'
             args = read_args(iprot, Remove_args)
             result = Remove_result.new()
             begin
-              @handler.remove(args.key, args.column_path, args.clock, args.consistency_level)
+              @handler.remove(args.key, args.column_path, args.timestamp, args.consistency_level)
             rescue CassandraThrift::InvalidRequestException => ire
               result.ire = ire
             rescue CassandraThrift::UnavailableException => ue
@@ -651,15 +697,15 @@ require 'cassandra_types'
             write_result(result, oprot, 'truncate', seqid)
           end
 
-          def process_check_schema_agreement(seqid, iprot, oprot)
-            args = read_args(iprot, Check_schema_agreement_args)
-            result = Check_schema_agreement_result.new()
+          def process_describe_schema_versions(seqid, iprot, oprot)
+            args = read_args(iprot, Describe_schema_versions_args)
+            result = Describe_schema_versions_result.new()
             begin
-              result.success = @handler.check_schema_agreement()
+              result.success = @handler.describe_schema_versions()
             rescue CassandraThrift::InvalidRequestException => ire
               result.ire = ire
             end
-            write_result(result, oprot, 'check_schema_agreement', seqid)
+            write_result(result, oprot, 'describe_schema_versions', seqid)
           end
 
           def process_describe_keyspaces(seqid, iprot, oprot)
@@ -701,6 +747,13 @@ require 'cassandra_types'
             write_result(result, oprot, 'describe_partitioner', seqid)
           end
 
+          def process_describe_snitch(seqid, iprot, oprot)
+            args = read_args(iprot, Describe_snitch_args)
+            result = Describe_snitch_result.new()
+            result.success = @handler.describe_snitch()
+            write_result(result, oprot, 'describe_snitch', seqid)
+          end
+
           def process_describe_keyspace(seqid, iprot, oprot)
             args = read_args(iprot, Describe_keyspace_args)
             result = Describe_keyspace_result.new()
@@ -715,7 +768,7 @@ require 'cassandra_types'
           def process_describe_splits(seqid, iprot, oprot)
             args = read_args(iprot, Describe_splits_args)
             result = Describe_splits_result.new()
-            result.success = @handler.describe_splits(args.keyspace, args.cfName, args.start_token, args.end_token, args.keys_per_split)
+            result.success = @handler.describe_splits(args.cfName, args.start_token, args.end_token, args.keys_per_split)
             write_result(result, oprot, 'describe_splits', seqid)
           end
 
@@ -785,6 +838,28 @@ require 'cassandra_types'
             write_result(result, oprot, 'system_rename_keyspace', seqid)
           end
 
+          def process_system_update_keyspace(seqid, iprot, oprot)
+            args = read_args(iprot, System_update_keyspace_args)
+            result = System_update_keyspace_result.new()
+            begin
+              result.success = @handler.system_update_keyspace(args.ks_def)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            end
+            write_result(result, oprot, 'system_update_keyspace', seqid)
+          end
+
+          def process_system_update_column_family(seqid, iprot, oprot)
+            args = read_args(iprot, System_update_column_family_args)
+            result = System_update_column_family_result.new()
+            begin
+              result.success = @handler.system_update_column_family(args.cf_def)
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            end
+            write_result(result, oprot, 'system_update_column_family', seqid)
+          end
+
         end
 
         # HELPER FUNCTIONS AND STRUCTURES
@@ -808,13 +883,11 @@ require 'cassandra_types'
 
         class Login_result
           include ::Thrift::Struct
-          SUCCESS = 0
           AUTHNX = 1
           AUTHZX = 2
 
-          ::Thrift::Struct.field_accessor self, :success, :authnx, :authzx
+          ::Thrift::Struct.field_accessor self, :authnx, :authzx
           FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::I32, :name => 'success', :enum_class => CassandraThrift::AccessLevel},
             AUTHNX => {:type => ::Thrift::Types::STRUCT, :name => 'authnx', :class => CassandraThrift::AuthenticationException},
             AUTHZX => {:type => ::Thrift::Types::STRUCT, :name => 'authzx', :class => CassandraThrift::AuthorizationException}
           }
@@ -822,9 +895,6 @@ require 'cassandra_types'
           def struct_fields; FIELDS; end
 
           def validate
-            unless @success.nil? || CassandraThrift::AccessLevel::VALID_VALUES.include?(@success)
-              raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field success!')
-            end
           end
 
         end
@@ -1067,15 +1137,13 @@ require 'cassandra_types'
 
         class Multiget_count_args
           include ::Thrift::Struct
-          KEYSPACE = 1
-          KEYS = 2
-          COLUMN_PARENT = 3
-          PREDICATE = 4
-          CONSISTENCY_LEVEL = 5
+          KEYS = 1
+          COLUMN_PARENT = 2
+          PREDICATE = 3
+          CONSISTENCY_LEVEL = 4
 
-          ::Thrift::Struct.field_accessor self, :keyspace, :keys, :column_parent, :predicate, :consistency_level
+          ::Thrift::Struct.field_accessor self, :keys, :column_parent, :predicate, :consistency_level
           FIELDS = {
-            KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
             KEYS => {:type => ::Thrift::Types::LIST, :name => 'keys', :element => {:type => ::Thrift::Types::STRING}},
             COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
             PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate},
@@ -1085,7 +1153,6 @@ require 'cassandra_types'
           def struct_fields; FIELDS; end
 
           def validate
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field keyspace is unset!') unless @keyspace
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field keys is unset!') unless @keys
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field column_parent is unset!') unless @column_parent
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field predicate is unset!') unless @predicate
@@ -1274,14 +1341,14 @@ require 'cassandra_types'
           include ::Thrift::Struct
           KEY = 1
           COLUMN_PATH = 2
-          CLOCK = 3
+          TIMESTAMP = 3
           CONSISTENCY_LEVEL = 4
 
-          ::Thrift::Struct.field_accessor self, :key, :column_path, :clock, :consistency_level
+          ::Thrift::Struct.field_accessor self, :key, :column_path, :timestamp, :consistency_level
           FIELDS = {
             KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
             COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => CassandraThrift::ColumnPath},
-            CLOCK => {:type => ::Thrift::Types::STRUCT, :name => 'clock', :class => CassandraThrift::Clock},
+            TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
           }
 
@@ -1290,7 +1357,7 @@ require 'cassandra_types'
           def validate
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field key is unset!') unless @key
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field column_path is unset!') unless @column_path
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field clock is unset!') unless @clock
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field timestamp is unset!') unless @timestamp
             unless @consistency_level.nil? || CassandraThrift::ConsistencyLevel::VALID_VALUES.include?(@consistency_level)
               raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Invalid value of field consistency_level!')
             end
@@ -1396,7 +1463,7 @@ require 'cassandra_types'
 
         end
 
-        class Check_schema_agreement_args
+        class Describe_schema_versions_args
           include ::Thrift::Struct
 
           FIELDS = {
@@ -1410,7 +1477,7 @@ require 'cassandra_types'
 
         end
 
-        class Check_schema_agreement_result
+        class Describe_schema_versions_result
           include ::Thrift::Struct
           SUCCESS = 0
           IRE = 1
@@ -1448,7 +1515,7 @@ require 'cassandra_types'
 
           ::Thrift::Struct.field_accessor self, :success
           FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::SET, :name => 'success', :element => {:type => ::Thrift::Types::STRING}}
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::KsDef}}
           }
 
           def struct_fields; FIELDS; end
@@ -1583,6 +1650,36 @@ require 'cassandra_types'
 
         end
 
+        class Describe_snitch_args
+          include ::Thrift::Struct
+
+          FIELDS = {
+
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class Describe_snitch_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+
+          ::Thrift::Struct.field_accessor self, :success
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
         class Describe_keyspace_args
           include ::Thrift::Struct
           KEYSPACE = 1
@@ -1607,7 +1704,7 @@ require 'cassandra_types'
 
           ::Thrift::Struct.field_accessor self, :success, :nfe
           FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::MAP, :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}}},
+            SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CassandraThrift::KsDef},
             NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException}
           }
 
@@ -1620,15 +1717,13 @@ require 'cassandra_types'
 
         class Describe_splits_args
           include ::Thrift::Struct
-          KEYSPACE = 1
-          CFNAME = 2
-          START_TOKEN = 3
-          END_TOKEN = 4
-          KEYS_PER_SPLIT = 5
+          CFNAME = 1
+          START_TOKEN = 2
+          END_TOKEN = 3
+          KEYS_PER_SPLIT = 4
 
-          ::Thrift::Struct.field_accessor self, :keyspace, :cfName, :start_token, :end_token, :keys_per_split
+          ::Thrift::Struct.field_accessor self, :cfName, :start_token, :end_token, :keys_per_split
           FIELDS = {
-            KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
             CFNAME => {:type => ::Thrift::Types::STRING, :name => 'cfName'},
             START_TOKEN => {:type => ::Thrift::Types::STRING, :name => 'start_token'},
             END_TOKEN => {:type => ::Thrift::Types::STRING, :name => 'end_token'},
@@ -1638,7 +1733,6 @@ require 'cassandra_types'
           def struct_fields; FIELDS; end
 
           def validate
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field keyspace is unset!') unless @keyspace
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field cfName is unset!') unless @cfName
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field start_token is unset!') unless @start_token
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field end_token is unset!') unless @end_token
@@ -1862,6 +1956,76 @@ require 'cassandra_types'
         end
 
         class System_rename_keyspace_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+
+          ::Thrift::Struct.field_accessor self, :success, :ire
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class System_update_keyspace_args
+          include ::Thrift::Struct
+          KS_DEF = 1
+
+          ::Thrift::Struct.field_accessor self, :ks_def
+          FIELDS = {
+            KS_DEF => {:type => ::Thrift::Types::STRUCT, :name => 'ks_def', :class => CassandraThrift::KsDef}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field ks_def is unset!') unless @ks_def
+          end
+
+        end
+
+        class System_update_keyspace_result
+          include ::Thrift::Struct
+          SUCCESS = 0
+          IRE = 1
+
+          ::Thrift::Struct.field_accessor self, :success, :ire
+          FIELDS = {
+            SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+          end
+
+        end
+
+        class System_update_column_family_args
+          include ::Thrift::Struct
+          CF_DEF = 1
+
+          ::Thrift::Struct.field_accessor self, :cf_def
+          FIELDS = {
+            CF_DEF => {:type => ::Thrift::Types::STRUCT, :name => 'cf_def', :class => CassandraThrift::CfDef}
+          }
+
+          def struct_fields; FIELDS; end
+
+          def validate
+            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field cf_def is unset!') unless @cf_def
+          end
+
+        end
+
+        class System_update_column_family_result
           include ::Thrift::Struct
           SUCCESS = 0
           IRE = 1

@@ -1,19 +1,28 @@
-# THIS IS FILTHY
-module CassandraThrift
-  class Column
-    def timestamp
-      clock.timestamp
-    end
-    
-    def timestamp=(ts)
-      clock.timestamp = ts
-    end
-  end
-end
 
 class Cassandra
   # A bunch of crap, mostly related to introspecting on column types
   module Columns #:nodoc:
+
+    def is_super(column_family)
+      @is_super[column_family] ||= column_family_property(column_family, 'column_type') == "Super"
+    end
+
+    def column_name_class(column_family)
+      @column_name_class[column_family] ||= column_name_class_for_key(column_family, "comparator_type")
+    end
+
+    def sub_column_name_class(column_family)
+      @sub_column_name_class[column_family] ||= column_name_class_for_key(column_family, "subcomparator_type")
+    end
+
+    def column_family_property(column_family, key)
+      cfdef = schema.cf_defs.find {|cfdef| cfdef.name == column_family }
+      unless cfdef
+        raise AccessError, "Invalid column family \"#{column_family}\""
+      end
+      cfdef.send(key)
+    end
+
     private
 
     def _standard_insert_mutation(column_family, column_name, value, timestamp, ttl = nil)
@@ -22,7 +31,7 @@ class Cassandra
           :column => CassandraThrift::Column.new(
             :name      => column_name_class(column_family).new(column_name).to_s,
             :value     => value,
-            :clock     => CassandraThrift::Clock.new(:timestamp => timestamp),
+            :timestamp => timestamp,
             :ttl       => ttl
           )
         )
@@ -38,7 +47,7 @@ class Cassandra
               CassandraThrift::Column.new(
                 :name      => sub_column_name_class(column_family).new(sub_column_name).to_s,
                 :value     => sub_column_value.to_s,
-                :clock     => CassandraThrift::Clock.new(:timestamp => timestamp),
+                :timestamp => timestamp,
                 :ttl       => ttl
               )
             }
