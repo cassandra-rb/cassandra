@@ -1,5 +1,10 @@
 require 'rubygems'
-gem 'thrift', '< 0.2.5'
+if Cassandra.VERSION.eql?("0.6")
+  gem 'thrift', '< 0.2.5'
+else
+  gem 'thrift', '>= 0.5.0'
+  gem 'thrift_client', '>= 0.5'
+end
 require 'thrift'
 require 'thrift_client'
 require 'json' unless defined?(JSON)
