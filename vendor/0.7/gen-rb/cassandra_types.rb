@@ -7,15 +7,14 @@
 
 module CassandraThrift
     module ConsistencyLevel
-      ZERO = 0
       ONE = 1
       QUORUM = 2
-      DCQUORUM = 3
-      DCQUORUMSYNC = 4
+      LOCAL_QUORUM = 3
+      EACH_QUORUM = 4
       ALL = 5
       ANY = 6
-      VALUE_MAP = {0 => "ZERO", 1 => "ONE", 2 => "QUORUM", 3 => "DCQUORUM", 4 => "DCQUORUMSYNC", 5 => "ALL", 6 => "ANY"}
-      VALID_VALUES = Set.new([ZERO, ONE, QUORUM, DCQUORUM, DCQUORUMSYNC, ALL, ANY]).freeze
+      VALUE_MAP = {1 => "ONE", 2 => "QUORUM", 3 => "LOCAL_QUORUM", 4 => "EACH_QUORUM", 5 => "ALL", 6 => "ANY"}
+      VALID_VALUES = Set.new([ONE, QUORUM, LOCAL_QUORUM, EACH_QUORUM, ALL, ANY]).freeze
     end
 
     module IndexOperator
@@ -599,7 +598,6 @@ module CassandraThrift
       SUBCOMPARATOR_TYPE = 6
       COMMENT = 8
       ROW_CACHE_SIZE = 9
-      PRELOAD_ROW_CACHE = 10
       KEY_CACHE_SIZE = 11
       READ_REPAIR_CHANCE = 12
       COLUMN_METADATA = 13
@@ -608,8 +606,13 @@ module CassandraThrift
       ID = 16
       MIN_COMPACTION_THRESHOLD = 17
       MAX_COMPACTION_THRESHOLD = 18
+      ROW_CACHE_SAVE_PERIOD_IN_SECONDS = 19
+      KEY_CACHE_SAVE_PERIOD_IN_SECONDS = 20
+      MEMTABLE_FLUSH_AFTER_MINS = 21
+      MEMTABLE_THROUGHPUT_IN_MB = 22
+      MEMTABLE_OPERATIONS_IN_MILLIONS = 23
 
-      ::Thrift::Struct.field_accessor self, :keyspace, :name, :column_type, :comparator_type, :subcomparator_type, :comment, :row_cache_size, :preload_row_cache, :key_cache_size, :read_repair_chance, :column_metadata, :gc_grace_seconds, :default_validation_class, :id, :min_compaction_threshold, :max_compaction_threshold
+      ::Thrift::Struct.field_accessor self, :keyspace, :name, :column_type, :comparator_type, :subcomparator_type, :comment, :row_cache_size, :key_cache_size, :read_repair_chance, :column_metadata, :gc_grace_seconds, :default_validation_class, :id, :min_compaction_threshold, :max_compaction_threshold, :row_cache_save_period_in_seconds, :key_cache_save_period_in_seconds, :memtable_flush_after_mins, :memtable_throughput_in_mb, :memtable_operations_in_millions
       FIELDS = {
         KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'},
         NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
@@ -618,7 +621,6 @@ module CassandraThrift
         SUBCOMPARATOR_TYPE => {:type => ::Thrift::Types::STRING, :name => 'subcomparator_type', :optional => true},
         COMMENT => {:type => ::Thrift::Types::STRING, :name => 'comment', :optional => true},
         ROW_CACHE_SIZE => {:type => ::Thrift::Types::DOUBLE, :name => 'row_cache_size', :default => 0, :optional => true},
-        PRELOAD_ROW_CACHE => {:type => ::Thrift::Types::BOOL, :name => 'preload_row_cache', :default => false, :optional => true},
         KEY_CACHE_SIZE => {:type => ::Thrift::Types::DOUBLE, :name => 'key_cache_size', :default => 200000, :optional => true},
         READ_REPAIR_CHANCE => {:type => ::Thrift::Types::DOUBLE, :name => 'read_repair_chance', :default => 1, :optional => true},
         COLUMN_METADATA => {:type => ::Thrift::Types::LIST, :name => 'column_metadata', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnDef}, :optional => true},
@@ -626,7 +628,12 @@ module CassandraThrift
         DEFAULT_VALIDATION_CLASS => {:type => ::Thrift::Types::STRING, :name => 'default_validation_class', :optional => true},
         ID => {:type => ::Thrift::Types::I32, :name => 'id', :optional => true},
         MIN_COMPACTION_THRESHOLD => {:type => ::Thrift::Types::I32, :name => 'min_compaction_threshold', :optional => true},
-        MAX_COMPACTION_THRESHOLD => {:type => ::Thrift::Types::I32, :name => 'max_compaction_threshold', :optional => true}
+        MAX_COMPACTION_THRESHOLD => {:type => ::Thrift::Types::I32, :name => 'max_compaction_threshold', :optional => true},
+        ROW_CACHE_SAVE_PERIOD_IN_SECONDS => {:type => ::Thrift::Types::I32, :name => 'row_cache_save_period_in_seconds', :optional => true},
+        KEY_CACHE_SAVE_PERIOD_IN_SECONDS => {:type => ::Thrift::Types::I32, :name => 'key_cache_save_period_in_seconds', :optional => true},
+        MEMTABLE_FLUSH_AFTER_MINS => {:type => ::Thrift::Types::I32, :name => 'memtable_flush_after_mins', :optional => true},
+        MEMTABLE_THROUGHPUT_IN_MB => {:type => ::Thrift::Types::I32, :name => 'memtable_throughput_in_mb', :optional => true},
+        MEMTABLE_OPERATIONS_IN_MILLIONS => {:type => ::Thrift::Types::DOUBLE, :name => 'memtable_operations_in_millions', :optional => true}
       }
 
       def struct_fields; FIELDS; end

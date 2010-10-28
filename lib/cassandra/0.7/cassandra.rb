@@ -89,16 +89,6 @@ class Cassandra
     res
   end
 
-  def rename_column_family(old_name, new_name)
-    begin
-      res = client.system_rename_column_family(old_name, new_name)
-    rescue CassandraThrift::TimedOutException => te
-      puts "Timed out: #{te.inspect}"
-    end
-    @schema = nil
-    res
-  end
-
   def add_keyspace(ks_def)
     begin
       res = client.system_add_keyspace(ks_def)
@@ -120,19 +110,6 @@ class Cassandra
       puts "Timed out: #{te.inspect}"
     end
     keyspace = "system" if ks_name.eql?(@keyspace)
-    @keyspaces = nil
-    res
-  end
-
-  def rename_keyspace(old_name, new_name)
-    begin
-      res = client.system_rename_keyspace(old_name, new_name)
-    rescue CassandraThrift::TimedOutException => toe
-      puts "Timed out: #{toe.inspect}"
-    rescue Thrift::TransportException => te
-      puts "Timed out: #{te.inspect}"
-    end
-    keyspace = new_name if old_name.eql?(@keyspace)
     @keyspaces = nil
     res
   end

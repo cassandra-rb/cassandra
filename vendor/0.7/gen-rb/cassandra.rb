@@ -265,6 +265,7 @@ require 'cassandra_types'
           def recv_describe_keyspaces()
             result = receive_message(Describe_keyspaces_result)
             return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_keyspaces failed: unknown result')
           end
 
@@ -357,6 +358,7 @@ require 'cassandra_types'
             result = receive_message(Describe_keyspace_result)
             return result.success unless result.success.nil?
             raise result.nfe unless result.nfe.nil?
+            raise result.ire unless result.ire.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_keyspace failed: unknown result')
           end
 
@@ -407,22 +409,6 @@ require 'cassandra_types'
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'system_drop_column_family failed: unknown result')
           end
 
-          def system_rename_column_family(old_name, new_name)
-            send_system_rename_column_family(old_name, new_name)
-            return recv_system_rename_column_family()
-          end
-
-          def send_system_rename_column_family(old_name, new_name)
-            send_message('system_rename_column_family', System_rename_column_family_args, :old_name => old_name, :new_name => new_name)
-          end
-
-          def recv_system_rename_column_family()
-            result = receive_message(System_rename_column_family_result)
-            return result.success unless result.success.nil?
-            raise result.ire unless result.ire.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'system_rename_column_family failed: unknown result')
-          end
-
           def system_add_keyspace(ks_def)
             send_system_add_keyspace(ks_def)
             return recv_system_add_keyspace()
@@ -453,22 +439,6 @@ require 'cassandra_types'
             return result.success unless result.success.nil?
             raise result.ire unless result.ire.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'system_drop_keyspace failed: unknown result')
-          end
-
-          def system_rename_keyspace(old_name, new_name)
-            send_system_rename_keyspace(old_name, new_name)
-            return recv_system_rename_keyspace()
-          end
-
-          def send_system_rename_keyspace(old_name, new_name)
-            send_message('system_rename_keyspace', System_rename_keyspace_args, :old_name => old_name, :new_name => new_name)
-          end
-
-          def recv_system_rename_keyspace()
-            result = receive_message(System_rename_keyspace_result)
-            return result.success unless result.success.nil?
-            raise result.ire unless result.ire.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'system_rename_keyspace failed: unknown result')
           end
 
           def system_update_keyspace(ks_def)
@@ -711,7 +681,11 @@ require 'cassandra_types'
           def process_describe_keyspaces(seqid, iprot, oprot)
             args = read_args(iprot, Describe_keyspaces_args)
             result = Describe_keyspaces_result.new()
-            result.success = @handler.describe_keyspaces()
+            begin
+              result.success = @handler.describe_keyspaces()
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            end
             write_result(result, oprot, 'describe_keyspaces', seqid)
           end
 
@@ -761,6 +735,8 @@ require 'cassandra_types'
               result.success = @handler.describe_keyspace(args.keyspace)
             rescue CassandraThrift::NotFoundException => nfe
               result.nfe = nfe
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
             end
             write_result(result, oprot, 'describe_keyspace', seqid)
           end
@@ -794,17 +770,6 @@ require 'cassandra_types'
             write_result(result, oprot, 'system_drop_column_family', seqid)
           end
 
-          def process_system_rename_column_family(seqid, iprot, oprot)
-            args = read_args(iprot, System_rename_column_family_args)
-            result = System_rename_column_family_result.new()
-            begin
-              result.success = @handler.system_rename_column_family(args.old_name, args.new_name)
-            rescue CassandraThrift::InvalidRequestException => ire
-              result.ire = ire
-            end
-            write_result(result, oprot, 'system_rename_column_family', seqid)
-          end
-
           def process_system_add_keyspace(seqid, iprot, oprot)
             args = read_args(iprot, System_add_keyspace_args)
             result = System_add_keyspace_result.new()
@@ -825,17 +790,6 @@ require 'cassandra_types'
               result.ire = ire
             end
             write_result(result, oprot, 'system_drop_keyspace', seqid)
-          end
-
-          def process_system_rename_keyspace(seqid, iprot, oprot)
-            args = read_args(iprot, System_rename_keyspace_args)
-            result = System_rename_keyspace_result.new()
-            begin
-              result.success = @handler.system_rename_keyspace(args.old_name, args.new_name)
-            rescue CassandraThrift::InvalidRequestException => ire
-              result.ire = ire
-            end
-            write_result(result, oprot, 'system_rename_keyspace', seqid)
           end
 
           def process_system_update_keyspace(seqid, iprot, oprot)
@@ -1512,10 +1466,12 @@ require 'cassandra_types'
         class Describe_keyspaces_result
           include ::Thrift::Struct
           SUCCESS = 0
+          IRE = 1
 
-          ::Thrift::Struct.field_accessor self, :success
+          ::Thrift::Struct.field_accessor self, :success, :ire
           FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::KsDef}}
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::KsDef}},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
           }
 
           def struct_fields; FIELDS; end
@@ -1701,11 +1657,13 @@ require 'cassandra_types'
           include ::Thrift::Struct
           SUCCESS = 0
           NFE = 1
+          IRE = 2
 
-          ::Thrift::Struct.field_accessor self, :success, :nfe
+          ::Thrift::Struct.field_accessor self, :success, :nfe, :ire
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CassandraThrift::KsDef},
-            NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException}
+            NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
           }
 
           def struct_fields; FIELDS; end
@@ -1827,44 +1785,6 @@ require 'cassandra_types'
 
         end
 
-        class System_rename_column_family_args
-          include ::Thrift::Struct
-          OLD_NAME = 1
-          NEW_NAME = 2
-
-          ::Thrift::Struct.field_accessor self, :old_name, :new_name
-          FIELDS = {
-            OLD_NAME => {:type => ::Thrift::Types::STRING, :name => 'old_name'},
-            NEW_NAME => {:type => ::Thrift::Types::STRING, :name => 'new_name'}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field old_name is unset!') unless @old_name
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field new_name is unset!') unless @new_name
-          end
-
-        end
-
-        class System_rename_column_family_result
-          include ::Thrift::Struct
-          SUCCESS = 0
-          IRE = 1
-
-          ::Thrift::Struct.field_accessor self, :success, :ire
-          FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'},
-            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
-        end
-
         class System_add_keyspace_args
           include ::Thrift::Struct
           KS_DEF = 1
@@ -1918,44 +1838,6 @@ require 'cassandra_types'
         end
 
         class System_drop_keyspace_result
-          include ::Thrift::Struct
-          SUCCESS = 0
-          IRE = 1
-
-          ::Thrift::Struct.field_accessor self, :success, :ire
-          FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'},
-            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
-        end
-
-        class System_rename_keyspace_args
-          include ::Thrift::Struct
-          OLD_NAME = 1
-          NEW_NAME = 2
-
-          ::Thrift::Struct.field_accessor self, :old_name, :new_name
-          FIELDS = {
-            OLD_NAME => {:type => ::Thrift::Types::STRING, :name => 'old_name'},
-            NEW_NAME => {:type => ::Thrift::Types::STRING, :name => 'new_name'}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field old_name is unset!') unless @old_name
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field new_name is unset!') unless @new_name
-          end
-
-        end
-
-        class System_rename_keyspace_result
           include ::Thrift::Struct
           SUCCESS = 0
           IRE = 1
