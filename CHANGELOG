@@ -1,4 +1,4 @@
-v0.9dev cassandra 0.7 compat
+v0.9.0 cassandra 0.7 compat
 
 v0.8.2 Renamed :thrift_client_class option, UUID fix, 0.6 update, fixing cassanda install, much Mock fixes
 
