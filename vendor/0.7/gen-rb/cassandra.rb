@@ -265,6 +265,7 @@ require 'cassandra_types'
           def recv_describe_keyspaces()
             result = receive_message(Describe_keyspaces_result)
             return result.success unless result.success.nil?
+            raise result.ire unless result.ire.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_keyspaces failed: unknown result')
           end
 
@@ -357,6 +358,7 @@ require 'cassandra_types'
             result = receive_message(Describe_keyspace_result)
             return result.success unless result.success.nil?
             raise result.nfe unless result.nfe.nil?
+            raise result.ire unless result.ire.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'describe_keyspace failed: unknown result')
           end
 
@@ -407,22 +409,6 @@ require 'cassandra_types'
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'system_drop_column_family failed: unknown result')
           end
 
-          def system_rename_column_family(old_name, new_name)
-            send_system_rename_column_family(old_name, new_name)
-            return recv_system_rename_column_family()
-          end
-
-          def send_system_rename_column_family(old_name, new_name)
-            send_message('system_rename_column_family', System_rename_column_family_args, :old_name => old_name, :new_name => new_name)
-          end
-
-          def recv_system_rename_column_family()
-            result = receive_message(System_rename_column_family_result)
-            return result.success unless result.success.nil?
-            raise result.ire unless result.ire.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'system_rename_column_family failed: unknown result')
-          end
-
           def system_add_keyspace(ks_def)
             send_system_add_keyspace(ks_def)
             return recv_system_add_keyspace()
@@ -453,22 +439,6 @@ require 'cassandra_types'
             return result.success unless result.success.nil?
             raise result.ire unless result.ire.nil?
             raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'system_drop_keyspace failed: unknown result')
-          end
-
-          def system_rename_keyspace(old_name, new_name)
-            send_system_rename_keyspace(old_name, new_name)
-            return recv_system_rename_keyspace()
-          end
-
-          def send_system_rename_keyspace(old_name, new_name)
-            send_message('system_rename_keyspace', System_rename_keyspace_args, :old_name => old_name, :new_name => new_name)
-          end
-
-          def recv_system_rename_keyspace()
-            result = receive_message(System_rename_keyspace_result)
-            return result.success unless result.success.nil?
-            raise result.ire unless result.ire.nil?
-            raise ::Thrift::ApplicationException.new(::Thrift::ApplicationException::MISSING_RESULT, 'system_rename_keyspace failed: unknown result')
           end
 
           def system_update_keyspace(ks_def)
@@ -711,7 +681,11 @@ require 'cassandra_types'
           def process_describe_keyspaces(seqid, iprot, oprot)
             args = read_args(iprot, Describe_keyspaces_args)
             result = Describe_keyspaces_result.new()
-            result.success = @handler.describe_keyspaces()
+            begin
+              result.success = @handler.describe_keyspaces()
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
+            end
             write_result(result, oprot, 'describe_keyspaces', seqid)
           end
 
@@ -761,6 +735,8 @@ require 'cassandra_types'
               result.success = @handler.describe_keyspace(args.keyspace)
             rescue CassandraThrift::NotFoundException => nfe
               result.nfe = nfe
+            rescue CassandraThrift::InvalidRequestException => ire
+              result.ire = ire
             end
             write_result(result, oprot, 'describe_keyspace', seqid)
           end
@@ -794,17 +770,6 @@ require 'cassandra_types'
             write_result(result, oprot, 'system_drop_column_family', seqid)
           end
 
-          def process_system_rename_column_family(seqid, iprot, oprot)
-            args = read_args(iprot, System_rename_column_family_args)
-            result = System_rename_column_family_result.new()
-            begin
-              result.success = @handler.system_rename_column_family(args.old_name, args.new_name)
-            rescue CassandraThrift::InvalidRequestException => ire
-              result.ire = ire
-            end
-            write_result(result, oprot, 'system_rename_column_family', seqid)
-          end
-
           def process_system_add_keyspace(seqid, iprot, oprot)
             args = read_args(iprot, System_add_keyspace_args)
             result = System_add_keyspace_result.new()
@@ -825,17 +790,6 @@ require 'cassandra_types'
               result.ire = ire
             end
             write_result(result, oprot, 'system_drop_keyspace', seqid)
-          end
-
-          def process_system_rename_keyspace(seqid, iprot, oprot)
-            args = read_args(iprot, System_rename_keyspace_args)
-            result = System_rename_keyspace_result.new()
-            begin
-              result.success = @handler.system_rename_keyspace(args.old_name, args.new_name)
-            rescue CassandraThrift::InvalidRequestException => ire
-              result.ire = ire
-            end
-            write_result(result, oprot, 'system_rename_keyspace', seqid)
           end
 
           def process_system_update_keyspace(seqid, iprot, oprot)
@@ -865,10 +819,9 @@ require 'cassandra_types'
         # HELPER FUNCTIONS AND STRUCTURES
 
         class Login_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           AUTH_REQUEST = 1
 
-          ::Thrift::Struct.field_accessor self, :auth_request
           FIELDS = {
             AUTH_REQUEST => {:type => ::Thrift::Types::STRUCT, :name => 'auth_request', :class => CassandraThrift::AuthenticationRequest}
           }
@@ -879,14 +832,14 @@ require 'cassandra_types'
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field auth_request is unset!') unless @auth_request
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Login_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           AUTHNX = 1
           AUTHZX = 2
 
-          ::Thrift::Struct.field_accessor self, :authnx, :authzx
           FIELDS = {
             AUTHNX => {:type => ::Thrift::Types::STRUCT, :name => 'authnx', :class => CassandraThrift::AuthenticationException},
             AUTHZX => {:type => ::Thrift::Types::STRUCT, :name => 'authzx', :class => CassandraThrift::AuthorizationException}
@@ -897,13 +850,13 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Set_keyspace_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           KEYSPACE = 1
 
-          ::Thrift::Struct.field_accessor self, :keyspace
           FIELDS = {
             KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'}
           }
@@ -914,13 +867,13 @@ require 'cassandra_types'
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field keyspace is unset!') unless @keyspace
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Set_keyspace_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           IRE = 1
 
-          ::Thrift::Struct.field_accessor self, :ire
           FIELDS = {
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
           }
@@ -930,17 +883,17 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Get_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           KEY = 1
           COLUMN_PATH = 2
           CONSISTENCY_LEVEL = 3
 
-          ::Thrift::Struct.field_accessor self, :key, :column_path, :consistency_level
           FIELDS = {
-            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key', :binary => true},
             COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => CassandraThrift::ColumnPath},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
           }
@@ -956,17 +909,17 @@ require 'cassandra_types'
             end
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Get_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
           NFE = 2
           UE = 3
           TE = 4
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :nfe, :ue, :te
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CassandraThrift::ColumnOrSuperColumn},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
@@ -980,18 +933,18 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Get_slice_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           KEY = 1
           COLUMN_PARENT = 2
           PREDICATE = 3
           CONSISTENCY_LEVEL = 4
 
-          ::Thrift::Struct.field_accessor self, :key, :column_parent, :predicate, :consistency_level
           FIELDS = {
-            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key', :binary => true},
             COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
             PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
@@ -1009,16 +962,16 @@ require 'cassandra_types'
             end
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Get_slice_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
           UE = 2
           TE = 3
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
@@ -1031,18 +984,18 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Get_count_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           KEY = 1
           COLUMN_PARENT = 2
           PREDICATE = 3
           CONSISTENCY_LEVEL = 4
 
-          ::Thrift::Struct.field_accessor self, :key, :column_parent, :predicate, :consistency_level
           FIELDS = {
-            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key', :binary => true},
             COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
             PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
@@ -1060,16 +1013,16 @@ require 'cassandra_types'
             end
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Get_count_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
           UE = 2
           TE = 3
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::I32, :name => 'success'},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
@@ -1082,18 +1035,18 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Multiget_slice_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           KEYS = 1
           COLUMN_PARENT = 2
           PREDICATE = 3
           CONSISTENCY_LEVEL = 4
 
-          ::Thrift::Struct.field_accessor self, :keys, :column_parent, :predicate, :consistency_level
           FIELDS = {
-            KEYS => {:type => ::Thrift::Types::LIST, :name => 'keys', :element => {:type => ::Thrift::Types::STRING}},
+            KEYS => {:type => ::Thrift::Types::LIST, :name => 'keys', :element => {:type => ::Thrift::Types::STRING, :binary => true}},
             COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
             PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
@@ -1111,18 +1064,18 @@ require 'cassandra_types'
             end
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Multiget_slice_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
           UE = 2
           TE = 3
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
           FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}}},
+            SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING, :binary => true}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::ColumnOrSuperColumn}}},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
             UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
             TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
@@ -1133,18 +1086,18 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Multiget_count_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           KEYS = 1
           COLUMN_PARENT = 2
           PREDICATE = 3
           CONSISTENCY_LEVEL = 4
 
-          ::Thrift::Struct.field_accessor self, :keys, :column_parent, :predicate, :consistency_level
           FIELDS = {
-            KEYS => {:type => ::Thrift::Types::LIST, :name => 'keys', :element => {:type => ::Thrift::Types::STRING}},
+            KEYS => {:type => ::Thrift::Types::LIST, :name => 'keys', :element => {:type => ::Thrift::Types::STRING, :binary => true}},
             COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
             PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
@@ -1162,18 +1115,18 @@ require 'cassandra_types'
             end
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Multiget_count_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
           UE = 2
           TE = 3
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
           FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::I32}},
+            SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING, :binary => true}, :value => {:type => ::Thrift::Types::I32}},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
             UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
             TE => {:type => ::Thrift::Types::STRUCT, :name => 'te', :class => CassandraThrift::TimedOutException}
@@ -1184,16 +1137,16 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Get_range_slices_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           COLUMN_PARENT = 1
           PREDICATE = 2
           RANGE = 3
           CONSISTENCY_LEVEL = 4
 
-          ::Thrift::Struct.field_accessor self, :column_parent, :predicate, :range, :consistency_level
           FIELDS = {
             COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
             PREDICATE => {:type => ::Thrift::Types::STRUCT, :name => 'predicate', :class => CassandraThrift::SlicePredicate},
@@ -1213,16 +1166,16 @@ require 'cassandra_types'
             end
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Get_range_slices_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
           UE = 2
           TE = 3
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::KeySlice}},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
@@ -1235,16 +1188,16 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Get_indexed_slices_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           COLUMN_PARENT = 1
           INDEX_CLAUSE = 2
           COLUMN_PREDICATE = 3
           CONSISTENCY_LEVEL = 4
 
-          ::Thrift::Struct.field_accessor self, :column_parent, :index_clause, :column_predicate, :consistency_level
           FIELDS = {
             COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
             INDEX_CLAUSE => {:type => ::Thrift::Types::STRUCT, :name => 'index_clause', :class => CassandraThrift::IndexClause},
@@ -1264,16 +1217,16 @@ require 'cassandra_types'
             end
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Get_indexed_slices_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
           UE = 2
           TE = 3
 
-          ::Thrift::Struct.field_accessor self, :success, :ire, :ue, :te
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::KeySlice}},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
@@ -1286,18 +1239,18 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Insert_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           KEY = 1
           COLUMN_PARENT = 2
           COLUMN = 3
           CONSISTENCY_LEVEL = 4
 
-          ::Thrift::Struct.field_accessor self, :key, :column_parent, :column, :consistency_level
           FIELDS = {
-            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key', :binary => true},
             COLUMN_PARENT => {:type => ::Thrift::Types::STRUCT, :name => 'column_parent', :class => CassandraThrift::ColumnParent},
             COLUMN => {:type => ::Thrift::Types::STRUCT, :name => 'column', :class => CassandraThrift::Column},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
@@ -1315,15 +1268,15 @@ require 'cassandra_types'
             end
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Insert_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           IRE = 1
           UE = 2
           TE = 3
 
-          ::Thrift::Struct.field_accessor self, :ire, :ue, :te
           FIELDS = {
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
             UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
@@ -1335,18 +1288,18 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Remove_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           KEY = 1
           COLUMN_PATH = 2
           TIMESTAMP = 3
           CONSISTENCY_LEVEL = 4
 
-          ::Thrift::Struct.field_accessor self, :key, :column_path, :timestamp, :consistency_level
           FIELDS = {
-            KEY => {:type => ::Thrift::Types::STRING, :name => 'key'},
+            KEY => {:type => ::Thrift::Types::STRING, :name => 'key', :binary => true},
             COLUMN_PATH => {:type => ::Thrift::Types::STRUCT, :name => 'column_path', :class => CassandraThrift::ColumnPath},
             TIMESTAMP => {:type => ::Thrift::Types::I64, :name => 'timestamp'},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
@@ -1363,15 +1316,15 @@ require 'cassandra_types'
             end
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Remove_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           IRE = 1
           UE = 2
           TE = 3
 
-          ::Thrift::Struct.field_accessor self, :ire, :ue, :te
           FIELDS = {
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
             UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
@@ -1383,16 +1336,16 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Batch_mutate_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           MUTATION_MAP = 1
           CONSISTENCY_LEVEL = 2
 
-          ::Thrift::Struct.field_accessor self, :mutation_map, :consistency_level
           FIELDS = {
-            MUTATION_MAP => {:type => ::Thrift::Types::MAP, :name => 'mutation_map', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::MAP, :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::Mutation}}}},
+            MUTATION_MAP => {:type => ::Thrift::Types::MAP, :name => 'mutation_map', :key => {:type => ::Thrift::Types::STRING, :binary => true}, :value => {:type => ::Thrift::Types::MAP, :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::Mutation}}}},
             CONSISTENCY_LEVEL => {:type => ::Thrift::Types::I32, :name => 'consistency_level', :default =>             1, :enum_class => CassandraThrift::ConsistencyLevel}
           }
 
@@ -1406,15 +1359,15 @@ require 'cassandra_types'
             end
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Batch_mutate_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           IRE = 1
           UE = 2
           TE = 3
 
-          ::Thrift::Struct.field_accessor self, :ire, :ue, :te
           FIELDS = {
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
             UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException},
@@ -1426,13 +1379,13 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Truncate_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           CFNAME = 1
 
-          ::Thrift::Struct.field_accessor self, :cfname
           FIELDS = {
             CFNAME => {:type => ::Thrift::Types::STRING, :name => 'cfname'}
           }
@@ -1443,14 +1396,14 @@ require 'cassandra_types'
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field cfname is unset!') unless @cfname
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Truncate_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           IRE = 1
           UE = 2
 
-          ::Thrift::Struct.field_accessor self, :ire, :ue
           FIELDS = {
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException},
             UE => {:type => ::Thrift::Types::STRUCT, :name => 'ue', :class => CassandraThrift::UnavailableException}
@@ -1461,10 +1414,11 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_schema_versions_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
 
           FIELDS = {
 
@@ -1475,14 +1429,14 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_schema_versions_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
 
-          ::Thrift::Struct.field_accessor self, :success, :ire
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::MAP, :name => 'success', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::LIST, :element => {:type => ::Thrift::Types::STRING}}},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
@@ -1493,10 +1447,11 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_keyspaces_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
 
           FIELDS = {
 
@@ -1507,15 +1462,17 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_keyspaces_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
+          IRE = 1
 
-          ::Thrift::Struct.field_accessor self, :success
           FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::KsDef}}
+            SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::KsDef}},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
           }
 
           def struct_fields; FIELDS; end
@@ -1523,10 +1480,11 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_cluster_name_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
 
           FIELDS = {
 
@@ -1537,13 +1495,13 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_cluster_name_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
 
-          ::Thrift::Struct.field_accessor self, :success
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'}
           }
@@ -1553,10 +1511,11 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_version_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
 
           FIELDS = {
 
@@ -1567,13 +1526,13 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_version_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
 
-          ::Thrift::Struct.field_accessor self, :success
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'}
           }
@@ -1583,13 +1542,13 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_ring_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           KEYSPACE = 1
 
-          ::Thrift::Struct.field_accessor self, :keyspace
           FIELDS = {
             KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'}
           }
@@ -1600,14 +1559,14 @@ require 'cassandra_types'
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field keyspace is unset!') unless @keyspace
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_ring_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
 
-          ::Thrift::Struct.field_accessor self, :success, :ire
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::TokenRange}},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
@@ -1618,10 +1577,11 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_partitioner_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
 
           FIELDS = {
 
@@ -1632,13 +1592,13 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_partitioner_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
 
-          ::Thrift::Struct.field_accessor self, :success
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'}
           }
@@ -1648,10 +1608,11 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_snitch_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
 
           FIELDS = {
 
@@ -1662,13 +1623,13 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_snitch_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
 
-          ::Thrift::Struct.field_accessor self, :success
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'}
           }
@@ -1678,13 +1639,13 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_keyspace_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           KEYSPACE = 1
 
-          ::Thrift::Struct.field_accessor self, :keyspace
           FIELDS = {
             KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'}
           }
@@ -1695,17 +1656,19 @@ require 'cassandra_types'
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field keyspace is unset!') unless @keyspace
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_keyspace_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           NFE = 1
+          IRE = 2
 
-          ::Thrift::Struct.field_accessor self, :success, :nfe
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRUCT, :name => 'success', :class => CassandraThrift::KsDef},
-            NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException}
+            NFE => {:type => ::Thrift::Types::STRUCT, :name => 'nfe', :class => CassandraThrift::NotFoundException},
+            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
           }
 
           def struct_fields; FIELDS; end
@@ -1713,16 +1676,16 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_splits_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           CFNAME = 1
           START_TOKEN = 2
           END_TOKEN = 3
           KEYS_PER_SPLIT = 4
 
-          ::Thrift::Struct.field_accessor self, :cfName, :start_token, :end_token, :keys_per_split
           FIELDS = {
             CFNAME => {:type => ::Thrift::Types::STRING, :name => 'cfName'},
             START_TOKEN => {:type => ::Thrift::Types::STRING, :name => 'start_token'},
@@ -1739,13 +1702,13 @@ require 'cassandra_types'
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field keys_per_split is unset!') unless @keys_per_split
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class Describe_splits_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
 
-          ::Thrift::Struct.field_accessor self, :success
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::LIST, :name => 'success', :element => {:type => ::Thrift::Types::STRING}}
           }
@@ -1755,13 +1718,13 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class System_add_column_family_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           CF_DEF = 1
 
-          ::Thrift::Struct.field_accessor self, :cf_def
           FIELDS = {
             CF_DEF => {:type => ::Thrift::Types::STRUCT, :name => 'cf_def', :class => CassandraThrift::CfDef}
           }
@@ -1772,14 +1735,14 @@ require 'cassandra_types'
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field cf_def is unset!') unless @cf_def
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class System_add_column_family_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
 
-          ::Thrift::Struct.field_accessor self, :success, :ire
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
@@ -1790,13 +1753,13 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class System_drop_column_family_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           COLUMN_FAMILY = 1
 
-          ::Thrift::Struct.field_accessor self, :column_family
           FIELDS = {
             COLUMN_FAMILY => {:type => ::Thrift::Types::STRING, :name => 'column_family'}
           }
@@ -1807,14 +1770,14 @@ require 'cassandra_types'
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field column_family is unset!') unless @column_family
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class System_drop_column_family_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
 
-          ::Thrift::Struct.field_accessor self, :success, :ire
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
@@ -1825,51 +1788,13 @@ require 'cassandra_types'
           def validate
           end
 
-        end
-
-        class System_rename_column_family_args
-          include ::Thrift::Struct
-          OLD_NAME = 1
-          NEW_NAME = 2
-
-          ::Thrift::Struct.field_accessor self, :old_name, :new_name
-          FIELDS = {
-            OLD_NAME => {:type => ::Thrift::Types::STRING, :name => 'old_name'},
-            NEW_NAME => {:type => ::Thrift::Types::STRING, :name => 'new_name'}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field old_name is unset!') unless @old_name
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field new_name is unset!') unless @new_name
-          end
-
-        end
-
-        class System_rename_column_family_result
-          include ::Thrift::Struct
-          SUCCESS = 0
-          IRE = 1
-
-          ::Thrift::Struct.field_accessor self, :success, :ire
-          FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'},
-            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
+          ::Thrift::Struct.generate_accessors self
         end
 
         class System_add_keyspace_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           KS_DEF = 1
 
-          ::Thrift::Struct.field_accessor self, :ks_def
           FIELDS = {
             KS_DEF => {:type => ::Thrift::Types::STRUCT, :name => 'ks_def', :class => CassandraThrift::KsDef}
           }
@@ -1880,14 +1805,14 @@ require 'cassandra_types'
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field ks_def is unset!') unless @ks_def
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class System_add_keyspace_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
 
-          ::Thrift::Struct.field_accessor self, :success, :ire
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
@@ -1898,13 +1823,13 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class System_drop_keyspace_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           KEYSPACE = 1
 
-          ::Thrift::Struct.field_accessor self, :keyspace
           FIELDS = {
             KEYSPACE => {:type => ::Thrift::Types::STRING, :name => 'keyspace'}
           }
@@ -1915,14 +1840,14 @@ require 'cassandra_types'
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field keyspace is unset!') unless @keyspace
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class System_drop_keyspace_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
 
-          ::Thrift::Struct.field_accessor self, :success, :ire
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
@@ -1933,51 +1858,13 @@ require 'cassandra_types'
           def validate
           end
 
-        end
-
-        class System_rename_keyspace_args
-          include ::Thrift::Struct
-          OLD_NAME = 1
-          NEW_NAME = 2
-
-          ::Thrift::Struct.field_accessor self, :old_name, :new_name
-          FIELDS = {
-            OLD_NAME => {:type => ::Thrift::Types::STRING, :name => 'old_name'},
-            NEW_NAME => {:type => ::Thrift::Types::STRING, :name => 'new_name'}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field old_name is unset!') unless @old_name
-            raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field new_name is unset!') unless @new_name
-          end
-
-        end
-
-        class System_rename_keyspace_result
-          include ::Thrift::Struct
-          SUCCESS = 0
-          IRE = 1
-
-          ::Thrift::Struct.field_accessor self, :success, :ire
-          FIELDS = {
-            SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'},
-            IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
-          }
-
-          def struct_fields; FIELDS; end
-
-          def validate
-          end
-
+          ::Thrift::Struct.generate_accessors self
         end
 
         class System_update_keyspace_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           KS_DEF = 1
 
-          ::Thrift::Struct.field_accessor self, :ks_def
           FIELDS = {
             KS_DEF => {:type => ::Thrift::Types::STRUCT, :name => 'ks_def', :class => CassandraThrift::KsDef}
           }
@@ -1988,14 +1875,14 @@ require 'cassandra_types'
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field ks_def is unset!') unless @ks_def
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class System_update_keyspace_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
 
-          ::Thrift::Struct.field_accessor self, :success, :ire
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
@@ -2006,13 +1893,13 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class System_update_column_family_args
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           CF_DEF = 1
 
-          ::Thrift::Struct.field_accessor self, :cf_def
           FIELDS = {
             CF_DEF => {:type => ::Thrift::Types::STRUCT, :name => 'cf_def', :class => CassandraThrift::CfDef}
           }
@@ -2023,14 +1910,14 @@ require 'cassandra_types'
             raise ::Thrift::ProtocolException.new(::Thrift::ProtocolException::UNKNOWN, 'Required field cf_def is unset!') unless @cf_def
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
         class System_update_column_family_result
-          include ::Thrift::Struct
+          include ::Thrift::Struct, ::Thrift::Struct_Union
           SUCCESS = 0
           IRE = 1
 
-          ::Thrift::Struct.field_accessor self, :success, :ire
           FIELDS = {
             SUCCESS => {:type => ::Thrift::Types::STRING, :name => 'success'},
             IRE => {:type => ::Thrift::Types::STRUCT, :name => 'ire', :class => CassandraThrift::InvalidRequestException}
@@ -2041,6 +1928,7 @@ require 'cassandra_types'
           def validate
           end
 
+          ::Thrift::Struct.generate_accessors self
         end
 
       end

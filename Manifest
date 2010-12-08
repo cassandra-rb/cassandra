@@ -5,6 +5,7 @@ README.rdoc
 Rakefile
 bin/cassandra_helper
 conf/cassandra.in.sh
+conf/cassandra.yaml
 conf/log4j.properties
 conf/storage-conf.xml
 lib/cassandra.rb

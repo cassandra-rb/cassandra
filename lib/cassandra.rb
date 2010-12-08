@@ -1,9 +1,12 @@
 require 'rubygems'
-gem 'thrift', '< 0.2.5'
+gem 'thrift', '~> 0.5.0'
 require 'thrift'
+gem 'thrift_client', '~> 0.6.0'
 require 'thrift_client'
-require 'json' unless defined?(JSON)
+gem 'simple_uuid' , '~> 0.1.0'
 require 'simple_uuid'
+
+require 'json' unless defined?(JSON)
 
 here = File.expand_path(File.dirname(__FILE__))
 
