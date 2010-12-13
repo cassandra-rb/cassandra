@@ -54,6 +54,10 @@ Insert into a column family. You can insert a `Cassandra::OrderedHash`, or a reg
 
   client.insert(:Users, "5", {'screen_name' => "buttonscat"})
 
+The 0.7 API insert() includes support for TTL on columns.  The following example inserts into a comlumn family with a time to live of 30 seconds.
+
+  client.insert(:Users, "5", {'screen_name' => "buttonscat"}, {:ttl=>30})
+  
 Insert into a super column family:
 
   client.insert(:UserRelationships, "5", {"user_timeline" => {UUID.new => "1"}})
