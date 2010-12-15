@@ -1,4 +1,5 @@
 class Cassandra
+
   def self.DEFAULT_TRANSPORT_WRAPPER
     Thrift::FramedTransport
   end
@@ -99,6 +100,16 @@ class Cassandra
     res
   end
 
+  def update_column_family(cf_def)
+    begin
+      res = client.system_update_column_family(cf_def)
+    rescue CassandraThrift::TimedOutException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @schema = nil
+    res
+  end
+
   def add_keyspace(ks_def)
     begin
       res = client.system_add_keyspace(ks_def)
@@ -137,6 +148,18 @@ class Cassandra
     res
   end
 
+  def update_keyspace(ks_def)
+    begin
+      res = client.system_update_keyspace(ks_def)
+    rescue CassandraThrift::TimedOutException => toe
+      puts "Timed out: #{toe.inspect}"
+    rescue Thrift::TransportException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @keyspaces = nil
+    res
+  end
+
   # Open a batch operation and yield self. Inserts and deletes will be queued
   # until the block closes, and then sent atomically to the server.  Supports
   # the <tt>:consistency</tt> option, which overrides the consistency set in
@@ -159,6 +182,61 @@ class Cassandra
     end
   ensure
     @batch = nil
+  end
+
+### 2ary Indexing
+
+  def create_index(ks_name, cf_name, c_name, v_class)
+    cf_def = client.describe_keyspace(ks_name).cf_defs.reject{|x| x.name != cf_name}.first
+    if !cf_def.nil? and cf_def.column_metadata.reject{|x| x.name != c_name}.length == 0
+      c_def  = CassandraThrift::ColumnDef.new do |cd|
+        cd.name             = c_name
+        cd.validation_class = "org.apache.cassandra.db.marshal."+v_class
+        cd.index_type       = CassandraThrift::IndexType::KEYS
+      end
+      cf_def.column_metadata.push(c_def)
+      update_column_family(cf_def)
+    end
+  end
+
+  def drop_index(ks_name, cf_name, c_name)
+    cf_def = client.describe_keyspace(ks_name).cf_defs.reject{|x| x.name != cf_name}.first
+    if !cf_def.nil? and cf_def.column_metadata.reject{|x| x.name != c_name}.length > 0
+      cf_def.column_metadata.delete_if{|x| x.name == c_name}
+      update_column_family(cf_def)
+    end
+  end
+
+	def create_idx_expr(c_name, value, op)
+		CassandraThrift::IndexExpression.new(
+			:column_name => c_name,
+			:value => value,
+			:op => (case op
+								when nil, "EQ", "eq", "=="
+									CassandraThrift::IndexOperator::EQ
+								when "GTE", "gte", ">="
+									CassandraThrift::IndexOperator::GTE
+								when "GT", "gt", ">"
+									CassandraThrift::IndexOperator::GT
+								when "LTE", "lte", "<="
+									CassandraThrift::IndexOperator::LTE
+								when "LT", "lt", "<"
+									CassandraThrift::IndexOperator::LT
+							end ))
+	end
+
+	def create_idx_clause(idx_expressions, start = "")
+		CassandraThrift::IndexClause.new(
+			:start_key => start,
+			:expressions => idx_expressions)
+	end
+
+  # TODO: Supercolumn support.
+  def get_indexed_slices(column_family, idx_clause, *columns_and_options)
+    column_family, columns, _, options =
+      extract_and_validate_params(column_family, [], columns_and_options, READ_DEFAULTS)
+    _get_indexed_slices(column_family, idx_clause, columns, options[:count], options[:start],
+      options[:finish], options[:reversed], options[:consistency])
   end
 
   protected
