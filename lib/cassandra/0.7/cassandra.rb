@@ -187,8 +187,8 @@ class Cassandra
 ### 2ary Indexing
 
   def create_index(ks_name, cf_name, c_name, v_class)
-    cf_def = client.describe_keyspace(ks_name).cf_defs.reject{|x| x.name != cf_name}.first
-    if !cf_def.nil? and cf_def.column_metadata.reject{|x| x.name != c_name}.length == 0
+    cf_def = client.describe_keyspace(ks_name).cf_defs.find{|x| x.name == cf_name}
+    if !cf_def.nil? and !cf_def.column_metadata.find{|x| x.name == c_name}
       c_def  = CassandraThrift::ColumnDef.new do |cd|
         cd.name             = c_name
         cd.validation_class = "org.apache.cassandra.db.marshal."+v_class
@@ -200,8 +200,8 @@ class Cassandra
   end
 
   def drop_index(ks_name, cf_name, c_name)
-    cf_def = client.describe_keyspace(ks_name).cf_defs.reject{|x| x.name != cf_name}.first
-    if !cf_def.nil? and cf_def.column_metadata.reject{|x| x.name != c_name}.length > 0
+    cf_def = client.describe_keyspace(ks_name).cf_defs.find{|x| x.name == cf_name}
+    if !cf_def.nil? and cf_def.column_metadata.find{|x| x.name == c_name}
       cf_def.column_metadata.delete_if{|x| x.name == c_name}
       update_column_family(cf_def)
     end
