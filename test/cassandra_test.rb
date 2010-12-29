@@ -102,6 +102,18 @@ class CassandraTest < Test::Unit::TestCase
     assert !@twitter.exists?(:Statuses, 'bogus', 'body')
   end
 
+  def test_get_value_with_range
+    10.times do |i|
+      @twitter.insert(:Statuses, key, {"body-#{i}" => 'v'})
+    end
+
+    assert_equal 5, @twitter.get(:Statuses, key, :count => 5).length
+    assert_equal 5, @twitter.get(:Statuses, key, :start => "body-5").length
+    assert_equal 5, @twitter.get(:Statuses, key, :finish => "body-4").length
+    assert_equal 5, @twitter.get(:Statuses, key, :start => "body-1", :count => 5).length
+    assert_equal 5, @twitter.get(:Statuses, key, :start => "body-0", :finish => "body-4", :count => 7).length
+  end
+
   def test_exists_with_only_key
     @twitter.insert(:Statuses, key, {'body' => 'v'})
     assert @twitter.exists?(:Statuses, key)

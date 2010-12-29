@@ -89,6 +89,18 @@ class Cassandra
       if column
         row[column]
       else
+        # TODO: extract this to apply_range
+        if options[:start] || options[:finish]
+          start  = to_compare_with_type(options[:start],  column_family)
+          finish = to_compare_with_type(options[:finish], column_family)
+          ret = OrderedHash.new
+          row.keys.each do |key|
+            if (start.nil? || key >= start) && (finish.nil? || key <= finish)
+              ret[key] = row[key]
+            end
+          end
+          row = ret
+        end
         apply_count(row, options[:count], options[:reversed])
       end
     end
