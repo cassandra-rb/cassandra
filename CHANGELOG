@@ -1,4 +1,5 @@
-v0.9.dev Support for secondary indexing (jhermes).
+v0.9.dev Support for secondary indexing. (jhermes)
+Fix bug in mock where we didn't support range queries. (therealadam)
 
 v0.9.0 cassandra 0.7 compat
 
