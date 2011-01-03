@@ -404,6 +404,32 @@ class CassandraTest < Test::Unit::TestCase
     @twitter.insert(:Statuses, key, { 'body' => '1' })
   end
 
+  def test_creating_and_dropping_new_index
+    @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
+    assert_nil @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
+
+    @twitter.drop_index('Twitter', 'Statuses', 'column_name')
+    assert_nil @twitter.drop_index('Twitter', 'Statuses', 'column_name')
+
+    # Recreating and redropping the same index should not error either.
+    @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
+    @twitter.drop_index('Twitter', 'Statuses', 'column_name')
+  end
+
+  def test_get_indexed_slices
+    @twitter.create_index('Twitter', 'Statuses', 'x', 'LongType')
+
+    @twitter.insert(:Statuses, 'row1', { 'x' => [0,10].pack("NN")  })
+    @twitter.insert(:Statuses, 'row2', { 'x' => [0,20].pack("NN")  })
+
+    idx_expr   = @twitter.create_idx_expr('x', [0,20].pack("NN"), "==")
+    idx_clause = @twitter.create_idx_clause([idx_expr])
+
+    indexed_row = @twitter.get_indexed_slices(:Statuses, idx_clause)
+    assert_equal(1,      indexed_row.length)
+    assert_equal('row2', indexed_row.first.key)
+  end
+
   private
 
   def key

@@ -68,6 +68,17 @@ Query a super column:
 
 The returned result will always be a Cassandra::OrderedHash.
 
+Create and delete a 2ary index:
+
+  client.create_index("Twitter", "Users", "revenue_generating_units", "LongType")
+  client.delete_index("Twitter", "Users", "revenue_generating_units"
+
+Create an index clause and query an indexed column family:
+
+  expr   = client.create_idx_expr("revenue_generating_units", 100, ">")
+  clause = client.create_idx_clause([expr])
+  client.get_indexed_slices(:Users, clause)
+
 See Cassandra for more methods.
 
 == Configuration

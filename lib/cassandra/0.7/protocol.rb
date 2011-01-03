@@ -85,6 +85,22 @@ class Cassandra
       _get_range(column_family, start, finish, count, consistency).collect{|i| i.key }
     end
 
+    # TODO: Supercolumn support
+    def _get_indexed_slices(column_family, idx_clause, column, count, start, finish, reversed, consistency)
+      column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family)
+      if column
+        predicate = CassandraThrift::SlicePredicate.new(:column_names => [column])
+      else
+        predicate = CassandraThrift::SlicePredicate.new(:slice_range =>
+          CassandraThrift::SliceRange.new(
+            :reversed => reversed,
+            :count => count,
+            :start => start,
+            :finish => finish))
+      end
+      client.get_indexed_slices(column_parent, idx_clause, predicate, consistency)
+    end
+
     def each_key(column_family)
       column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family.to_s)
       predicate = CassandraThrift::SlicePredicate.new(:column_names => [])
