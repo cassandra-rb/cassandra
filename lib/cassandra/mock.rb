@@ -89,6 +89,7 @@ class Cassandra
       if column
         row[column]
       else
+        row = apply_range(row, column_family, options[:start], options[:finish])
         apply_count(row, options[:count], options[:reversed])
       end
     end
@@ -107,17 +108,7 @@ class Cassandra
           row = cf(column_family)[key] && cf(column_family)[key][column] ?
             cf(column_family)[key][column] :
             OrderedHash.new
-          if options[:start] || options[:finish]
-            start  = to_compare_with_type(options[:start],  column_family, false)
-            finish = to_compare_with_type(options[:finish], column_family, false)
-            ret = OrderedHash.new
-            row.keys.each do |key|
-              if (start.nil? || key >= start) && (finish.nil? || key <= finish)
-                ret[key] = row[key]
-              end
-            end
-            row = ret
-          end
+          row = apply_range(row, column_family, options[:start], options[:finish], false)
           apply_count(row, options[:count], options[:reversed])
         end
       elsif cf(column_family)[key]
@@ -318,5 +309,18 @@ class Cassandra
         row
       end
     end
+
+    def apply_range(row, column_family, strt, fin, standard=true)
+      start  = to_compare_with_type(strt, column_family, standard)
+      finish = to_compare_with_type(fin,  column_family, standard)
+      ret = OrderedHash.new
+      row.keys.each do |key|
+        if (start.nil? || key >= start) && (finish.nil? || key <= finish)
+          ret[key] = row[key]
+        end
+      end
+      ret
+    end
+
   end
 end
