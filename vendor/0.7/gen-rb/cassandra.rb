@@ -6,6 +6,7 @@
 
 require 'thrift'
 require 'cassandra_types'
+require 'cassandra_constants'
 
     module CassandraThrift
       module Cassandra
