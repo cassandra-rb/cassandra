@@ -52,9 +52,14 @@ class Cassandra
 
   def all_nodes
     if @auto_discover_nodes
-      ips = ::JSON.parse(new_client.get_string_property('token map')).values
-      port = @servers.first.split(':').last
-      ips.map{|ip| "#{ip}:#{port}" }
+      temp_client = new_client
+      begin
+        ips = ::JSON.parse(temp_client.get_string_property('token map')).values
+        port = @servers.first.split(':').last
+        ips.map{|ip| "#{ip}:#{port}" }
+      ensure 
+        temp_client.disconnect!
+      end
     else
       @servers
     end
