@@ -262,9 +262,14 @@ class Cassandra
 
   def all_nodes
     if @auto_discover_nodes && !@keyspace.eql?("system")
-      ips = (new_client.describe_ring(@keyspace).map {|range| range.endpoints}).flatten.uniq
-      port = @servers.first.split(':').last
-      ips.map{|ip| "#{ip}:#{port}" }
+      temp_client = new_client
+      begin
+        ips = (temp_client.describe_ring(@keyspace).map {|range| range.endpoints}).flatten.uniq
+        port = @servers.first.split(':').last
+        ips.map{|ip| "#{ip}:#{port}" }
+      ensure
+        temp_client.disconnect!
+      end
     else
       @servers
     end

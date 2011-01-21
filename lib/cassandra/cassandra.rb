@@ -84,8 +84,10 @@ class Cassandra
   end
 
   def disconnect!
-    @client.disconnect!
-    @client = nil
+    if @client
+      @client.disconnect!
+      @client = nil
+    end
   end
 
   def keyspaces

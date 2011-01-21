@@ -162,6 +162,7 @@
   </DataFileDirectories>
   <CalloutLocation>data/cassandra/callouts</CalloutLocation>
   <StagingFileDirectory>data/cassandra/staging</StagingFileDirectory>
+  <SavedCachesDirectory>data/cassandra/saved_caches</SavedCachesDirectory>
 
 
   <!--

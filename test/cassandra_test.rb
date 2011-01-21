@@ -413,6 +413,13 @@ class CassandraTest < Test::Unit::TestCase
     assert_nil @twitter.instance_variable_get(:@client)
   end
 
+  def test_disconnect_when_not_connected!
+    assert_nothing_raised do
+      @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :exception_classes => [])
+      @twitter.disconnect!
+    end
+  end
+
   def test_super_allows_for_non_string_values_while_normal_does_not
     columns = {'user_timelines' => {@uuids[4] => '4', @uuids[5] => '5'}}
 
