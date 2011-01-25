@@ -168,18 +168,18 @@ class Cassandra
     _, _, _, options =
       extract_and_validate_params(schema.cf_defs.first.name, "", [options], WRITE_DEFAULTS)
 
-    @batch = []
-    yield(self)
-    compact_mutations!
+      @batch = []
+      yield(self)
+      compacted_map,seen_clevels = compact_mutations!
+      clevel = if options[:consistency] != nil # Override any clevel from individual mutations if 
+                 options[:consistency]
+               elsif seen_clevels.length > 1 # Cannot choose which CLevel to use if there are several ones
+                 raise "Multiple consistency levels used in the batch, and no override...cannot pick one" 
+               else # if no consistency override has been provided but all the clevels in the batch are the same: use that one
+                 seen_clevels.first
+               end
 
-    @batch.each do |mutation|
-      case mutation.first
-      when :remove
-        _remove(*mutation[1])
-      else
-        _mutate(*mutation)
-      end
-    end
+      _mutate(compacted_map,clevel)
   ensure
     @batch = nil
   end

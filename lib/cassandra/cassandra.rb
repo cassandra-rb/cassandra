@@ -138,16 +138,26 @@ class Cassandra
   # _mutate the element at the column_family:key:[column]:[sub_column]
   # path you request. Supports the <tt>:consistency</tt> and <tt>:timestamp</tt>
   # options.
+  # TODO: we could change this function or add another that support multi-column removal (by list or predicate)
   def remove(column_family, key, *columns_and_options)
     column_family, column, sub_column, options = extract_and_validate_params(column_family, key, columns_and_options, WRITE_DEFAULTS)
 
-    args = {:column_family => column_family}
-    columns = is_super(column_family) ? {:super_column => column, :column => sub_column} : {:column => column}
-    column_path = CassandraThrift::ColumnPath.new(args.merge(columns))
-
-    mutation = [:remove, [key, column_path, options[:timestamp] || Time.stamp, options[:consistency]]]
-
-    @batch ? @batch << mutation : _remove(*mutation[1])
+    if @batch
+      mutation_map = 
+        {
+          key => {
+            column_family => [ _delete_mutation(column_family , is_super(column_family)? column : nil , sub_column , options[:timestamp]|| Time.stamp) ]
+          }
+        }  
+      @batch << [mutation_map, options[:consistency]]
+    else 
+      # Let's continue using the 'remove' thrift method...not sure about the implications/performance of using the mutate instead
+      # Otherwise we coul get use the mutation_map above, and do _mutate(mutation_map, options[:consistency])
+      args = {:column_family => column_family}
+      columns = is_super(column_family) ? {:super_column => column, :column => sub_column} : {:column => column}
+      column_path = CassandraThrift::ColumnPath.new(args.merge(columns))
+      _remove(key, column_path, options[:timestamp] || Time.stamp, options[:consistency])
+    end
   end
 
 ### Read
@@ -243,16 +253,16 @@ class Cassandra
 
     @batch = []
     yield(self)
-    compact_mutations!
-
-    @batch.each do |mutation|
-      case mutation.first
-      when :remove
-        _remove(*mutation[1])
-      else
-        _mutate(*mutation)
-      end
-    end
+    compacted_map,seen_clevels = compact_mutations!
+    clevel = if options[:consistency] != nil # Override any clevel from individual mutations if 
+               options[:consistency]
+             elsif seen_clevels.length > 1 # Cannot choose which CLevel to use if there are several ones
+               raise "Multiple consistency levels used in the batch, and no override...cannot pick one" 
+             else # if no consistency override has been provided but all the clevels in the batch are the same: use that one
+               seen_clevels.first
+             end
+        
+    _mutate(compacted_map,clevel)
   ensure
     @batch = nil
   end
@@ -263,9 +273,41 @@ class Cassandra
     "#{self.class}##{caller[0].split('`').last[0..-3]}"
   end
 
-  # Roll up queued mutations, to improve atomicity.
+  # Roll up queued mutations, to improve atomicity (and performance).
   def compact_mutations!
-    #TODO re-do this rollup
+    used_clevels = {} # hash that lists the consistency levels seen in the batch array. key is the clevel, value is true
+    by_key = {}
+    # @batch is an array of mutation_ops.
+    # A mutation op is a 2-item array containing [mutationmap, consistency_number]
+    # a mutation map is a hash, by key (string) that has a hash by CF name, containing a list of column_mutations)
+    @batch.each do |mutation_op|
+      # A single mutation op looks like:
+      # For an insert/update
+      #[ { key1 => 
+      #            { CF1 => [several of CassThrift:Mutation(colname,value,TS,ttl)]
+      #              CF2 => [several mutations]
+      #            },
+      #    key2 => {...} # Not sure if they can come batched like this...so there might only be a single key (and CF)
+      #      }, # [0]
+      #  consistency # [1] 
+      #]
+      # For a remove:
+      # [  :remove,  # [0]
+      #    [key, CassThrift:ColPath, timestamp, consistency ]  # [1]
+      # ]
+      mmap = mutation_op[0] # :remove OR a hash like {"key"=> {"CF"=>[mutationclass1,...] } }
+      used_clevels[mutation_op[1]]=true #save the clevel required for this operation
+
+      mmap.keys.each do |k|
+        by_key[k] = {} unless by_key.has_key? k #make sure the key exists
+        mmap[k].keys.each do |cf| # For each CF in that key
+          by_key[k][cf] = [] unless by_key[k][cf] != nil
+          by_key[k][cf].concat mmap[k][cf] # Append the list of mutations for that key and CF
+        end
+      end
+    end
+    # Returns the batch mutations map, and an array with the consistency levels 'seen' in the batch
+    [by_key, used_clevels.keys]
   end
 
   def new_client

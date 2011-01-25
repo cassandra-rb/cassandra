@@ -31,5 +31,31 @@ class Cassandra
         )
       )
     end
+
+    # General info about a deletion object within a mutation
+    # timestamp - required. If this is the only param, it will cause deletion of the whole key at that TS
+    # supercolumn - opt. If passed, the deletes will only occur within that supercolumn (only subcolumns 
+    #               will be deleted). Otherwise the normal columns will be deleted.
+    # predicate - opt. Defines how to match the columns to delete. if supercolumn passed, the slice will 
+    #               be scoped to subcolumns of that supercolumn.
+    
+    # Deletes a single column from the containing key/CF (and possibly supercolumn), at a given timestamp. 
+    # Although mutations (as opposed to 'remove' calls) support deleting slices and lists of columns in one shot, this is not implemented here.
+    # The main reason being that the batch function takes removes, but removes don't have that capability...so we'd need to change the remove
+    # methods to use delete mutation calls...although that might have performance implications. We'll leave that refactoring for later.
+    def _delete_mutation(cf, column, subcolumn, timestamp, options={})
+      
+      deletion_hash = {:timestamp => timestamp}
+      if is_super(cf)
+         deletion_hash[:super_column] = column if column
+         deletion_hash[:predicate] = CassandraThrift::SlicePredicate.new(:column_names => [subcolumn]) if subcolumn
+     else
+         deletion_hash[:predicate] = CassandraThrift::SlicePredicate.new(:column_names => [column]) if column
+      end
+      CassandraThrift::Mutation.new(
+        :deletion => CassandraThrift::Deletion.new(deletion_hash)
+        )      
+    end
+    
   end
 end

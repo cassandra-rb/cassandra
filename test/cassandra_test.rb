@@ -11,10 +11,10 @@ class CassandraTest < Test::Unit::TestCase
     @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :exception_classes => [])
     @twitter.clear_keyspace!
 
-    @blogs = Cassandra.new('Multiblog')
+    @blogs = Cassandra.new('Multiblog', "127.0.0.1:9160",:retries => 2, :exception_classes => [])
     @blogs.clear_keyspace!
 
-    @blogs_long = Cassandra.new('MultiblogLong')
+    @blogs_long = Cassandra.new('MultiblogLong', "127.0.0.1:9160",:retries => 2, :exception_classes => [])
     @blogs_long.clear_keyspace!
 
     @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
@@ -256,11 +256,12 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_remove_super_value
-    columns = {@uuids[1] => 'v1'}
+    columns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
+    column_name_to_remove = @uuids[2]
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
-    @twitter.remove(:StatusRelationships, key, 'user_timelines', columns.keys.first)
-    assert_nil @twitter.get(:StatusRelationships, key, 'user_timelines', columns.keys.first)
-    assert_nil @twitter.get(:StatusRelationships, key, 'user_timelines').timestamps[columns.keys.first]
+    @twitter.remove(:StatusRelationships, key, 'user_timelines', column_name_to_remove)
+    assert_equal( columns.reject{|k,v| k == column_name_to_remove}, @twitter.get(:StatusRelationships, key, 'user_timelines') )
+    assert_nil @twitter.get(:StatusRelationships, key, 'user_timelines').timestamps[column_name_to_remove]
   end
 
   def test_clear_column_family
@@ -360,6 +361,12 @@ class CassandraTest < Test::Unit::TestCase
     k = key
 
     @twitter.insert(:Users, k + '1', {'body' => 'v1', 'user' => 'v1'})
+    initial_subcolumns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
+    @twitter.insert(:StatusRelationships, k, {'user_timelines' => initial_subcolumns, 'dummy_supercolumn' => {@uuids[5] => 'value'}})
+    assert_equal(initial_subcolumns, @twitter.get(:StatusRelationships, k, 'user_timelines'))
+    assert_equal({@uuids[5] => 'value'}, @twitter.get(:StatusRelationships, k, 'dummy_supercolumn'))
+    new_subcolumns = {@uuids[3] => 'v3', @uuids[4] => 'v4'}
+    subcolumn_to_delete = initial_subcolumns.keys.first # the first column of the initial set
 
     @twitter.batch do
       @twitter.insert(:Users, k + '2', {'body' => 'v2', 'user' => 'v2'})
@@ -377,6 +384,15 @@ class CassandraTest < Test::Unit::TestCase
       @twitter.remove(:Users, k + '4')
       @twitter.insert(:Users, k + '4', {'body' => 'v4', 'user' => 'v4'})
       assert_equal({}, @twitter.get(:Users, k + '4')) # Not yet written
+
+      # SuperColumns
+      # Add and delete new sub columns to the user timeline supercolumn
+      @twitter.insert(:StatusRelationships, k, {'user_timelines' => new_subcolumns }) 
+      @twitter.remove(:StatusRelationships, k, 'user_timelines' , subcolumn_to_delete ) # Delete the first of the initial_subcolumns from the user_timeline supercolumn
+      assert_equal(initial_subcolumns, @twitter.get(:StatusRelationships, k, 'user_timelines')) # No additions or deletes reflected yet
+      # Delete a complete supercolumn 
+      @twitter.remove(:StatusRelationships, k, 'dummy_supercolumn' ) # Delete the full dummy supercolumn
+      assert_equal({@uuids[5] => 'value'}, @twitter.get(:StatusRelationships, k, 'dummy_supercolumn')) # dummy supercolumn not yet deleted 
     end
 
     assert_equal({'body' => 'v2', 'user' => 'v2'}, @twitter.get(:Users, k + '2')) # Written
@@ -389,6 +405,12 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}.keys.sort, @twitter.get(:Users, k + '3').timestamps.keys.sort) # Written and compacted
     assert_equal({'body' => 'v4', 'user' => 'v4'}.keys.sort, @twitter.get(:Users, k + '4').timestamps.keys.sort) # Written
     assert_equal({'body' => 'v'}.keys.sort, @twitter.get(:Statuses, k + '3').timestamps.keys.sort) # Written
+
+    # Final result: initial_subcolumns - initial_subcolumns.first + new_subcolumns
+    resulting_subcolumns = initial_subcolumns.merge(new_subcolumns).reject{|k,v| k == subcolumn_to_delete }
+    assert_equal(resulting_subcolumns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
+    assert_equal({}, @twitter.get(:StatusRelationships, key, 'dummy_supercolumn')) # dummy supercolumn deleted 
+
   end
 
   def test_complain_about_nil_key
