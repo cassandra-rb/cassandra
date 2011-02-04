@@ -207,29 +207,29 @@ class Cassandra
     end
   end
 
-	def create_idx_expr(c_name, value, op)
-		CassandraThrift::IndexExpression.new(
-			:column_name => c_name,
-			:value => value,
-			:op => (case op
-								when nil, "EQ", "eq", "=="
-									CassandraThrift::IndexOperator::EQ
-								when "GTE", "gte", ">="
-									CassandraThrift::IndexOperator::GTE
-								when "GT", "gt", ">"
-									CassandraThrift::IndexOperator::GT
-								when "LTE", "lte", "<="
-									CassandraThrift::IndexOperator::LTE
-								when "LT", "lt", "<"
-									CassandraThrift::IndexOperator::LT
-							end ))
-	end
+  def create_idx_expr(c_name, value, op)
+    CassandraThrift::IndexExpression.new(
+      :column_name => c_name,
+      :value => value,
+      :op => (case op
+                when nil, "EQ", "eq", "=="
+                  CassandraThrift::IndexOperator::EQ
+                when "GTE", "gte", ">="
+                  CassandraThrift::IndexOperator::GTE
+                when "GT", "gt", ">"
+                  CassandraThrift::IndexOperator::GT
+                when "LTE", "lte", "<="
+                  CassandraThrift::IndexOperator::LTE
+                when "LT", "lt", "<"
+                  CassandraThrift::IndexOperator::LT
+              end ))
+  end
 
-	def create_idx_clause(idx_expressions, start = "")
-		CassandraThrift::IndexClause.new(
-			:start_key => start,
-			:expressions => idx_expressions)
-	end
+  def create_idx_clause(idx_expressions, start = "")
+    CassandraThrift::IndexClause.new(
+      :start_key => start,
+      :expressions => idx_expressions)
+  end
 
   # TODO: Supercolumn support.
   def get_indexed_slices(column_family, idx_clause, *columns_and_options)
