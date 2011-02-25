@@ -17,7 +17,7 @@ class Cassandra
   end
 
   def keyspace=(ks)
-    client.set_keyspace(ks) if check_keyspace(ks)
+    client.set_keyspace(ks)
     @schema = nil; @keyspace = ks
   end
 
@@ -244,7 +244,7 @@ class Cassandra
   def client
     if @client.nil? || @client.current_server.nil?
       reconnect!
-      @client.set_keyspace(@keyspace) if check_keyspace
+      @client.set_keyspace(@keyspace)
     end
     @client
   end
@@ -252,12 +252,6 @@ class Cassandra
   def reconnect!
     @servers = all_nodes
     @client = new_client
-  end
-
-  def check_keyspace(ks = @keyspace)
-    !(unless (_keyspaces = keyspaces()).include?(ks)
-      raise AccessError, "Keyspace #{ks.inspect} not found. Available: #{_keyspaces.inspect}"
-    end)
   end
 
   def all_nodes

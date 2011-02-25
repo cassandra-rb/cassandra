@@ -41,13 +41,6 @@ class Cassandra
   def reconnect!
     @servers = all_nodes
     @client = new_client
-    check_keyspace
-  end
-
-  def check_keyspace
-    unless (keyspaces = client.get_string_list_property("keyspaces")).include?(@keyspace)
-      raise AccessError, "Keyspace #{@keyspace.inspect} not found. Available: #{keyspaces.inspect}"
-    end
   end
 
   def all_nodes

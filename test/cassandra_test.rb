@@ -397,13 +397,6 @@ class CassandraTest < Test::Unit::TestCase
     end
   end
 
-  def test_raise_access_error_on_nonexistent_keyspace
-    nonexistent = Cassandra.new('Nonexistent')
-    assert_raises(Cassandra::AccessError) do
-      nonexistent.get "foo", "bar"
-    end
-  end
-
   def test_nil_sub_column_value
     @twitter.insert(:Index, 'asdf', {"thing" => {'jkl' => ''} })
   end
