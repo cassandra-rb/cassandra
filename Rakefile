@@ -10,8 +10,6 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
     p.dependencies = ['thrift_client >=0.6.0', 'json', 'rake', 'simple_uuid >=0.1.0']
     p.ignore_pattern = /^(data|vendor\/cassandra|cassandra|vendor\/thrift)/
     p.rdoc_pattern = /^(lib|bin|tasks|ext)|^README|^CHANGELOG|^TODO|^LICENSE|^COPYING$/
-    p.url = "http://blog.evanweaver.com/files/doc/fauna/cassandra/"
-    p.docs_host = "blog.evanweaver.com:~/www/bax/public/files/doc/"
   end
 end
 
