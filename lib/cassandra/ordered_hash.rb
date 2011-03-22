@@ -156,13 +156,13 @@ class Cassandra
       super
     end
 
-    def delete_if
-      @timestamps.delete_if
+    def delete_if(&block)
+      @timestamps.delete_if(&block)
       super
     end
 
-    def reject!
-      @timestamps.reject!
+    def reject!(&block)
+      @timestamps.reject!(&block)
       super
     end
 
