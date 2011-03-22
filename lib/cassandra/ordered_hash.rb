@@ -189,12 +189,5 @@ class Cassandra
     def inspect
       "#<OrderedHash #{super}\n#{@timestamps.inspect}>"
     end
-
-  private
-
-    def sync_keys!
-      @timestamps.delete_if {|k,v| !has_key?(k)}
-      super
-    end
   end
 end
