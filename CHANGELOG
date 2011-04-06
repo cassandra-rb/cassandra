@@ -1,4 +1,4 @@
-v0.9.dev Support for secondary indexing. (jhermes)
+v0.9.1 Support for secondary indexing. (jhermes)
 Fix bug in mock where we didn't support range queries. (therealadam)
 Support deletes in batch mutations. [blanquer]
 
