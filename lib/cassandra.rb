@@ -6,14 +6,14 @@ require 'thrift_client'
 gem 'simple_uuid' , '~> 0.1.0'
 require 'simple_uuid'
 
-require 'json' unless defined?(JSON)
-
 here = File.expand_path(File.dirname(__FILE__))
 
 class Cassandra ; end
 unless Cassandra.respond_to?(:VERSION)
   require "#{here}/cassandra/0.6"
 end
+
+require 'json' unless defined?(JSON) || Cassandra.VERSION != "0.6"
 
 $LOAD_PATH << "#{here}/../vendor/#{Cassandra.VERSION}/gen-rb"
 require "#{here}/../vendor/#{Cassandra.VERSION}/gen-rb/cassandra"
