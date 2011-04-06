@@ -156,13 +156,13 @@ class Cassandra
       super
     end
 
-    def delete_if
-      @timestamps.delete_if
+    def delete_if(&block)
+      @timestamps.delete_if(&block)
       super
     end
 
-    def reject!
-      @timestamps.reject!
+    def reject!(&block)
+      @timestamps.reject!(&block)
       super
     end
 
@@ -188,13 +188,6 @@ class Cassandra
 
     def inspect
       "#<OrderedHash #{super}\n#{@timestamps.inspect}>"
-    end
-
-  private
-
-    def sync_keys!
-      @timestamps.delete_if {|k,v| !has_key?(k)}
-      super
     end
   end
 end
