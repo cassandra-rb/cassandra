@@ -1,5 +1,6 @@
 v0.9.dev Support for secondary indexing. (jhermes)
 Fix bug in mock where we didn't support range queries. (therealadam)
+Support deletes in batch mutations. [blanquer]
 
 v0.9.0 cassandra 0.7 compat
 
