@@ -226,8 +226,8 @@ class Cassandra
     end
   end
 
-  # Return a list of keys in the column_family you request. Requires the
-  # table to be partitioned with OrderPreservingHash. Supports the
+  # Return a list of keys in the column_family you request. Only works well if
+  # the table is partitioned with OrderPreservingPartitioner. Supports the
   # <tt>:count</tt>, <tt>:start</tt>, <tt>:finish</tt>, and <tt>:consistency</tt>
   # options.
   def get_range(column_family, options = {})
