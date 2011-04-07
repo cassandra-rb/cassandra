@@ -46,7 +46,7 @@ class Cassandra
     def _multiget(column_family, keys, column, sub_column, count, start, finish, reversed, consistency)
       # Single values; count and range parameters have no effect
       if is_super(column_family) and sub_column
-        predicate = CassandraThrift::SlicePredicate.new(:column_names => [column])
+        predicate = CassandraThrift::SlicePredicate.new(:column_names => [sub_column])
         column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column)
         multi_sub_columns_to_hash!(column_family, client.multiget_slice(keys, column_parent, predicate, consistency))
 
