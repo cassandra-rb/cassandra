@@ -236,6 +236,13 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({}, @twitter.get(:Statuses, key))
   end
 
+  def test_remove_super_sub_key_errors_for_normal_column_family
+    @twitter.insert(:Statuses, key, {'body' => 'v'})
+    assert_equal({'body' => 'v'}, @twitter.get(:Statuses, key))
+
+    assert_raise( ArgumentError) { @twitter.remove(:Statuses, key, 'body' , 'subcolumn') }
+  end
+
   def test_remove_value
     @twitter.insert(:Statuses, key, {'body' => 'v'})
     @twitter.remove(:Statuses, key, 'body')
@@ -360,6 +367,7 @@ class CassandraTest < Test::Unit::TestCase
   def test_batch_mutate
     k = key
 
+    @twitter.insert(:Users, k + '0', {'delete_me' => 'v0', 'keep_me' => 'v0'})
     @twitter.insert(:Users, k + '1', {'body' => 'v1', 'user' => 'v1'})
     initial_subcolumns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
     @twitter.insert(:StatusRelationships, k, {'user_timelines' => initial_subcolumns, 'dummy_supercolumn' => {@uuids[5] => 'value'}})
@@ -369,18 +377,23 @@ class CassandraTest < Test::Unit::TestCase
     subcolumn_to_delete = initial_subcolumns.keys.first # the first column of the initial set
 
     @twitter.batch do
+      # Normal Columns
       @twitter.insert(:Users, k + '2', {'body' => 'v2', 'user' => 'v2'})
       @twitter.insert(:Users, k + '3', {'body' => 'bogus', 'user' => 'v3'})
       @twitter.insert(:Users, k + '3', {'body' => 'v3', 'location' => 'v3'})
       @twitter.insert(:Statuses, k + '3', {'body' => 'v'})
 
+      assert_equal({'delete_me' => 'v0', 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # Written
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Written
       assert_equal({}, @twitter.get(:Users, k + '2')) # Not yet written
       assert_equal({}, @twitter.get(:Statuses, k + '3')) # Not yet written
 
-      @twitter.remove(:Users, k + '1')
+      @twitter.remove(:Users, k + '1') # Full row 
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Not yet removed
 
+      @twitter.remove(:Users, k +'0', 'delete_me') # A single column of the row
+      assert_equal({'delete_me' => 'v0', 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # Not yet removed
+      
       @twitter.remove(:Users, k + '4')
       @twitter.insert(:Users, k + '4', {'body' => 'v4', 'user' => 'v4'})
       assert_equal({}, @twitter.get(:Users, k + '4')) # Not yet written
@@ -400,6 +413,9 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({'body' => 'v4', 'user' => 'v4'}, @twitter.get(:Users, k + '4')) # Written
     assert_equal({'body' => 'v'}, @twitter.get(:Statuses, k + '3')) # Written
     assert_equal({}, @twitter.get(:Users, k + '1')) # Removed
+    
+    assert_equal({ 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # 'delete_me' column removed
+    
 
     assert_equal({'body' => 'v2', 'user' => 'v2'}.keys.sort, @twitter.get(:Users, k + '2').timestamps.keys.sort) # Written
     assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}.keys.sort, @twitter.get(:Users, k + '3').timestamps.keys.sort) # Written and compacted
