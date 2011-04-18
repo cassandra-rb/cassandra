@@ -68,17 +68,16 @@ class Cassandra
     # The main reason being that the batch function takes removes, but removes don't have that capability...so we'd need to change the remove
     # methods to use delete mutation calls...although that might have performance implications. We'll leave that refactoring for later.
     def _delete_mutation(cf, column, subcolumn, timestamp, options={})
-      
       deletion_hash = {:timestamp => timestamp}
       if is_super(cf)
-         deletion_hash[:super_column] = column if column
-         deletion_hash[:predicate] = CassandraThrift::SlicePredicate.new(:column_names => [subcolumn]) if subcolumn
-     else
-         deletion_hash[:predicate] = CassandraThrift::SlicePredicate.new(:column_names => [column]) if column
+        deletion_hash[:super_column] = column if column
+        deletion_hash[:predicate] = CassandraThrift::SlicePredicate.new(:column_names => [subcolumn]) if subcolumn
+      else
+        deletion_hash[:predicate] = CassandraThrift::SlicePredicate.new(:column_names => [column]) if column
       end
       CassandraThrift::Mutation.new(
         :deletion => CassandraThrift::Deletion.new(deletion_hash)
-        )      
+      )
     end
    
   end

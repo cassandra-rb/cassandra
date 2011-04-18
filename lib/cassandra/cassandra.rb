@@ -276,7 +276,7 @@ class Cassandra
   # Roll up queued mutations, to improve atomicity (and performance).
   def compact_mutations!
     used_clevels = {} # hash that lists the consistency levels seen in the batch array. key is the clevel, value is true
-    by_key = {}
+    by_key = Hash.new{|h,k | h[k] = {}}
     # @batch is an array of mutation_ops.
     # A mutation op is a 2-item array containing [mutationmap, consistency_number]
     # a mutation map is a hash, by key (string) that has a hash by CF name, containing a list of column_mutations)
@@ -291,18 +291,13 @@ class Cassandra
       #      }, # [0]
       #  consistency # [1] 
       #]
-      # For a remove:
-      # [  :remove,  # [0]
-      #    [key, CassThrift:ColPath, timestamp, consistency ]  # [1]
-      # ]
       mmap = mutation_op[0] # :remove OR a hash like {"key"=> {"CF"=>[mutationclass1,...] } }
-      used_clevels[mutation_op[1]]=true #save the clevel required for this operation
+      used_clevels[mutation_op[1]] = true #save the clevel required for this operation
 
       mmap.keys.each do |k|
-        by_key[k] = {} unless by_key.has_key? k #make sure the key exists
         mmap[k].keys.each do |cf| # For each CF in that key
-          by_key[k][cf] = [] unless by_key[k][cf] != nil
-          by_key[k][cf].concat mmap[k][cf] # Append the list of mutations for that key and CF
+          by_key[k][cf] ||= []
+          by_key[k][cf].concat(mmap[k][cf]) # Append the list of mutations for that key and CF
         end
       end
     end
