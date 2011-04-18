@@ -442,6 +442,15 @@ class CassandraTest < Test::Unit::TestCase
     @twitter.insert(:Statuses, key, { 'body' => '1' })
   end
 
+  def test_batch_over_deletes
+    @twitter.batch do
+      @twitter.insert(:Users, key, {'body' => 'body', 'user' => 'user'})
+      @twitter.remove(:Users, key, 'body')
+    end
+
+    assert_equal({'user' => 'user'}, @twitter.get(:Users, key))
+  end
+
   if cassandra07?
     def test_creating_and_dropping_new_index
       @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')

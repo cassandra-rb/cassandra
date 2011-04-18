@@ -1,3 +1,5 @@
+v0.9.2 fix bug with deletions in batch mutations
+
 v0.9.1 Support for secondary indexing. (jhermes)
 Fix bug in mock where we didn't support range queries. (therealadam)
 Support deletes in batch mutations. [blanquer]

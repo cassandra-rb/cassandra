@@ -146,9 +146,9 @@ class Cassandra
       mutation_map = 
         {
           key => {
-            column_family => [ _delete_mutation(column_family , is_super(column_family)? column : nil , sub_column , options[:timestamp]|| Time.stamp) ]
+            column_family => [ _delete_mutation(column_family, column, sub_column , options[:timestamp]|| Time.stamp) ]
           }
-        }  
+        }
       @batch << [mutation_map, options[:consistency]]
     else 
       # Let's continue using the 'remove' thrift method...not sure about the implications/performance of using the mutate instead
