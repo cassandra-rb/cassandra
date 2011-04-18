@@ -16,6 +16,7 @@ class Cassandra
     include ::Cassandra::Columns
 
     def initialize(keyspace, storage_xml)
+      @is_super = {}
       @keyspace = keyspace
       @column_name_class = {}
       @sub_column_name_class = {}

@@ -17,6 +17,7 @@ class Cassandra
 
       # Ranges
       column, sub_column = args[0], args[1]
+      raise ArgumentError, "Invalid arguments: subcolumns specified for a non-supercolumn family" if sub_column && !is_super(column_family)      
       klass, sub_klass = column_name_class(column_family), sub_column_name_class(column_family)
       range_class = column ? sub_klass : klass
 
