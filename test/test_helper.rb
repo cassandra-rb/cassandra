@@ -1,6 +1,7 @@
+version = ENV['CASSANDRA_VERSION'] || '0.8'
 
 require 'test/unit'
-require "#{File.expand_path(File.dirname(__FILE__))}/../lib/cassandra"
+require "#{File.expand_path(File.dirname(__FILE__))}/../lib/cassandra/#{version}"
 begin; require 'ruby-debug'; rescue LoadError; end
 
 begin
