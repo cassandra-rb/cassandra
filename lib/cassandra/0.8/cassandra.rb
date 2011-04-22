@@ -57,8 +57,9 @@ class Cassandra
 
   # Remove all rows in the column family you request.
   def truncate!(column_family)
-    client.truncate(column_family)
+    client.truncate(column_family.to_s)
   end
+  alias clear_column_family! truncate!
 
   # Remove all rows in the keyspace.
   def clear_keyspace!
