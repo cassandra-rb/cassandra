@@ -1,0 +1,37 @@
+# Cassandra YAML generated from previous config
+# Configuration wiki: http://wiki.apache.org/cassandra/StorageConfiguration
+
+cluster_name:                        Test
+
+listen_address:                      localhost
+storage_port:                        7000
+rpc_port:                            9160
+seeds:
+  - 127.0.0.1
+data_file_directories:
+  - data/data
+commitlog_directory:                 data/commitlog
+auto_bootstrap:                      false
+partitioner:                         org.apache.cassandra.dht.RandomPartitioner
+authenticator:                       org.apache.cassandra.auth.AllowAllAuthenticator
+
+binary_memtable_throughput_in_mb:    256
+column_index_size_in_kb:             64
+commitlog_rotation_threshold_in_mb:  128
+commitlog_sync:                      periodic
+commitlog_sync_period_in_ms:         10000
+concurrent_reads:                    8
+concurrent_writes:                   32
+disk_access_mode:                    auto
+dynamic_snitch:                      false
+hinted_handoff_enabled:              true
+in_memory_compaction_limit_in_mb:    256
+memtable_flush_after_mins:           60
+memtable_operations_in_millions:     0.3
+memtable_throughput_in_mb:           64
+phi_convict_threshold:               8
+rpc_timeout_in_ms:                   5000
+sliced_buffer_size_in_kb:            64
+snapshot_before_compaction:          false
+thrift_framed_transport_size_in_mb:  15
+thrift_max_message_length_in_mb:     16

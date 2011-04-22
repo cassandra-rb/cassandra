@@ -26,7 +26,7 @@ directory CASSANDRA_HOME
 directory File.join(CASSANDRA_HOME, 'test', 'data')
 
 def setup_cassandra_version(version = CASSANDRA_VERSION)
-  destination_directory = File.join(CASSANDRA_HOME, File.basename(download_source,'-bin.tar.gz'))
+  destination_directory = File.join(CASSANDRA_HOME, 'cassandra-' + CASSANDRA_VERSION)
   download_source       = CassandraBinaries[CASSANDRA_VERSION]
   download_destination  = File.join("/tmp", File.basename(download_source))
 
@@ -45,9 +45,9 @@ task :cassandra => [:java, File.join(CASSANDRA_HOME, 'test', 'data')] do
 
   env = ""
   if !ENV["CASSANDRA_INCLUDE"]
-    env << "CASSANDRA_INCLUDE=#{File.expand_path(Dir.pwd)}/conf/cassandra.in.sh "
-    env << "CASSANDRA_HOME=#{CASSANDRA_HOME}/server "
-    env << "CASSANDRA_CONF=#{File.expand_path(Dir.pwd)}/conf"
+    env << "CASSANDRA_INCLUDE=#{File.expand_path(Dir.pwd)}/conf/cassandra-env.sh "
+    env << "CASSANDRA_HOME=#{CASSANDRA_HOME}/cassandra-#{CASSANDRA_VERSION} "
+    env << "CASSANDRA_CONF=#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION}"
   else
     env << "CASSANDRA_INCLUDE=#{ENV['CASSANDRA_INCLUDE']} "
     env << "CASSANDRA_HOME=#{ENV['CASSANDRA_HOME']} "
