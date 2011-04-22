@@ -129,8 +129,9 @@ class CassandraTest < Test::Unit::TestCase
 
   def test_get_several_super_keys
     columns = {
-      'user_timelines' => {@uuids[1]  => 'v1'},
-      'mentions_timelines' => {@uuids[2]  => 'v2'}}
+      'mentions_timelines' => {@uuids[2]  => 'v2'},
+      'user_timelines' => {@uuids[1]  => 'v1'}}
+
     @twitter.insert(:StatusRelationships, key, columns)
 
     assert_equal(columns, @twitter.get(:StatusRelationships, key))
