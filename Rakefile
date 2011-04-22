@@ -1,3 +1,5 @@
+require 'fileutils'
+
 unless ENV['FROM_BIN_CASSANDRA_HELPER']
   require 'rubygems'
   require 'echoe'
@@ -22,30 +24,31 @@ CassandraBinaries = {
 CASSANDRA_HOME = ENV['CASSANDRA_HOME'] || "#{ENV['HOME']}/cassandra"
 CASSANDRA_VERSION = ENV['CASSANDRA_VERSION'] || '0.8'
 
-directory CASSANDRA_HOME
-directory File.join(CASSANDRA_HOME, 'test', 'data')
-
 def setup_cassandra_version(version = CASSANDRA_VERSION)
+  FileUtils.mkdir_p CASSANDRA_HOME
+
   destination_directory = File.join(CASSANDRA_HOME, 'cassandra-' + CASSANDRA_VERSION)
-  download_source       = CassandraBinaries[CASSANDRA_VERSION]
-  download_destination  = File.join("/tmp", File.basename(download_source))
 
   unless File.exists?(File.join(destination_directory, 'bin','cassandra'))
+    download_source       = CassandraBinaries[CASSANDRA_VERSION]
+    download_destination  = File.join("/tmp", File.basename(download_source))
+    untar_directory       = File.join(CASSANDRA_HOME,  File.basename(download_source,'-bin.tar.gz'))
+
     puts "downloading cassandra"
     sh "curl -L -o #{download_destination} #{download_source}"
 
     sh "tar xzf #{download_destination} -C #{CASSANDRA_HOME}"
-    sh "mv #{destination_directory}-bin #{destination_directory}"
+    sh "mv #{untar_directory} #{destination_directory}"
   end
 end
 
 desc "Start Cassandra"
-task :cassandra => [:java, File.join(CASSANDRA_HOME, 'test', 'data')] do
+task :cassandra => :java do
   setup_cassandra_version
 
   env = ""
   if !ENV["CASSANDRA_INCLUDE"]
-    env << "CASSANDRA_INCLUDE=#{File.expand_path(Dir.pwd)}/conf/cassandra-env.sh "
+    env << "CASSANDRA_INCLUDE=#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION}/cassandra.in.sh "
     env << "CASSANDRA_HOME=#{CASSANDRA_HOME}/cassandra-#{CASSANDRA_VERSION} "
     env << "CASSANDRA_CONF=#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION}"
   else
@@ -54,7 +57,9 @@ task :cassandra => [:java, File.join(CASSANDRA_HOME, 'test', 'data')] do
     env << "CASSANDRA_CONF=#{ENV['CASSANDRA_CONF']}"
   end
 
-  Dir.chdir(File.join(CASSANDRA_HOME, 'server')) do
+  puts env
+
+  Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
     sh("env #{env} bin/cassandra -f")
   end
 end
