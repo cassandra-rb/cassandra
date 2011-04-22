@@ -14,6 +14,7 @@ class Cassandra
       remove(column_family, key, options)
     end
   end
+  alias truncate! clear_column_family!
 
   # Remove all rows in the keyspace. Supports options <tt>:consistency</tt> and
   # <tt>:timestamp</tt>.
