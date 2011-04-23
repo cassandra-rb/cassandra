@@ -1,0 +1,48 @@
+{"Twitter":{
+    "Users":{
+      "CompareWith":"org.apache.cassandra.db.marshal.UTF8Type",
+      "Type":"Standard"},
+    "UserAudits":{
+      "CompareWith":"org.apache.cassandra.db.marshal.UTF8Type",
+      "Type":"Standard"},
+    "UserRelationships":{ 
+      "CompareSubcolumnsWith":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "CompareWith":"org.apache.cassandra.db.marshal.UTF8Type",
+      "Type":"Super"},
+    "Usernames":{
+      "CompareWith":"org.apache.cassandra.db.marshal.UTF8Type",
+      "Type":"Standard"},
+    "Statuses":{
+      "CompareWith":"org.apache.cassandra.db.marshal.UTF8Type",
+      "Type":"Standard"},
+    "StatusAudits":{
+      "CompareWith":"org.apache.cassandra.db.marshal.UTF8Type",
+      "Type":"Standard"},
+    "StatusRelationships":{
+      "CompareSubcolumnsWith":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "CompareWith":"org.apache.cassandra.db.marshal.UTF8Type",
+      "Type":"Super"},
+    "Index":{
+      "CompareWith":"org.apache.cassandra.db.marshal.UTF8Type",
+      "Type":"Super"},
+    "TimelinishThings":{
+      "CompareWith":"org.apache.cassandra.db.marshal.BytesType",
+      "Type":"Standard"}
+  },
+"Multiblog":{
+    "Blogs":{
+      "CompareWith":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "Type":"Standard"},
+    "Comments":{
+      "CompareWith":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "Type":"Standard"}
+  },
+"MultiblogLong":{
+    "Blogs":{
+      "CompareWith":"org.apache.cassandra.db.marshal.LongType",
+      "Type":"Standard"},
+    "Comments":{
+      "CompareWith":"org.apache.cassandra.db.marshal.LongType",
+      "Type":"Standard"}
+  }
+}

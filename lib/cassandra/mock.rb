@@ -1,5 +1,3 @@
-require 'nokogiri'
-
 class SimpleUUID::UUID
   def >=(other)
     (self <=> other) >= 0
@@ -15,12 +13,12 @@ class Cassandra
     include ::Cassandra::Helpers
     include ::Cassandra::Columns
 
-    def initialize(keyspace, storage_xml)
+    def initialize(keyspace, schema)
       @is_super = {}
       @keyspace = keyspace
       @column_name_class = {}
       @sub_column_name_class = {}
-      @storage_xml = storage_xml
+      @schema = schema[keyspace]
       clear_keyspace!
     end
 
@@ -40,7 +38,7 @@ class Cassandra
         @batch << [:insert, column_family, key, hash_or_array, options]
       else
         raise ArgumentError if key.nil?
-        if column_family_type(column_family) == 'Standard'
+        if !is_super(column_family)
           insert_standard(column_family, key, hash_or_array)
         else
           insert_super(column_family, key, hash_or_array)
@@ -78,7 +76,7 @@ class Cassandra
     def get(column_family, key, *columns_and_options)
       column_family, column, sub_column, options =
         extract_and_validate_params_for_real(column_family, [key], columns_and_options, READ_DEFAULTS)
-      if column_family_type(column_family) == 'Standard'
+      if !is_super(column_family)
         get_standard(column_family, key, column, options)
       else
         get_super(column_family, key, column, sub_column, options)
@@ -199,11 +197,11 @@ class Cassandra
     end
 
     def schema(load=true)
-      if !load && !@schema
-        []
-      else
-        @schema ||= schema_for_keyspace(@keyspace)
-      end
+      @schema
+    end
+
+    def column_family_property(column_family, key)
+      schema[column_family.to_s][key]
     end
 
     private
@@ -219,30 +217,6 @@ class Cassandra
         end
       end
       ret
-    end
-
-    def schema_for_keyspace(keyspace)
-      doc = read_storage_xml
-      ret = {}
-      doc.css("Keyspaces Keyspace[@Name='#{keyspace}']").css('ColumnFamily').each do |cf|
-        ret[cf['Name']] = {}
-        if cf['CompareSubcolumnsWith']
-          ret[cf['Name']]['CompareSubcolumnsWith'] = 'org.apache.cassandra.db.marshal.' + cf['CompareSubcolumnsWith']
-        end
-        if cf['CompareWith']
-          ret[cf['Name']]['CompareWith'] = 'org.apache.cassandra.db.marshal.' + cf['CompareWith']
-        end
-        if cf['ColumnType'] == 'Super'
-          ret[cf['Name']]['Type'] = 'Super'
-        else
-          ret[cf['Name']]['Type'] = 'Standard'
-        end
-      end
-      ret
-    end
-
-    def read_storage_xml
-      @doc ||= Nokogiri::XML(open(@storage_xml))
     end
 
     def extract_and_validate_params_for_real(column_family, keys, args, options)
@@ -265,29 +239,19 @@ class Cassandra
     def to_compare_with_type(column_name, column_family, standard=true)
       return column_name if column_name.nil?
       klass = if standard
-        schema[column_family.to_s]["CompareWith"]
+        column_name_class(column_family)
       else
-        schema[column_family.to_s]["CompareSubcolumnsWith"]
+        sub_column_name_class(column_family)
       end
 
       case klass
-      when "org.apache.cassandra.db.marshal.UTF8Type", "org.apache.cassandra.db.marshal.BytesType"
-        column_name
-      when "org.apache.cassandra.db.marshal.TimeUUIDType"
+      when SimpleUUID::UUID
         SimpleUUID::UUID.new(column_name)
-      when "org.apache.cassandra.db.marshal.LongType"
+      when Long
         Long.new(column_name)
       else
-        raise "Unknown column family type: #{klass.inspect}"
+        column_name
       end
-    end
-
-    def column_family_type(column_family)
-      column_family_property(column_family, 'Type')
-    end
-
-    def column_family_property(column_family, property)
-      schema[column_family.to_s][property]
     end
 
     def cf(column_family)

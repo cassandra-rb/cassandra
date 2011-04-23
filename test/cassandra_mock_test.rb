@@ -1,19 +1,20 @@
 require File.expand_path(File.dirname(__FILE__) + '/test_helper')
-require 'cassandra_test'
+require File.expand_path(File.dirname(__FILE__) + '/cassandra_test')
 require 'cassandra/mock'
+require 'json'
 
 class CassandraMockTest < CassandraTest
   include Cassandra::Constants
 
   def setup
-    storage_xml_path = File.expand_path(File.join(File.dirname(File.dirname(__FILE__)), 'conf', 'storage-conf.xml'))
-    @twitter = Cassandra::Mock.new('Twitter', storage_xml_path)
+    schema = JSON.parse(File.read(File.join(File.expand_path(File.dirname(__FILE__)), '..','conf', CASSANDRA_VERSION, 'schema.json')))
+    @twitter = Cassandra::Mock.new('Twitter', schema)
     @twitter.clear_keyspace!
 
-    @blogs = Cassandra::Mock.new('Multiblog', storage_xml_path)
+    @blogs = Cassandra::Mock.new('Multiblog', schema)
     @blogs.clear_keyspace!
 
-    @blogs_long = Cassandra::Mock.new('MultiblogLong', storage_xml_path)
+    @blogs_long = Cassandra::Mock.new('MultiblogLong', schema)
     @blogs_long.clear_keyspace!
 
     @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
