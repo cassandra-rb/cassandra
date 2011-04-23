@@ -283,7 +283,11 @@ class Cassandra
     end
 
     def column_family_type(column_family)
-      schema[column_family.to_s]['Type']
+      column_family_property(column_family, 'Type')
+    end
+
+    def column_family_property(column_family, property)
+      schema[column_family.to_s][property]
     end
 
     def cf(column_family)
