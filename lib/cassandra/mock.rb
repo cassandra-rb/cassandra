@@ -84,7 +84,9 @@ class Cassandra
     end
 
     def get_standard(column_family, key, column, options)
-      row = cf(column_family)[key] || OrderedHash.new
+      columns = cf(column_family)[key] || OrderedHash.new
+      row = columns_to_hash(column_family, columns)
+
       if column
         row[column]
       else
@@ -94,26 +96,24 @@ class Cassandra
     end
 
     def get_super(column_family, key, column, sub_column, options)
+      columns = cf(column_family)[key] || OrderedHash.new
+      row = columns_to_hash(column_family, columns)
+
       if column
         if sub_column
-          if cf(column_family)[key] &&
-             cf(column_family)[key][column] &&
-             cf(column_family)[key][column][sub_column]
-            cf(column_family)[key][column][sub_column]
+          if row[column] &&
+            row[column][sub_column] &&
+            row[column][sub_column]
           else
             nil
           end
         else
-          row = cf(column_family)[key] && cf(column_family)[key][column] ?
-            cf(column_family)[key][column] :
-            OrderedHash.new
+          row = row[column] || OrderedHash.new
           row = apply_range(row, column_family, options[:start], options[:finish], false)
           apply_count(row, options[:count], options[:reversed])
         end
-      elsif cf(column_family)[key]
-        cf(column_family)[key]
       else
-        OrderedHash.new
+        row
       end
     end
 
@@ -136,9 +136,9 @@ class Cassandra
       else
         if column
           if sub_column
-            cf(column_family)[key][column].delete(sub_column)
+            cf(column_family)[key][column].delete(sub_column.to_s)
           else
-            cf(column_family)[key].delete(column)
+            cf(column_family)[key].delete(column.to_s)
           end
         else
           cf(column_family).delete(key)
@@ -149,7 +149,6 @@ class Cassandra
     def get_columns(column_family, key, *columns_and_options)
       column_family, columns, sub_columns, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, READ_DEFAULTS)
       d = get(column_family, key)
-
 
       if sub_columns
         sub_columns.collect do |sub_column|
@@ -244,14 +243,7 @@ class Cassandra
         sub_column_name_class(column_family)
       end
 
-      case klass
-      when SimpleUUID::UUID
-        SimpleUUID::UUID.new(column_name)
-      when Long
-        Long.new(column_name)
-      else
-        column_name
-      end
+      klass.new(column_name)
     end
 
     def cf(column_family)
@@ -262,7 +254,30 @@ class Cassandra
       if new_stuff.is_a?(Array)
         new_stuff = new_stuff.inject({}){|h,k| h[k] = nil; h }
       end
+
+      new_stuff = new_stuff.to_a.inject({}){|h,k| h[k[0].to_s] = k[1]; h }
+
       OrderedHash[old_stuff.merge(new_stuff).sort{|a,b| a[0] <=> b[0]}]
+    end
+
+    def columns_to_hash(column_family, columns)
+      column_class, sub_column_class = column_name_class(column_family), sub_column_name_class(column_family)
+      output = OrderedHash.new
+
+      columns.each do |column_name, value|
+        column = column_class.new(column_name)
+
+        if [Hash, OrderedHash].include?(value.class)
+          output[column] ||= OrderedHash.new
+          value.each do |sub_column, sub_column_value|
+            output[column][sub_column_class.new(sub_column)] = sub_column_value
+          end
+        else
+          output[column_class.new(column_name)] = value
+        end
+      end
+
+      output
     end
 
     def apply_count(row, count, reversed=false)
