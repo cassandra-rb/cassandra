@@ -47,14 +47,11 @@ class Cassandra
       # Single values; count and range parameters have no effect
       if is_super(column_family) and sub_column
         column_path = CassandraThrift::ColumnPath.new(:column_family => column_family, :super_column => column, :column => sub_column)
-        column_hash = multi_column_to_hash!(client.multiget(@keyspace, keys, column_path, consistency))
-
-        keys.inject({}){|hash, key| hash[key] = column_hash[key][column]; hash}
+        multi_column_to_hash!(client.multiget(@keyspace, keys, column_path, consistency))
       elsif !is_super(column_family) and column
         column_path = CassandraThrift::ColumnPath.new(:column_family => column_family, :column => column)
-        column_hash = multi_column_to_hash!(client.multiget(@keyspace, keys, column_path, consistency))
+        multi_column_to_hash!(client.multiget(@keyspace, keys, column_path, consistency))
 
-        keys.inject({}){|hash, key| hash[key] = column_hash[key][column]; hash}
       # Slices
       else
         predicate = CassandraThrift::SlicePredicate.new(:slice_range => 
