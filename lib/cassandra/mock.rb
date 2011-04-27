@@ -102,7 +102,7 @@ class Cassandra
       if column
         if sub_column
           if row[column] &&
-            row[column][sub_column] &&
+            row[column][sub_column]
             row[column][sub_column]
           else
             nil
