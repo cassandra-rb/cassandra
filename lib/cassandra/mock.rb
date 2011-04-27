@@ -205,6 +205,10 @@ class Cassandra
 
     private
 
+    def schema_for_keyspace(keyspace)
+      @schema
+    end
+
     def _get_range(column_family, start, finish, count)
       ret = OrderedHash.new
       start  = to_compare_with_type(start,  column_family)
