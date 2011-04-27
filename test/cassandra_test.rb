@@ -456,12 +456,14 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_batch_over_deletes
+    k = key
+
     @twitter.batch do
-      @twitter.insert(:Users, key, {'body' => 'body', 'user' => 'user'})
-      @twitter.remove(:Users, key, 'body')
+      @twitter.insert(:Users, k, {'body' => 'body', 'user' => 'user'})
+      @twitter.remove(:Users, k, 'body')
     end
 
-    assert_equal({'user' => 'user'}, @twitter.get(:Users, key))
+    assert_equal({'user' => 'user'}, @twitter.get(:Users, k))
   end
 
   if CASSANDRA_VERSION == '0.7'
