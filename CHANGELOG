@@ -1,3 +1,13 @@
+v0.10.0 Major Update (rjackson)
+- Update Rakefile to install 0.6.13, 0.7.4, 0.8.0-beta1 to ~/cassandra/cassandra-VERSION
+- Add data:load task to Rakefile for creating the schema required for the tests
+- Default the Rakefile to use 0.8-beta1
+- Setup test suite to work on 0.6.13, 0.7.4, and 0.8.0-beta1
+- All tests pass for all supported (0.6.13, 0.7.4, 0.8.0-beta1) versions.
+- Added Support for 0.8-beta1
+- Changed get_index_slices to return a hash of rows
+- Updated Cassandra::Mock to pass all tests for each Cassandra version
+
 v0.9.2 fix bug with deletions in batch mutations
 
 v0.9.1 Support for secondary indexing. (jhermes)
