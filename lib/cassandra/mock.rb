@@ -18,6 +18,7 @@ class Cassandra
       @keyspace = keyspace
       @column_name_class = {}
       @sub_column_name_class = {}
+      @indexes = {}
       @schema = schema[keyspace]
       clear_keyspace!
     end
@@ -193,6 +194,60 @@ class Cassandra
         start_key = l.last.succ
       end
       count
+    end
+
+    def create_index(ks_name, cf_name, c_name, v_class)
+      if @indexes[ks_name] &&
+        @indexes[ks_name][cf_name] &&
+        @indexes[ks_name][cf_name][c_name] 
+        nil
+
+      else
+        @indexes[ks_name] ||= {}
+        @indexes[ks_name][cf_name] ||= {}
+        @indexes[ks_name][cf_name][c_name] = true
+      end
+    end
+
+    def drop_index(ks_name, cf_name, c_name)
+      if @indexes[ks_name] &&
+        @indexes[ks_name][cf_name] &&
+        @indexes[ks_name][cf_name][c_name] 
+
+        @indexes[ks_name][cf_name].delete(c_name)
+      else
+        nil
+      end
+    end
+
+    def create_idx_expr(c_name, value, op)
+      {:column_name => c_name, :value => value, :comparison => op}
+    end
+
+    def create_idx_clause(idx_expressions, start = "")
+      {:start => start, :index_expressions => idx_expressions}
+    end
+
+    def get_indexed_slices(column_family, idx_clause, *columns_and_options)
+      column_family, columns, _, options =
+        extract_and_validate_params_for_real(column_family, [], columns_and_options, READ_DEFAULTS)
+
+      ret = {}
+      cf(column_family).each do |key, row|
+        next if idx_clause[:start] != '' && key < idx_clause[:start]
+
+        matches = []
+        idx_clause[:index_expressions].each do |expr|
+          next if row[expr[:column_name]].nil?
+          next unless row[expr[:column_name]].send(expr[:comparison].to_sym, expr[:value])
+
+          matches << expr
+        end
+
+        ret[key] = row if matches.length == idx_clause[:index_expressions].length
+      end
+
+      ret
     end
 
     def schema(load=true)
