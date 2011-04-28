@@ -1,19 +1,20 @@
 require File.expand_path(File.dirname(__FILE__) + '/test_helper')
-require 'cassandra_test'
+require File.expand_path(File.dirname(__FILE__) + '/cassandra_test')
 require 'cassandra/mock'
+require 'json'
 
 class CassandraMockTest < CassandraTest
   include Cassandra::Constants
 
   def setup
-    storage_xml_path = File.expand_path(File.join(File.dirname(File.dirname(__FILE__)), 'conf', 'storage-conf.xml'))
-    @twitter = Cassandra::Mock.new('Twitter', storage_xml_path)
+    @test_schema = JSON.parse(File.read(File.join(File.expand_path(File.dirname(__FILE__)), '..','conf', CASSANDRA_VERSION, 'schema.json')))
+    @twitter = Cassandra::Mock.new('Twitter', @test_schema)
     @twitter.clear_keyspace!
 
-    @blogs = Cassandra::Mock.new('Multiblog', storage_xml_path)
+    @blogs = Cassandra::Mock.new('Multiblog', @test_schema)
     @blogs.clear_keyspace!
 
-    @blogs_long = Cassandra::Mock.new('MultiblogLong', storage_xml_path)
+    @blogs_long = Cassandra::Mock.new('MultiblogLong', @test_schema)
     @blogs_long.clear_keyspace!
 
     @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
@@ -27,28 +28,7 @@ class CassandraMockTest < CassandraTest
   end
   
   def test_schema_for_keyspace
-    data = {
-      "StatusRelationships"=>{
-          "CompareSubcolumnsWith"=>"org.apache.cassandra.db.marshal.TimeUUIDType", 
-          "CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type",
-          "Type"=>"Super"},
-      "StatusAudits"=>{
-        "CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type",
-        "Type"=>"Standard"}, 
-      "Statuses"=>{
-        "CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type",
-        "Type"=>"Standard"}, 
-      "UserRelationships"=>{
-        "CompareSubcolumnsWith"=>"org.apache.cassandra.db.marshal.TimeUUIDType", 
-        "CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type",
-        "Type"=>"Super"}, 
-      "UserAudits"=>{
-        "CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type", 
-        "Type"=>"Standard"},
-      "Users"=>{"CompareWith"=>"org.apache.cassandra.db.marshal.UTF8Type", "Type"=>"Standard"},
-      "TimelinishThings"=>
-        {"CompareWith"=>"org.apache.cassandra.db.marshal.BytesType", "Type"=>"Standard"}
-    }
+    data = @test_schema['Twitter']
     stuff = @twitter.send(:schema_for_keyspace, 'Twitter')
     data.keys.each do |k|
       assert_equal data[k], stuff[k], k

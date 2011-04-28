@@ -1,9 +1,5 @@
 require File.expand_path(File.dirname(__FILE__) + '/test_helper')
 
-def cassandra07?
-  CassandraThrift::VERSION != '2.1.0'
-end
-
 class CassandraTest < Test::Unit::TestCase
   include Cassandra::Constants
 
@@ -107,15 +103,17 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_value_with_range
+    k = key
+
     10.times do |i|
-      @twitter.insert(:Statuses, key, {"body-#{i}" => 'v'})
+      @twitter.insert(:Statuses, k, {"body-#{i}" => 'v'})
     end
 
-    assert_equal 5, @twitter.get(:Statuses, key, :count => 5).length
-    assert_equal 5, @twitter.get(:Statuses, key, :start => "body-5").length
-    assert_equal 5, @twitter.get(:Statuses, key, :finish => "body-4").length
-    assert_equal 5, @twitter.get(:Statuses, key, :start => "body-1", :count => 5).length
-    assert_equal 5, @twitter.get(:Statuses, key, :start => "body-0", :finish => "body-4", :count => 7).length
+    assert_equal 5, @twitter.get(:Statuses, k, :count => 5).length
+    assert_equal 5, @twitter.get(:Statuses, k, :start => "body-5").length
+    assert_equal 5, @twitter.get(:Statuses, k, :finish => "body-4").length
+    assert_equal 5, @twitter.get(:Statuses, k, :start => "body-1", :count => 5).length
+    assert_equal 5, @twitter.get(:Statuses, k, :start => "body-0", :finish => "body-4", :count => 7).length
   end
 
   def test_exists_with_only_key
@@ -133,8 +131,9 @@ class CassandraTest < Test::Unit::TestCase
 
   def test_get_several_super_keys
     columns = {
-      'user_timelines' => {@uuids[1]  => 'v1'},
-      'mentions_timelines' => {@uuids[2]  => 'v2'}}
+      'mentions_timelines' => {@uuids[2]  => 'v2'},
+      'user_timelines' => {@uuids[1]  => 'v1'}}
+
     @twitter.insert(:StatusRelationships, key, columns)
 
     assert_equal(columns, @twitter.get(:StatusRelationships, key))
@@ -459,15 +458,17 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_batch_over_deletes
+    k = key
+
     @twitter.batch do
-      @twitter.insert(:Users, key, {'body' => 'body', 'user' => 'user'})
-      @twitter.remove(:Users, key, 'body')
+      @twitter.insert(:Users, k, {'body' => 'body', 'user' => 'user'})
+      @twitter.remove(:Users, k, 'body')
     end
 
-    assert_equal({'user' => 'user'}, @twitter.get(:Users, key))
+    assert_equal({'user' => 'user'}, @twitter.get(:Users, k))
   end
 
-  if cassandra07?
+  if CASSANDRA_VERSION.to_f >= 0.7
     def test_creating_and_dropping_new_index
       @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
       assert_nil @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
@@ -491,7 +492,7 @@ class CassandraTest < Test::Unit::TestCase
 
       indexed_row = @twitter.get_indexed_slices(:Statuses, idx_clause)
       assert_equal(1,      indexed_row.length)
-      assert_equal('row2', indexed_row.first.key)
+      assert_equal('row2', indexed_row.keys.first)
     end
   end
 
