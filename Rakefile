@@ -16,9 +16,9 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
 end
 
 CassandraBinaries = {
-  '0.6' => 'http://download.nextag.com/apache/cassandra/0.6.13/apache-cassandra-0.6.13-bin.tar.gz',
-  '0.7' => 'http://www.trieuvan.com/apache/cassandra/0.7.4/apache-cassandra-0.7.4-bin.tar.gz',
-  '0.8' => 'http://people.apache.org/~eevans/apache-cassandra-0.8.0-beta1-bin.tar.gz'
+  '0.6' => 'http://www.apache.org/dist/cassandra/0.6.13/apache-cassandra-0.6.13-bin.tar.gz',
+  '0.7' => 'http://www.apache.org/dist/cassandra/0.7.5/apache-cassandra-0.7.5-bin.tar.gz',
+  '0.8' => 'http://www.apache.org/dist/cassandra/0.8.0/apache-cassandra-0.8.0-beta1-bin.tar.gz'
 }
 
 CASSANDRA_HOME = ENV['CASSANDRA_HOME'] || "#{ENV['HOME']}/cassandra"
@@ -90,10 +90,16 @@ namespace :data do
     schema_path = "#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION}/schema.txt"
     puts "Loading test data structures."
     Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
-      sh("bin/cassandra-cli --host localhost --batch < #{schema_path}")
+      begin
+        sh("bin/cassandra-cli --host localhost --batch < #{schema_path}")
+      rescue
+        puts "Schema already loaded."
+      end
     end
   end
 end
+
+task :test => 'data:load'
 
 # desc "Regenerate thrift bindings for Cassandra" # Dev only
 task :thrift do
