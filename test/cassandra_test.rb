@@ -468,7 +468,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({'user' => 'user'}, @twitter.get(:Users, k))
   end
 
-  if CASSANDRA_VERSION == '0.7'
+  if CASSANDRA_VERSION.to_f >= 0.7
     def test_creating_and_dropping_new_index
       @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
       assert_nil @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
@@ -492,7 +492,7 @@ class CassandraTest < Test::Unit::TestCase
 
       indexed_row = @twitter.get_indexed_slices(:Statuses, idx_clause)
       assert_equal(1,      indexed_row.length)
-      assert_equal('row2', indexed_row.first.key)
+      assert_equal('row2', indexed_row.keys.first)
     end
   end
 

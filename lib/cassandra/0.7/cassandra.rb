@@ -233,8 +233,10 @@ class Cassandra
   def get_indexed_slices(column_family, idx_clause, *columns_and_options)
     column_family, columns, _, options =
       extract_and_validate_params(column_family, [], columns_and_options, READ_DEFAULTS)
-    _get_indexed_slices(column_family, idx_clause, columns, options[:count], options[:start],
+    key_slices = _get_indexed_slices(column_family, idx_clause, columns, options[:count], options[:start],
       options[:finish], options[:reversed], options[:consistency])
+
+    key_slices.inject({}){|h, key_slice| h[key_slice.key] = key_slice.columns; h}
   end
 
   protected
