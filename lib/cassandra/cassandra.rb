@@ -146,7 +146,7 @@ class Cassandra
       mutation_map = 
         {
           key => {
-            column_family => [ _delete_mutation(column_family , column , sub_column , options[:timestamp]|| Time.stamp) ]
+            column_family => [ _delete_mutation(column_family, column, sub_column, options[:timestamp]|| Time.stamp) ]
           }
         }
       @batch << [mutation_map, options[:consistency]]

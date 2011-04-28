@@ -22,9 +22,10 @@ You need Ruby 1.8 or 1.9. If you have those, just run:
 
 Cassandra itself is a rapidly moving target. In order to get a working server, use the `bin/cassandra_helper` script:
 
-  cassandra_helper cassandra
+  CASSANDRA_VERSION=0.8 cassandra_helper cassandra
 
-A server will be installed in `$HOME/cassandra/server`, and started in debug mode.
+Specify the Cassandra version by setting the CASSANDRA_VERSION
+environment variable. A server will be installed in `$HOME/cassandra/cassandra-VERSION`, and started in debug mode.
 
 WARNING: Don't use the test folder for your data, as it will get overwritten when you update the gem.
 
