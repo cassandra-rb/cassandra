@@ -22,7 +22,7 @@ CassandraBinaries = {
 }
 
 CASSANDRA_HOME = ENV['CASSANDRA_HOME'] || "#{ENV['HOME']}/cassandra"
-CASSANDRA_VERSION = ENV['CASSANDRA_VERSION'] || '0.8'
+CASSANDRA_VERSION = ENV['CASSANDRA_VERSION'] || '0.7'
 
 def setup_cassandra_version(version = CASSANDRA_VERSION)
   FileUtils.mkdir_p CASSANDRA_HOME
