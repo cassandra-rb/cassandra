@@ -15,6 +15,11 @@ class Cassandra
     def _count_columns(column_family, key, super_column, consistency)
       client.get_count(key,
         CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => super_column),
+        CassandraThrift::SlicePredicate.new(:slice_range =>
+                                            CassandraThrift::SliceRange.new(
+                                              :start => '',
+                                              :finish => ''
+                                            )),
         consistency
       )
     end
