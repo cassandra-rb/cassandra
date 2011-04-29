@@ -55,6 +55,8 @@ class Cassandra
     :count => 100,
     :start => nil,
     :finish => nil,
+    :start_key => nil,
+    :finish_key => nil,
     :reversed => false,
     :consistency => Consistency::ONE
   }.freeze
@@ -228,12 +230,12 @@ class Cassandra
 
   # Return a list of keys in the column_family you request. Only works well if
   # the table is partitioned with OrderPreservingPartitioner. Supports the
-  # <tt>:count</tt>, <tt>:start</tt>, <tt>:finish</tt>, and <tt>:consistency</tt>
-  # options.
+  # <tt>:count</tt>, <tt>:start_key</tt>, <tt>:finish_key</tt>, and
+  # <tt>:consistency</tt> options.
   def get_range(column_family, options = {})
     column_family, _, _, options = 
       extract_and_validate_params(column_family, "", [options], READ_DEFAULTS)
-    _get_range(column_family, options[:start].to_s, options[:finish].to_s, options[:count], options[:consistency])
+    _get_range(column_family, options[:start_key].to_s, options[:finish_key].to_s, options[:count], options[:consistency])
   end
 
   # Count all rows in the column_family you request. Requires the table
