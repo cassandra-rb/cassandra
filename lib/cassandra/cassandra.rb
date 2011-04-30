@@ -30,7 +30,7 @@ For write methods, valid option parameters are:
 
 For the initial client instantiation, you may also pass in <tt>:thrift_client<tt> with a ThriftClient subclass attached. On connection, that class will be used instead of the default ThriftClient class, allowing you to add additional behavior to the connection (e.g. query logging).
 
-=end rdoc
+=end
 
 class Cassandra
   include Columns
