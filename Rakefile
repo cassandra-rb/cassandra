@@ -42,11 +42,7 @@ def setup_cassandra_version(version = CASSANDRA_VERSION)
   end
 end
 
-desc "Start Cassandra"
-task :cassandra => :java do
-  setup_cassandra_version
-
-  env = ""
+def setup_environment
   if !ENV["CASSANDRA_INCLUDE"]
     env << "CASSANDRA_INCLUDE=#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION}/cassandra.in.sh "
     env << "CASSANDRA_HOME=#{CASSANDRA_HOME}/cassandra-#{CASSANDRA_VERSION} "
@@ -57,13 +53,26 @@ task :cassandra => :java do
     env << "CASSANDRA_CONF=#{ENV['CASSANDRA_CONF']}"
   end
 
-  puts env
+  env
+end
+
+desc "Start Cassandra"
+task :cassandra => :java do
+  setup_cassandra_version
+
+  env = setup_environment
 
   Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
     sh("env #{env} bin/cassandra -f")
   end
 end
 
+desc "Run the Cassandra CLI"
+task :cli do
+  Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
+    sh("bin/cassandra-cli -host localhost -port 9160")
+  end
+end
 
 desc "Check Java version"
 task :java do
