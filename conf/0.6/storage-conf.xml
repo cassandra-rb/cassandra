@@ -338,5 +338,5 @@
    ~ elapsed, even in the face of hardware failures.  The default value is
    ~ ten days.
   -->
-  <GCGraceSeconds>864000</GCGraceSeconds>
+  <GCGraceSeconds>0</GCGraceSeconds>
 </Storage>
