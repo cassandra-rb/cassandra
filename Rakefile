@@ -85,15 +85,16 @@ namespace :data do
 
   desc "Load test data structures."
   task :load do
-    return true if CASSANDRA_VERSION == '0.6'
+    unless CASSANDRA_VERSION == '0.6'
 
-    schema_path = "#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION}/schema.txt"
-    puts "Loading test data structures."
-    Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
-      begin
-        sh("bin/cassandra-cli --host localhost --batch < #{schema_path}")
-      rescue
-        puts "Schema already loaded."
+      schema_path = "#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION}/schema.txt"
+      puts "Loading test data structures."
+      Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
+        begin
+          sh("bin/cassandra-cli --host localhost --batch < #{schema_path}")
+        rescue
+          puts "Schema already loaded."
+        end
       end
     end
   end
