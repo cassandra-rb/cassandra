@@ -249,8 +249,10 @@ class Cassandra
   end
 
   # Count all rows in the column_family you request. Requires the table
-  # to be partitioned with OrderPreservingHash. Supports the <tt>:start</tt>,
-  # <tt>:finish</tt>, and <tt>:consistency</tt> options.
+  # to be partitioned with OrderPreservingHash. Supports the <tt>:start_key</tt>,
+  # <tt>:finish_key</tt>, and <tt>:consistency</tt> options.  Please note that 
+  # <tt>:start_key</tt> and <tt>:finish_key</tt> only work properly when
+  # OrderPreservingPartitioner.
   def count_range(column_family, options = {})
     get_range(column_family, options).length
   end
