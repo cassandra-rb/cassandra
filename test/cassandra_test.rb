@@ -43,7 +43,7 @@ class CassandraTest < Test::Unit::TestCase
     hash = OrderedHash['b', '', 'c', '', 'd', '', 'a', '']
     @twitter.insert(:Users, key, hash)
     assert_equal(hash.keys.sort, @twitter.get(:Users, key).keys)
-    assert_equal(hash.timestamps.keys.sort, @twitter.get(:Users, key).timestamps.keys.sort)
+    assert_equal(hash.timestamps.keys.sort, @twitter.get(:Users, key).timestamps.keys)
     assert_not_equal(hash.keys, @twitter.get(:Users, key).keys)
   end
 
