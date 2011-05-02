@@ -43,6 +43,7 @@ def setup_cassandra_version(version = CASSANDRA_VERSION)
 end
 
 def setup_environment
+  env = ""
   if !ENV["CASSANDRA_INCLUDE"]
     env << "CASSANDRA_INCLUDE=#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION}/cassandra.in.sh "
     env << "CASSANDRA_HOME=#{CASSANDRA_HOME}/cassandra-#{CASSANDRA_VERSION} "
