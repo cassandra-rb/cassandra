@@ -190,16 +190,16 @@ class CassandraTest < Test::Unit::TestCase
     assert_nil @twitter.get(:StatusRelationships, 'bogus', 'user_timelines', columns.keys.first)
   end
 
-
-  #TODO: add a OPP keyspace for this
-  # def test_get_range
-  #   @twitter.insert(:Statuses, '2', {'body' => '1'})
-  #   @twitter.insert(:Statuses, '3', {'body' => '1'})
-  #   @twitter.insert(:Statuses, '4', {'body' => '1'})
-  #   @twitter.insert(:Statuses, '5', {'body' => '1'})
-  #   @twitter.insert(:Statuses, '6', {'body' => '1'})
-  #   assert_equal(['3', '4', '5'], @twitter.get_range(:Statuses, :start => '3', :finish => '5'))
-  # end
+  def test_get_range
+    skip('This test requires the use of OrderPreservingPartitioner on the cluster to work properly.')
+    k = key
+    @twitter.insert(:Statuses, k + '2', {'body' => '1'})
+    @twitter.insert(:Statuses, k + '3', {'body' => '1'})
+    @twitter.insert(:Statuses, k + '4', {'body' => '1'})
+    @twitter.insert(:Statuses, k + '5', {'body' => '1'})
+    @twitter.insert(:Statuses, k + '6', {'body' => '1'})
+    assert_equal([k + '3', k + '4', k + '5'], @twitter.get_range(:Statuses, :start_key => k + '3', :finish_key => k + '5').keys)
+  end
 
   def test_get_range_count
      @twitter.insert(:Statuses, '2', {'body' => '1'})
@@ -208,6 +208,55 @@ class CassandraTest < Test::Unit::TestCase
      @twitter.insert(:Statuses, '5', {'body' => '1'})
      @twitter.insert(:Statuses, '6', {'body' => '1'})
      assert_equal(3, @twitter.get_range(:Statuses, :count => 3).size)
+  end
+
+  def test_each_key
+    k = key
+    keys_yielded = []
+
+    10.times do |i|
+      @twitter.insert(:Statuses, k + i.to_s, {"body-#{i.to_s}" => 'v'})
+    end
+
+    @twitter.each_key(:Statuses) do |key|
+      keys_yielded << key
+    end
+
+    assert_equal 10, keys_yielded.length
+  end
+
+  def test_each
+    k = key
+    key_columns  = {}
+
+    10.times do |i|
+      key_columns[k + i.to_s]   = {"body-#{i.to_s}" => 'v', 'single_column_lookup' => "value = #{i.to_s}"}
+      @twitter.insert(:Statuses, k + i.to_s, key_columns[k + i.to_s])
+    end
+
+    keys_yielded = []
+    @twitter.each(:Statuses, :batch_size => 5) do |key, columns|
+      assert_equal key_columns[key], columns
+      keys_yielded << key
+    end
+
+    assert_equal 10, keys_yielded.length
+
+    keys_yielded = []
+    @twitter.each(:Statuses, :count => 7, :batch_size => 5) do |key, columns|
+      assert_equal key_columns[key], columns
+      keys_yielded << key
+    end
+
+    assert_equal 7, keys_yielded.length, 'each limits to specified count'
+
+    keys_yielded = []
+    @twitter.each(:Statuses, :columns => ['single_column_lookup'], :batch_size => 5) do |key, columns|
+      assert_equal key_columns[key].reject {|k,v| k != 'single_column_lookup'}, columns
+      keys_yielded << key
+    end
+
+    assert_equal 10, keys_yielded.length
   end
 
   def test_multi_get
@@ -329,9 +378,10 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_count_keys
-    @twitter.insert(:Statuses, key + "1", {'body' => '1'})
-    @twitter.insert(:Statuses, key + "2", {'body' => '2'})
-    @twitter.insert(:Statuses, key + "3", {'body' => '3'})
+    k = key
+    @twitter.insert(:Statuses, k + "1", {'body' => '1'})
+    @twitter.insert(:Statuses, k + "2", {'body' => '2'})
+    @twitter.insert(:Statuses, k + "3", {'body' => '3'})
     assert_equal 3, @twitter.count_range(:Statuses)
   end
 

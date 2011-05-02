@@ -34,6 +34,14 @@ class Cassandra
       schema[column_family][key]
     end
 
+    def multi_key_slices_to_hash(column_family, array)
+      ret = {}
+      array.each do |value|
+        ret[value.key] = columns_to_hash(column_family, value.columns)
+      end
+      ret
+    end
+
     def multi_column_to_hash!(hash)
       hash.each do |key, column_or_supercolumn|
         hash[key] = (column_or_supercolumn.column.value if column_or_supercolumn.column)

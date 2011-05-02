@@ -226,21 +226,82 @@ class Cassandra
     end
   end
 
-  # Return a list of keys in the column_family you request. Only works well if
+  # Return an OrderedHash containing the columns specified for the given
+  # range of keys in the column_family you request. Only works well if
   # the table is partitioned with OrderPreservingPartitioner. Supports the
-  # <tt>:count</tt>, <tt>:start</tt>, <tt>:finish</tt>, and <tt>:consistency</tt>
-  # options.
+  # <tt>:count</tt>, <tt>:start_key</tt>, <tt>:finish_key</tt>,
+  # <tt>:columns</tt>, <tt>:start</tt>, <tt>:finish</tt>, 
+  # and <tt>:consistency</tt> options.
   def get_range(column_family, options = {})
     column_family, _, _, options = 
-      extract_and_validate_params(column_family, "", [options], READ_DEFAULTS)
-    _get_range(column_family, options[:start].to_s, options[:finish].to_s, options[:count], options[:consistency])
+      extract_and_validate_params(column_family, "", [options], 
+                                  READ_DEFAULTS.merge(:start_key  => '',
+                                                      :end_key    => '',
+                                                      :columns    => nil
+                                                     )
+                                 )
+
+    results = _get_range(column_family,     options[:start_key].to_s, options[:finish_key].to_s,
+                        options[:columns],  options[:start].to_s,     options[:finish].to_s,
+                        options[:count],    options[:consistency])
+
+    multi_key_slices_to_hash(column_family, results)
   end
 
   # Count all rows in the column_family you request. Requires the table
   # to be partitioned with OrderPreservingHash. Supports the <tt>:start</tt>,
   # <tt>:finish</tt>, and <tt>:consistency</tt> options.
   def count_range(column_family, options = {})
-    get_range(column_family, options).select{|r| r.columns.length > 0}.compact.length
+    get_range(column_family, options).length
+  end
+
+  # Return an Array containing all of the keys within a given range. (Only works
+  # properly if the Cassandra cluster is using the OrderPreservingPartitioner.)
+  # Supports <tt>:start_key</tt>, <tt>:finish_key</tt>, <tt>:count</tt>, and
+  # <tt>:consistency</tt> options.
+  def get_range_keys(column_family, options = {})
+    get_range(column_family,options.merge!(:columns => [])).keys
+  end
+
+  # Iterate through each key within the given parameters. This function can be
+  # used to iterate over each key in the given column family. However, if you
+  # only want to walk through a range of keys you need to have your cluster
+  # setup with OrderPreservingPartitioner. Please note that this function walks
+  # the list of keys in batches using the passed in <tt>:count</tt> option.
+  # Supports <tt>:start_key</tt>, <tt>:finish_key</tt>, <tt>:count</tt>, and
+  # <tt>:consistency</tt> options.
+  def each_key(column_family, options = {})
+    each(column_family, options.merge!(:columns => [])) do |key, value|
+      yield key
+    end
+  end
+
+  # Iterate through each row and yields each key and value within the given parameters.
+  # This function can be used to iterate over each key in the given column family.
+  # However, if you only want to walk through a range of keys you need to have your
+  # cluster setup with OrderPreservingPartitioner. Please note that this function walks
+  # the list of keys in batches using the passed in <tt>:count</tt> option.
+  # Supports the <tt>:count</tt>, <tt>:start_key</tt>, <tt>:finish_key</tt>,
+  # <tt>:columns</tt>, <tt>:start</tt>, <tt>:finish</tt>, and <tt>:consistency</tt> options.
+  def each(column_family, options = {})
+    batch_size    = options.delete(:batch_size) || 100
+    count         = options.delete(:count)
+    yielded_count = 0
+
+    options[:start_key] ||= ''
+    last_key  = nil
+
+    while options[:start_key] != last_key && (count.nil? || count > yielded_count)
+      options[:start_key] = last_key
+      res = get_range(column_family, options.merge!(:start_key => last_key, :count => batch_size))
+      res.each do |key, columns|
+        next if options[:start_key] == key
+        next if yielded_count == count
+        yield key, columns
+        yielded_count += 1
+        last_key = key
+      end
+    end
   end
 
   # Open a batch operation and yield self. Inserts and deletes will be queued
