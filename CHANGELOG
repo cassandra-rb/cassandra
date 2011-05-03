@@ -3,6 +3,7 @@ v0.11.0 - PENDING
 - Add function for get_range_keys which returns an array of keys in a given range.
 - Changed the return value of get_range to an OrderedHash.
 - Change get_range to accept both a range of keys and a range of columns.
+- Add batched range support to get_range and add get_range_batch.
 v0.10.0 Major Update (rjackson)
 - Update Rakefile to install 0.6.13, 0.7.4, 0.8.0-beta1 to ~/cassandra/cassandra-VERSION
 - Add data:load task to Rakefile for creating the schema required for the tests
