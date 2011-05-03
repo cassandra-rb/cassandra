@@ -38,7 +38,7 @@ class CassandraMockTest < CassandraTest
   def test_sorting_row_keys
     @twitter.insert(:Statuses, 'b', {:text => 'foo'})
     @twitter.insert(:Statuses, 'a', {:text => 'foo'})
-    assert_equal ['a'], @twitter.get_range(:Statuses, :count => 1).keys
+    assert_equal ['a'], @twitter.get_range(:Statuses, :key_count => 1).keys
   end
 
   def test_inserting_array_for_indices

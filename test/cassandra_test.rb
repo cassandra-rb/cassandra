@@ -201,13 +201,15 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal([k + '3', k + '4', k + '5'], @twitter.get_range(:Statuses, :start_key => k + '3', :finish_key => k + '5').keys)
   end
 
-  def test_get_range_count
-     @twitter.insert(:Statuses, '2', {'body' => '1'})
-     @twitter.insert(:Statuses, '3', {'body' => '1'})
-     @twitter.insert(:Statuses, '4', {'body' => '1'})
-     @twitter.insert(:Statuses, '5', {'body' => '1'})
-     @twitter.insert(:Statuses, '6', {'body' => '1'})
-     assert_equal(3, @twitter.get_range(:Statuses, :count => 3).size)
+  def test_get_range
+    # make sure that deleted rows are not included in the iteration
+    10.times do |i|
+      @twitter.insert(:Statuses, i.to_s, {'body' => '1'})
+      @twitter.insert(:Statuses, i.to_s + '_delete_me', {'test' => 'value'})
+      @twitter.remove(:Statuses, i.to_s + '_delete_me')
+    end
+
+    assert_equal(4, @twitter.get_range_keys(:Statuses, :key_count => 4).size)
   end
 
   def test_each_key
@@ -217,6 +219,10 @@ class CassandraTest < Test::Unit::TestCase
     10.times do |i|
       @twitter.insert(:Statuses, k + i.to_s, {"body-#{i.to_s}" => 'v'})
     end
+
+    # make sure that deleted rows are not included in the iteration
+    @twitter.insert(:Statuses, k + '_delete_me', {'test' => 'value'})
+    @twitter.remove(:Statuses, k + '_delete_me')
 
     @twitter.each_key(:Statuses) do |key|
       keys_yielded << key
@@ -243,7 +249,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal 10, keys_yielded.length
 
     keys_yielded = []
-    @twitter.each(:Statuses, :count => 7, :batch_size => 5) do |key, columns|
+    @twitter.each(:Statuses, :key_count => 7, :batch_size => 5) do |key, columns|
       assert_equal key_columns[key], columns
       keys_yielded << key
     end

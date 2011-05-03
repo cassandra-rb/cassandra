@@ -34,9 +34,10 @@ class Cassandra
       schema[column_family][key]
     end
 
-    def multi_key_slices_to_hash(column_family, array)
+    def multi_key_slices_to_hash(column_family, array, return_empty_rows = false)
       ret = {}
       array.each do |value|
+        next if return_empty_rows == false && value.columns.length == 0
         ret[value.key] = columns_to_hash(column_family, value.columns)
       end
       ret

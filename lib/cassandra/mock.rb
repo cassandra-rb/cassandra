@@ -184,12 +184,19 @@ class Cassandra
       column_family, _, _, options = extract_and_validate_params_for_real(column_family, "", [options], 
                                                                           READ_DEFAULTS.merge(:start_key  => '',
                                                                                               :end_key    => '',
+                                                                                              :key_count  => 100,
                                                                                               :columns    => nil
                                                                                              )
                                                                          )
-      _get_range(column_family,     options[:start_key],  options[:finish_key],
-                 options[:columns], options[:start],      options[:finish],
-                 options[:count], options[:consistency])
+      _get_range(column_family,
+                 options[:start_key],
+                 options[:finish_key],
+                 options[:key_count],
+                 options[:columns],
+                 options[:start],
+                 options[:finish],
+                 options[:count],
+                 options[:consistency])
     end
 
     def get_range_keys(column_family, options = {})
@@ -208,7 +215,7 @@ class Cassandra
 
     def each(column_family, options = {})
       batch_size    = options.delete(:batch_size) || 100
-      count         = options.delete(:count)
+      count         = options.delete(:key_count)
       yielded_count = 0
 
       options[:start_key] ||= ''
@@ -216,7 +223,7 @@ class Cassandra
 
       while options[:start_key] != last_key && (count.nil? || count > yielded_count)
         options[:start_key] = last_key
-        res = get_range(column_family, options.merge!(:start_key => last_key, :count => batch_size))
+        res = get_range(column_family, options.merge!(:start_key => last_key, :key_count => batch_size))
         res.each do |key, columns|
           next if options[:start_key] == key
           next if yielded_count == count
@@ -295,12 +302,12 @@ class Cassandra
       @schema
     end
 
-    def _get_range(column_family, start_key, finish_key, columns, start, finish, count, consistency)
+    def _get_range(column_family, start_key, finish_key, key_count, columns, start, finish, count, consistency)
       ret = OrderedHash.new
       start  = to_compare_with_type(start,  column_family)
       finish = to_compare_with_type(finish, column_family)
       cf(column_family).keys.sort.each do |key|
-        break if ret.keys.size >= count
+        break if ret.keys.size >= key_count
         if (start_key.nil? || key >= start_key) && (finish_key.nil? || key <= finish_key)
           if columns
             ret[key] = columns.inject(OrderedHash.new){|hash, column_name| hash[column_name] = cf(column_family)[key][column_name]; hash;}

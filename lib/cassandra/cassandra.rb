@@ -229,23 +229,74 @@ class Cassandra
   # Return an OrderedHash containing the columns specified for the given
   # range of keys in the column_family you request. Only works well if
   # the table is partitioned with OrderPreservingPartitioner. Supports the
-  # <tt>:count</tt>, <tt>:start_key</tt>, <tt>:finish_key</tt>,
-  # <tt>:columns</tt>, <tt>:start</tt>, <tt>:finish</tt>, 
-  # and <tt>:consistency</tt> options.
+  # <tt>:key_count</tt>, <tt>:start_key</tt>, <tt>:finish_key</tt>,
+  # <tt>:columns</tt>, <tt>:start</tt>, <tt>:finish</tt>, <tt>:count</tt>,
+  # and <tt>:consistency</tt> options. Please note that Cassandra returns
+  # a row for each row that has existed in the system since gc_grace_seconds.
+  # This is because deleted row keys are marked as deleted, but left in the
+  # system until the cluster has had resonable time to replicate the deletion.
+  # This function attempts to suppress deleted rows (actually any row returned without
+  # columns is suppressed).
   def get_range(column_family, options = {})
+    if block_given? || options[:key_count] || options[:batch_size]
+      get_range_batch(column_family, options)
+    else
+      get_range_single(column_family, options)
+    end
+  end
+
+  def get_range_single(column_family, options = {})
+    return_empty_rows = options.delete(:return_empty_rows) || false
+
     column_family, _, _, options = 
       extract_and_validate_params(column_family, "", [options], 
                                   READ_DEFAULTS.merge(:start_key  => '',
                                                       :end_key    => '',
+                                                      :key_count  => 100,
                                                       :columns    => nil
                                                      )
                                  )
 
-    results = _get_range(column_family,     options[:start_key].to_s, options[:finish_key].to_s,
-                        options[:columns],  options[:start].to_s,     options[:finish].to_s,
-                        options[:count],    options[:consistency])
+    results = _get_range( column_family,
+                          options[:start_key].to_s,
+                          options[:finish_key].to_s,
+                          options[:key_count],
+                          options[:columns],
+                          options[:start].to_s,
+                          options[:finish].to_s,
+                          options[:count],
+                          options[:consistency] )
 
-    multi_key_slices_to_hash(column_family, results)
+    multi_key_slices_to_hash(column_family, results, return_empty_rows)
+  end
+
+  def get_range_batch(column_family, options = {})
+    batch_size    = options.delete(:batch_size) || 100
+    count         = options.delete(:key_count)
+    result        = {}
+
+    options[:start_key] ||= ''
+    last_key  = nil
+
+    while options[:start_key] != last_key && (count.nil? || count > result.length)
+      options[:start_key] = last_key
+      res = get_range_single(column_family, options.merge!(:start_key => last_key,
+                                                           :key_count => batch_size,
+                                                           :return_empty_rows => true
+                                                          ))
+      res.each do |key, columns|
+        next if options[:start_key] == key
+        next if result.length == count
+
+        unless columns == {}
+          yield key, columns if block_given?
+          result[key] = columns
+        end
+        last_key = key
+      end
+    end
+
+    result
   end
 
   # Count all rows in the column_family you request. Requires the table
