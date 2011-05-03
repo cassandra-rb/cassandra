@@ -299,13 +299,12 @@ class Cassandra
     result
   end
 
-  # Count all rows in the column_family you request. Requires the table
-  # to be partitioned with OrderPreservingHash. Supports the <tt>:start_key</tt>,
+  # Count all rows in the column_family you request. Supports the <tt>:start_key</tt>,
   # <tt>:finish_key</tt>, and <tt>:consistency</tt> options.  Please note that 
   # <tt>:start_key</tt> and <tt>:finish_key</tt> only work properly when
   # OrderPreservingPartitioner.
   def count_range(column_family, options = {})
-    get_range(column_family, options).length
+    get_range_keys(column_family, options).length
   end
 
   # Return an Array containing all of the keys within a given range. (Only works
@@ -313,7 +312,7 @@ class Cassandra
   # Supports <tt>:start_key</tt>, <tt>:finish_key</tt>, <tt>:count</tt>, and
   # <tt>:consistency</tt> options.
   def get_range_keys(column_family, options = {})
-    get_range(column_family,options.merge!(:columns => [])).keys
+    get_range(column_family,options.merge!(:count => 1)).keys
   end
 
   # Iterate through each key within the given parameters. This function can be
@@ -324,7 +323,7 @@ class Cassandra
   # Supports <tt>:start_key</tt>, <tt>:finish_key</tt>, <tt>:count</tt>, and
   # <tt>:consistency</tt> options.
   def each_key(column_family, options = {})
-    each(column_family, options.merge!(:columns => [])) do |key, value|
+    get_range_batch(column_family, options) do |key, columns|
       yield key
     end
   end
@@ -334,26 +333,12 @@ class Cassandra
   # However, if you only want to walk through a range of keys you need to have your
   # cluster setup with OrderPreservingPartitioner. Please note that this function walks
   # the list of keys in batches using the passed in <tt>:count</tt> option.
-  # Supports the <tt>:count</tt>, <tt>:start_key</tt>, <tt>:finish_key</tt>,
-  # <tt>:columns</tt>, <tt>:start</tt>, <tt>:finish</tt>, and <tt>:consistency</tt> options.
+  # Supports the <tt>:key_count</tt>, <tt>:start_key</tt>, <tt>:finish_key</tt>,
+  # <tt>:columns</tt>, <tt>:start</tt>, <tt>:finish</tt>, <tt>:count</tt>,
+  # and <tt>:consistency</tt> options.
   def each(column_family, options = {})
-    batch_size    = options.delete(:batch_size) || 100
-    count         = options.delete(:count)
-    yielded_count = 0
-
-    options[:start_key] ||= ''
-    last_key  = nil
-
-    while options[:start_key] != last_key && (count.nil? || count > yielded_count)
-      options[:start_key] = last_key
-      res = get_range(column_family, options.merge!(:start_key => last_key, :count => batch_size))
-      res.each do |key, columns|
-        next if options[:start_key] == key
-        next if yielded_count == count
-        yield key, columns
-        yielded_count += 1
-        last_key = key
-      end
+    get_range_batch(column_family, options) do |key, columns|
+      yield key, columns
     end
   end
 

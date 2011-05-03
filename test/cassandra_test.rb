@@ -190,7 +190,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_nil @twitter.get(:StatusRelationships, 'bogus', 'user_timelines', columns.keys.first)
   end
 
-  def test_get_range
+  def test_get_range_with_key_range
     skip('This test requires the use of OrderPreservingPartitioner on the cluster to work properly.')
     k = key
     @twitter.insert(:Statuses, k + '2', {'body' => '1'})
