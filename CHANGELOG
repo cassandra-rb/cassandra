@@ -1,4 +1,5 @@
 v0.11.0 - PENDING
+- Remove direct thrift dependency. Allow thrift_client to require it.
 - Add functions for each and each_key to iterate through key ranges.
 - Add function for get_range_keys which returns an array of keys in a given range.
 - Changed the return value of get_range to an OrderedHash.
