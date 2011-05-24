@@ -98,7 +98,11 @@ end
 
 desc "Start Cassandra"
 task :cassandra => :java do
-  Rake::Task["cassandra:start"].invoke(false)
+  begin
+    Rake::Task["cassandra:start"].invoke(false)
+  rescue RuntimeError => e
+    raise e unless e.message =~ /Command failed with status \(130\)/ # handle keyboard interupt errors
+  end
 end
 
 desc "Run the Cassandra CLI"
