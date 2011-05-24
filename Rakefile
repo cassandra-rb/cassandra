@@ -23,6 +23,7 @@ CassandraBinaries = {
 
 CASSANDRA_HOME = ENV['CASSANDRA_HOME'] || "#{ENV['HOME']}/cassandra"
 CASSANDRA_VERSION = ENV['CASSANDRA_VERSION'] || '0.7'
+CASSANDRA_PIDFILE = ENV['CASSANDRA_PIDFILE'] || "#{CASSANDRA_HOME}/cassandra.pid"
 
 def setup_cassandra_version(version = CASSANDRA_VERSION)
   FileUtils.mkdir_p CASSANDRA_HOME
@@ -57,15 +58,47 @@ def setup_environment
   env
 end
 
+def running?(pid_file = nil)
+  pid_file ||= CASSANDRA_PIDFILE
+
+  if File.exists?(pid_file)
+    pid = File.new(pid_file).read.to_i
+    begin
+      Process.kill(0, pid)
+      return true
+    rescue
+      File.delete(pid_file)
+    end
+  end
+
+  false
+end
+
+namespace :cassandra do
+  desc "Start Cassandra"
+  task :start, :daemonize, :needs => :java do |t, args|
+    args.with_defaults(:daemonize => true)
+
+    setup_cassandra_version
+
+    env = setup_environment
+
+    Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
+      sh("env #{env} bin/cassandra #{'-f' unless args.daemonize} -p #{CASSANDRA_PIDFILE}")
+    end
+  end
+
+  desc "Stop Cassandra"
+  task :stop => :java do
+    setup_cassandra_version
+    env = setup_environment
+    sh("kill $(cat #{CASSANDRA_PIDFILE})")
+  end
+end
+
 desc "Start Cassandra"
 task :cassandra => :java do
-  setup_cassandra_version
-
-  env = setup_environment
-
-  Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
-    sh("env #{env} bin/cassandra -f")
-  end
+  Rake::Task["cassandra:start"].invoke(false)
 end
 
 desc "Run the Cassandra CLI"
