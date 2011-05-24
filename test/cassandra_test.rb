@@ -32,6 +32,17 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({}, @twitter.get(:Users, 'bogus'))
   end
 
+  def test_get_single_column_returns_single_value
+    @twitter.insert(:Users, key, {'body' => 'body_text', 'user' => 'user_name'})
+    assert_equal('body_text', @twitter.get(:Users, key, 'body'))
+    assert_equal('user_name', @twitter.get(:Users, key, 'user'))
+
+    @blogs.insert(:Blogs, key,
+      {@uuids[0] => 'I like this cat', @uuids[1] => 'Buttons is cuter', @uuids[2] => 'I disagree'})
+
+    assert_equal('I like this cat', @blogs.get(:Blogs, key, @uuids[0]))
+  end
+
   def test_get_key_preserving_order
     # In-order hash is preserved
     hash = OrderedHash['a', '', 'b', '', 'c', '', 'd', '',]
