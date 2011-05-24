@@ -62,7 +62,8 @@ class Cassandra
         column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family)
         column_hash  = multi_columns_to_hash!(column_family, client.multiget_slice(keys, column_parent, predicate, consistency))
 
-        keys.inject({}){|hash, key| hash[key] = column_hash[key][column]; hash}
+        klass = column_name_class(column_family)
+        keys.inject({}){|hash, key| hash[key] = column_hash[key][klass.new(column)]; hash}
 
       # Slices
       else
