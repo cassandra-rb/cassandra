@@ -4,13 +4,13 @@ class CassandraTest < Test::Unit::TestCase
   include Cassandra::Constants
 
   def setup
-    @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :exception_classes => [])
+    @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :exception_classes => [])
     @twitter.clear_keyspace!
 
-    @blogs = Cassandra.new('Multiblog', "127.0.0.1:9160",:retries => 2, :exception_classes => [])
+    @blogs = Cassandra.new('Multiblog', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :exception_classes => [])
     @blogs.clear_keyspace!
 
-    @blogs_long = Cassandra.new('MultiblogLong', "127.0.0.1:9160",:retries => 2, :exception_classes => [])
+    @blogs_long = Cassandra.new('MultiblogLong', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :exception_classes => [])
     @blogs_long.clear_keyspace!
 
     @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
@@ -25,6 +25,7 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_key
+    
     @twitter.insert(:Users, key, {'body' => 'v', 'user' => 'v'})
     assert_equal({'body' => 'v', 'user' => 'v'}, @twitter.get(:Users, key))
     assert_equal(['body', 'user'].sort, @twitter.get(:Users, key).timestamps.keys.sort)
