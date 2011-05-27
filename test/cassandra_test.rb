@@ -592,6 +592,19 @@ def test_each_key
 
   end
 
+  def test_each_column_types
+    num_users = rand(60)
+    num_users.times do |twit_counter|
+      @type_conversions.insert(:UUIDColumnConversion, twit_counter.to_s, {@uuids[1] => 'v1'})
+    end
+    counter = 0
+     @type_conversions.each(:UUIDColumnConversion) do |_, columns|
+      counter += 1
+      columns.keys.each {|column_name| assert_equal SimpleUUID::UUID, column_name.class}
+    end
+    assert_equal num_users, counter
+  end
+
   if CASSANDRA_VERSION.to_f >= 0.7
     def test_creating_and_dropping_new_index
       @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
