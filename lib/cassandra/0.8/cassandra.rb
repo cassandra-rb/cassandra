@@ -223,10 +223,11 @@ class Cassandra
               end ))
   end
 
-  def create_idx_clause(idx_expressions, start = "")
+  def create_idx_clause(idx_expressions, start = "", count = 100)
     CassandraThrift::IndexClause.new(
-      :start_key => start,
-      :expressions => idx_expressions)
+      :start_key    => start,
+      :expressions  => idx_expressions,
+      :count        => count)
   end
 
   # TODO: Supercolumn support.

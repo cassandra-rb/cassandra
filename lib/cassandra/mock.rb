@@ -270,8 +270,8 @@ class Cassandra
       {:column_name => c_name, :value => value, :comparison => op}
     end
 
-    def create_idx_clause(idx_expressions, start = "")
-      {:start => start, :index_expressions => idx_expressions}
+    def create_idx_clause(idx_expressions, start = "", count = 100)
+      {:start => start, :index_expressions => idx_expressions, :count => count}
     end
 
     def get_indexed_slices(column_family, idx_clause, *columns_and_options)
@@ -281,6 +281,7 @@ class Cassandra
       ret = {}
       cf(column_family).each do |key, row|
         next if idx_clause[:start] != '' && key < idx_clause[:start]
+        next if ret.length == idx_clause[:count]
 
         matches = []
         idx_clause[:index_expressions].each do |expr|
