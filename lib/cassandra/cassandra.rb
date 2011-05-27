@@ -49,7 +49,7 @@ class Cassandra
     :timestamp => nil,
     :consistency => Consistency::ONE,
     :ttl => nil
-  }.freeze
+  }
 
   READ_DEFAULTS = {
     :count => 100,
@@ -57,12 +57,12 @@ class Cassandra
     :finish => nil,
     :reversed => false,
     :consistency => Consistency::ONE
-  }.freeze
+  }
   
   THRIFT_DEFAULTS = {
     :transport_wrapper => Thrift::BufferedTransport,
     :thrift_client_class => ThriftClient
-  }.freeze
+  }
 
   attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client_class, :auth_request
 
@@ -104,6 +104,14 @@ class Cassandra
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       schema(false).map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
     }}, @servers=#{servers.inspect}>"
+  end
+
+  def default_write_consistency=(value)
+    WRITE_DEFAULTS[:consistency] = value
+  end
+
+  def default_read_consistency=(value)
+    READ_DEFAULTS[:consistency] = value
   end
 
 ### Write

@@ -34,6 +34,14 @@ class Cassandra
       @data[column_family.to_sym] = OrderedHash.new
     end
 
+    def default_write_consistency=(value)
+      WRITE_DEFAULTS[:consistency] = value
+    end
+
+    def default_read_consistency=(value)
+      READ_DEFAULTS[:consistency] = value
+    end
+
     def insert(column_family, key, hash_or_array, options = {})
       if @batch
         @batch << [:insert, column_family, key, hash_or_array, options]

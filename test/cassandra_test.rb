@@ -27,6 +27,18 @@ class CassandraTest < Test::Unit::TestCase
     end
   end
 
+  def test_setting_default_consistency
+    assert_nothing_raised do
+      @twitter.default_read_consistency = Cassandra::Consistency::ALL
+    end
+    assert_equal(Cassandra::READ_DEFAULTS[:consistency], Cassandra::Consistency::ALL)
+
+    assert_nothing_raised do
+      @twitter.default_write_consistency = Cassandra::Consistency::ALL
+    end
+    assert_equal(Cassandra::WRITE_DEFAULTS[:consistency], Cassandra::Consistency::ALL)
+  end
+
   def test_get_key
     
     @twitter.insert(:Users, key, {'body' => 'v', 'user' => 'v'})
