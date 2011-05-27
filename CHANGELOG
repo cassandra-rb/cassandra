@@ -2,6 +2,7 @@ v0.11.1
 - Add counter support for Cassandra 0.8. (Thanks Swrve team!)
 - Add additional rake tasks to start and stop cassandra in the background.
 - Fix issue with non-utf8 column names not being encoded/decoded properly.
+- Add way to specify a default read/write consistency.
 
 v0.11.0
 - Remove direct thrift dependency. Allow thrift_client to require it.
