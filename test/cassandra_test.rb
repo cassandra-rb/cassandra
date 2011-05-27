@@ -202,16 +202,16 @@ class CassandraTest < Test::Unit::TestCase
     assert_nil @twitter.get(:StatusRelationships, 'bogus', 'user_timelines', columns.keys.first)
   end
 
-  def test_get_range_with_key_range
-    skip('This test requires the use of OrderPreservingPartitioner on the cluster to work properly.')
-    k = key
-    @twitter.insert(:Statuses, k + '2', {'body' => '1'})
-    @twitter.insert(:Statuses, k + '3', {'body' => '1'})
-    @twitter.insert(:Statuses, k + '4', {'body' => '1'})
-    @twitter.insert(:Statuses, k + '5', {'body' => '1'})
-    @twitter.insert(:Statuses, k + '6', {'body' => '1'})
-    assert_equal([k + '3', k + '4', k + '5'], @twitter.get_range(:Statuses, :start_key => k + '3', :finish_key => k + '5').keys)
-  end
+#  def test_get_range_with_key_range
+#    skip('This test requires the use of OrderPreservingPartitioner on the cluster to work properly.')
+#    k = key
+#    @twitter.insert(:Statuses, k + '2', {'body' => '1'})
+#    @twitter.insert(:Statuses, k + '3', {'body' => '1'})
+#    @twitter.insert(:Statuses, k + '4', {'body' => '1'})
+#    @twitter.insert(:Statuses, k + '5', {'body' => '1'})
+#    @twitter.insert(:Statuses, k + '6', {'body' => '1'})
+#    assert_equal([k + '3', k + '4', k + '5'], @twitter.get_range(:Statuses, :start_key => k + '3', :finish_key => k + '5').keys)
+#  end
 
   def test_get_range
     # make sure that deleted rows are not included in the iteration
@@ -534,6 +534,59 @@ class CassandraTest < Test::Unit::TestCase
     end
 
     assert_equal({'user' => 'user'}, @twitter.get(:Users, k))
+  end
+
+def test_each_key
+    num_users = rand(60)
+    num_users.times do |twit_counter|
+      @twitter.insert(:Users, "Twitter : #{twit_counter}", {'body' => 'v1', 'user' => 'v1'})
+    end
+    counter = 0
+    @twitter.each_key(:Users) do |_, _|
+      counter += 1
+    end
+    assert_equal num_users, counter
+  end
+
+  def test_each_with_column_predicate
+    num_users = rand(60)
+    num_users.times do |twit_counter|
+      @twitter.insert(:Users, "Twitter : #{twit_counter}", {'body' => 'v1', 'user' => 'v1'})
+    end
+    counter = 0
+    @twitter.each(:Users, :batch_size => 10, :start => 'body', :finish => 'body') do |key, columns|
+      assert_equal 1, columns.length
+      counter += 1
+    end
+    assert_equal num_users, counter
+  end
+
+  def test_each_with_super_column
+    num_users = rand(50)
+    block_name = key
+    num_users.times do |twit_counter|
+      @twitter.insert(:StatusRelationships, block_name + twit_counter.to_s, {
+      'user_timelines' => {@uuids[1] => 'v1', @uuids[2] => 'v2'},
+      'mentions_timelines' => {@uuids[3] => 'v3'}})
+    end
+
+    counter = 0
+    # Restrict to one super column ::
+    @twitter.each(:StatusRelationships, :batch_size => 10, :start => 'user_timelines', :finish => 'user_timelines') do |key, columns|
+      columns.each do |_, column_value|
+          assert_equal 2, column_value.length
+      end
+      counter += 1
+    end
+
+    #Both super columns
+    @twitter.each(:StatusRelationships, :batch_size => 10, :start => 'mentions_timelines', :finish => 'user_timelines') do |key,columns|
+      assert_equal 2, columns.length
+      counter += 1
+    end
+
+    assert_equal num_users*2, counter
+
   end
 
   if CASSANDRA_VERSION.to_f >= 0.7
