@@ -56,11 +56,11 @@
   },
 "TypeConversions":{
     "UUIDColumnConversion":{
-      "CompareWith":"org.apache.cassandra.db.marshal.TimeUUIDType",
-      "Type":"Standard"},
+      "comparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "column_type":"Standard"},
     "SuperUUID":{
-      "CompareSubcolumnsWith":"org.apache.cassandra.db.marshal.TimeUUIDType",
-      "CompareWith":"org.apache.cassandra.db.marshal.TimeUUIDType",
-      "Type":"Super"}
+      "subcomparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "comparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "column_type":"Super"}
   }
 }
