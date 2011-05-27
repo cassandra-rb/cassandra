@@ -288,6 +288,23 @@ class Cassandra
       ret
     end
 
+    def add(column_family, key, value, *columns_and_options)
+      column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, WRITE_DEFAULTS)
+
+      if is_super(column_family)
+        cf(column_family)[key]                      ||= OrderedHash.new
+        cf(column_family)[key][column]              ||= OrderedHash.new
+        cf(column_family)[key][column][sub_column]  ||= 0
+        cf(column_family)[key][column][sub_column]  += value
+      else
+        cf(column_family)[key]                      ||= OrderedHash.new
+        cf(column_family)[key][column]              ||= 0
+        cf(column_family)[key][column]              += value
+      end
+
+      nil
+    end
+
     def schema(load=true)
       @schema
     end
@@ -310,9 +327,11 @@ class Cassandra
         break if ret.keys.size >= key_count
         if (start_key.nil? || key >= start_key) && (finish_key.nil? || key <= finish_key)
           if columns
-            ret[key] = columns.inject(OrderedHash.new){|hash, column_name| hash[column_name] = cf(column_family)[key][column_name]; hash;}
+            #ret[key] = columns.inject(OrderedHash.new){|hash, column_name| hash[column_name] = cf(column_family)[key][column_name]; hash;}
+            ret[key] = columns_to_hash(column_family, cf(column_family)[key].select{|k,v| columns.include?(k)})
           else
-            ret[key] = apply_range(cf(column_family)[key], column_family, start, finish, !is_super(column_family))
+            #ret[key] = apply_range(cf(column_family)[key], column_family, start, finish, !is_super(column_family))
+            ret[key] = apply_range(columns_to_hash(column_family, cf(column_family)[key]), column_family, start, finish)
           end
         end
       end

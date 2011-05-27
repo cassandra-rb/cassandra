@@ -17,6 +17,9 @@ class CassandraMockTest < CassandraTest
     @blogs_long = Cassandra::Mock.new('MultiblogLong', @test_schema)
     @blogs_long.clear_keyspace!
 
+    @type_conversions = Cassandra::Mock.new('TypeConversions', @test_schema)
+    @type_conversions.clear_keyspace!
+
     @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
     @longs = (0..6).map {|i| Long.new(Time.at(2**(24+i))) }
   end
