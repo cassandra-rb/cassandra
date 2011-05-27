@@ -13,6 +13,9 @@ class CassandraTest < Test::Unit::TestCase
     @blogs_long = Cassandra.new('MultiblogLong', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :exception_classes => [])
     @blogs_long.clear_keyspace!
 
+    @type_conversions = Cassandra.new('TypeConversions', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :exception_classes => [])
+    @type_conversions.clear_keyspace!
+
     @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
     @longs = (0..6).map {|i| Long.new(Time.at(2**(24+i))) }
   end

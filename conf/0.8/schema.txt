@@ -36,21 +36,10 @@ use MultiblogLong;
 create column family Blogs with comparator = 'LongType';
 create column family Comments with comparator = 'LongType';
 
-create keyspace CassandraObject with
+create keyspace TypeConversions with
   placement_strategy = 'org.apache.cassandra.locator.LocalStrategy' AND
   strategy_options = [{replication_factor:1}];
-use CassandraObject;
-create column family Customers with comparator = 'UTF8Type';
-create column family CustomerRelationships with
-  comparator = 'UTF8Type' AND
-  column_type = 'Super' AND
-  subcomparator = 'TimeUUIDType';
-create column family CustomersByLastName with comparator = 'TimeUUIDType';
-create column family Invoices with comparator = 'UTF8Type';
-create column family InvoiceRelationships with
-  comparator = 'UTF8Type' AND
-  column_type = 'Super' AND
-  subcomparator = 'TimeUUIDType';
-create column family InvoicesByNumber with comparator = 'UTF8Type';
-create column family Payments with comparator = 'UTF8Type';
-create column family Appointments with comparator = 'UTF8Type';
+use TypeConversions;
+create column family UUIDColumnConversion with comparator = TimeUUIDType;
+create column family SuperUUID with comparator = TimeUUIDType and column_type = Super;
+
