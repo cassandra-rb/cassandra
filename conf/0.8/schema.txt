@@ -4,9 +4,12 @@ create keyspace Twitter with
 use Twitter;
 create column family Users with comparator = 'UTF8Type';
 create column family UserAudits with comparator = 'UTF8Type';
-create column family UserCounters with comparator = UTF8Type and default_validation_class = CounterColumnType;
-create column family UserCounterAggregates with column_type = Super and comparator = UTF8Type and
-  subcomparator= UTF8Type and default_validation_class = CounterColumnType;
+create column family UserCounters with comparator = 'UTF8Type' and
+  default_validation_class = CounterColumnType;
+create column family UserCounterAggregates with column_type = 'Super'
+  and comparator = 'UTF8Type' and
+  subcomparator = 'UTF8Type' and
+  default_validation_class = CounterColumnType;
 create column family UserRelationships with
   comparator = 'UTF8Type' and
   column_type = 'Super' and

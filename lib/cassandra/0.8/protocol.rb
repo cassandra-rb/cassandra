@@ -12,6 +12,21 @@ class Cassandra
       client.remove(key, column_path, timestamp, consistency_level)
     end
 
+    def _remove_counter(key, column_path, consistency_level)
+      client.remove_counter(key, column_path, consistency_level)
+    end
+
+    def _add(column_family, key, column, sub_column, value, consistency)
+      if is_super(column_family)
+        column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column)
+        counter_column = CassandraThrift::CounterColumn.new(:name => sub_column, :value => value)
+      else
+        column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family)
+        counter_column = CassandraThrift::CounterColumn.new(:name => column, :value => value)
+      end
+      client.add(key, column_parent, counter_column, consistency)
+    end
+
     def _count_columns(column_family, key, super_column, consistency)
       client.get_count(key,
         CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => super_column),
@@ -24,28 +39,21 @@ class Cassandra
       )
     end
 
-    def _get_columns(column_family, key, columns, sub_columns, consistency)
-      result = if is_super(column_family)
-        if sub_columns
-          columns_to_hash(column_family, client.get_slice(key,
-            CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => columns),
-            CassandraThrift::SlicePredicate.new(:column_names => sub_columns),
-            consistency))
-        else
-          columns_to_hash(column_family, client.get_slice(key,
-            CassandraThrift::ColumnParent.new(:column_family => column_family),
-            CassandraThrift::SlicePredicate.new(:column_names => columns),
-            consistency))
-        end
-      else
-        columns_to_hash(column_family, client.get_slice(key,
-          CassandraThrift::ColumnParent.new(:column_family => column_family),
-          CassandraThrift::SlicePredicate.new(:column_names => columns),
-          consistency))
-      end
+    def _get_columns(column_family, key, columns, sub_columns, consistency, default_value = nil)
+      result = if is_super(column_family) && sub_columns
+                   columns_to_hash(column_family, client.get_slice(key,
+                                                                   CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => columns),
+                                                                   CassandraThrift::SlicePredicate.new(:column_names => sub_columns),
+                                                                   consistency))
+               else
+                 columns_to_hash(column_family, client.get_slice(key,
+                                                                 CassandraThrift::ColumnParent.new(:column_family => column_family),
+                                                                 CassandraThrift::SlicePredicate.new(:column_names => columns),
+                                                                 consistency))
+               end
 
       klass = column_name_class(column_family)
-      (sub_columns || columns).map { |name| result[klass.new(name)] }
+      (sub_columns || columns).map { |name| result[klass.new(name)] || default_value }
     end
 
     def _multiget(column_family, keys, column, sub_column, count, start, finish, reversed, consistency)
