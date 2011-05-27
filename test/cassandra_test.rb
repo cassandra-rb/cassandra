@@ -539,7 +539,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({'user' => 'user'}, @twitter.get(:Users, k))
   end
 
-def test_each_key
+  def test_each_key
     num_users = rand(60)
     num_users.times do |twit_counter|
       @twitter.insert(:Users, "Twitter : #{twit_counter}", {'body' => 'v1', 'user' => 'v1'})
@@ -605,6 +605,7 @@ def test_each_key
     assert_equal num_users, counter
   end
 
+
   if CASSANDRA_VERSION.to_f >= 0.7
     def test_creating_and_dropping_new_index
       @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
@@ -630,6 +631,35 @@ def test_each_key
       indexed_row = @twitter.get_indexed_slices(:Statuses, idx_clause)
       assert_equal(1,      indexed_row.length)
       assert_equal('row2', indexed_row.keys.first)
+    end
+  end
+
+  if CASSANDRA_VERSION.to_f >= 0.8
+    def test_adding_getting_value_in_counter
+      assert_nil @twitter.add(:UserCounters, 'bob', 5, 'tweet_count')
+      assert_equal(5, @twitter.get_counter(:UserCounters, 'bob', 'tweet_count'))
+      assert_equal(0, @twitter.get_counter(:UserCounters, 'bogus', 'tweet_count'))
+    end
+
+    def test_get_counter_slice
+      assert_nil @twitter.add(:UserCounters, 'bob', 5, 'tweet_count')
+      assert_equal({'tweet_count' => 5}, @twitter.get_counter_slice(:UserCounters, 'bob', :start => "tweet_count", :finish => "tweet_count"))
+    end
+
+    def test_adding_getting_value_in_multiple_counters
+      assert_nil @twitter.add(:UserCounters, 'bob', 5, 'tweet_count')
+      assert_nil @twitter.add(:UserCounters, 'bob', 7, 'follower_count')
+      assert_equal(5, @twitter.get_counter(:UserCounters, 'bob', 'tweet_count'))
+      assert_equal(0, @twitter.get_counter(:UserCounters, 'bogus', 'tweet_count'))
+      assert_equal([5, 7], @twitter.get_counter_columns(:UserCounters, 'bob', ['tweet_count', 'follower_count']))
+      assert_equal([5, 7, 0], @twitter.get_counter_columns(:UserCounters, 'bob', ['tweet_count', 'follower_count', 'bogus']))
+    end
+
+    def test_adding_getting_value_in_multiple_counters_with_super_columns
+      assert_nil @twitter.add(:UserCounterAggregates, 'bob', 1, 'DAU', 'today')
+      assert_nil @twitter.add(:UserCounterAggregates, 'bob', 2, 'DAU', 'tomorrow')
+      assert_equal(1, @twitter.get_counter(:UserCounterAggregates, 'bob', 'DAU', 'today'))
+      assert_equal(2, @twitter.get_counter(:UserCounterAggregates, 'bob', 'DAU', 'tomorrow'))
     end
   end
 
