@@ -39,6 +39,7 @@ class Cassandra
       )
     end
 
+    # FIXME: add support for start, stop, count functionality
     def _get_columns(column_family, key, columns, sub_columns, consistency, default_value = nil)
       result = if is_super(column_family) && sub_columns
                    columns_to_hash(column_family, client.get_slice(key,

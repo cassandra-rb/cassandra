@@ -12,6 +12,7 @@ class Cassandra
       client.remove(key, column_path, timestamp, consistency_level)
     end
 
+    # FIXME: Add support for start, stop, count
     def _count_columns(column_family, key, super_column, consistency)
       client.get_count(key,
         CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => super_column),
@@ -24,6 +25,7 @@ class Cassandra
       )
     end
 
+    # FIXME: Add support for start, stop, count
     def _get_columns(column_family, key, columns, sub_columns, consistency)
       result = if is_super(column_family)
         if sub_columns
