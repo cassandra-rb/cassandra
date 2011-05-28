@@ -58,13 +58,17 @@ class Cassandra
     :reversed => false,
     :consistency => Consistency::ONE
   }
-  
+
   THRIFT_DEFAULTS = {
     :transport_wrapper => Thrift::BufferedTransport,
     :thrift_client_class => ThriftClient
   }
 
   attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client_class, :auth_request
+
+  def self.DEFAULT_TRANSPORT_WRAPPER
+    Thrift::FramedTransport
+  end
 
   # Create a new Cassandra instance and open the connection.
   def initialize(keyspace, servers = "127.0.0.1:9160", thrift_client_options = {})
@@ -106,13 +110,6 @@ class Cassandra
   end
 
   ##
-  # Returns an array of available keyspaces.
-  #
-  def keyspaces
-    @keyspaces ||= client.describe_keyspaces()
-  end
-
-  ##
   # Issues a login attempt using the username and password specified.
   #
   # * username
@@ -121,15 +118,237 @@ class Cassandra
   def login!(username, password)
     @auth_request = CassandraThrift::AuthenticationRequest.new
     @auth_request.credentials = {'username' => username, 'password' => password}
-    client.login(@keyspace, @auth_request)
+    client.login(@auth_request)
   end
 
   def inspect
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
-      schema(false).map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
+      Array(schema(false).cf_defs).map {|cfdef| ":#{cfdef.name} => #{cfdef.column_type}"}.join(', ')
     }}, @servers=#{servers.inspect}>"
   end
 
+  ##
+  # Set the keyspace to use.
+  #
+  # Please note that this only works on version 0.7.0 and higher.
+  def keyspace=(ks)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    client.set_keyspace(ks)
+    @schema = nil; @keyspace = ks
+  end
+
+  ##
+  # Return an array of the keyspace names available.
+  #
+  # Please note that this only works on version 0.7.0 and higher.
+  def keyspaces
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    client.describe_keyspaces.to_a.collect {|ksdef| ksdef.name }
+  end
+
+  ##
+  # Return a Cassandra::Keyspace object loaded with the current
+  # keyspaces schema.
+  #
+  # Please note that this only works on version 0.7.0 and higher.
+  def schema(load=true)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    if !load && !@schema
+      Cassandra::Keyspace.new
+    else
+      @schema ||= client.describe_keyspace(@keyspace)
+    end
+  end
+
+  ##
+  # This returns true if all servers are in agreement on the schema.
+  #
+  # Please note that this only works on version 0.7.0 and higher.
+  def schema_agreement?
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    client.describe_schema_versions().length == 1
+  end
+
+  ##
+  # Lists the current cassandra.thrift version.
+  #
+  # Please note that this only works on version 0.7.0 and higher.
+  def version
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    client.describe_version()
+  end
+
+  ##
+  # Returns the string name specified for the cluster.
+  #
+  # Please note that this only works on version 0.7.0 and higher.
+  def cluster_name
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    @cluster_name ||= client.describe_cluster_name()
+  end
+
+  ##
+  # Returns an array of CassandraThrift::TokenRange objects indicating
+  # which servers make up the current ring. What their start and end
+  # tokens are, and their list of endpoints.
+  #
+  # Please note that this only works on version 0.7.0 and higher.
+  def ring
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    client.describe_ring(@keyspace)
+  end
+
+  ##
+  # Returns a string identifying which partitioner is in use by the
+  # current cluster.  Typically, this will be RandomPartitioner, but it
+  # could be OrderPreservingPartioner as well.
+  #
+  # Please note that this only works on version 0.7.0 and higher.
+  def partitioner
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    client.describe_partitioner()
+  end
+
+  ##
+  # Remove all rows in the column family you request.
+  #
+  # * column_family
+  # * options
+  #   * consitency
+  #   * timestamp
+  #
+  def truncate!(column_family)
+    client.truncate(column_family.to_s)
+  end
+  alias clear_column_family! truncate!
+
+  ##
+  # Remove all column families in the keyspace.
+  #
+  # This method calls Cassandra#truncate! for each column family in the
+  # keyspace.
+  #
+  # Please note that this only works on version 0.7.0 and higher.
+  #
+  def clear_keyspace!
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    schema.cf_defs.each { |cfdef| truncate!(cfdef.name) }
+  end
+
+  def add_column_family(cf_def)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    begin
+      res = client.system_add_column_family(cf_def)
+    rescue CassandraThrift::TimedOutException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @schema = nil
+    res
+  end
+
+  def drop_column_family(cf_name)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    begin
+      res = client.system_drop_column_family(cf_name)
+    rescue CassandraThrift::TimedOutException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @schema = nil
+    res
+  end
+
+  def rename_column_family(old_name, new_name)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    begin
+      res = client.system_rename_column_family(old_name, new_name)
+    rescue CassandraThrift::TimedOutException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @schema = nil
+    res
+  end
+
+  def update_column_family(cf_def)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    begin
+      res = client.system_update_column_family(cf_def)
+    rescue CassandraThrift::TimedOutException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @schema = nil
+    res
+  end
+
+  def add_keyspace(ks_def)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    begin
+      res = client.system_add_keyspace(ks_def)
+    rescue CassandraThrift::TimedOutException => toe
+      puts "Timed out: #{toe.inspect}"
+    rescue Thrift::TransportException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @keyspaces = nil
+    res
+  end
+
+  def drop_keyspace(ks_name)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    begin
+      res = client.system_drop_keyspace(ks_name)
+    rescue CassandraThrift::TimedOutException => toe
+      puts "Timed out: #{toe.inspect}"
+    rescue Thrift::TransportException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    keyspace = "system" if ks_name.eql?(@keyspace)
+    @keyspaces = nil
+    res
+  end
+
+  def rename_keyspace(old_name, new_name)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    begin
+      res = client.system_rename_keyspace(old_name, new_name)
+    rescue CassandraThrift::TimedOutException => toe
+      puts "Timed out: #{toe.inspect}"
+    rescue Thrift::TransportException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    keyspace = new_name if old_name.eql?(@keyspace)
+    @keyspaces = nil
+    res
+  end
+
+  def update_keyspace(ks_def)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    begin
+      res = client.system_update_keyspace(ks_def)
+    rescue CassandraThrift::TimedOutException => toe
+      puts "Timed out: #{toe.inspect}"
+    rescue Thrift::TransportException => te
+      puts "Timed out: #{te.inspect}"
+    end
+    @keyspaces = nil
+    res
+  end
   ##
   # The initial default consistency is set to ONE, but you can use this method
   # to override the normal default with your specified value. Use this if you
@@ -540,23 +759,91 @@ class Cassandra
   # the individual commands.
   #
   def batch(options = {})
-    _, _, _, options = 
-      extract_and_validate_params(schema.keys.first, "", [options], WRITE_DEFAULTS)
+    _, _, _, options =
+      extract_and_validate_params(schema.cf_defs.first.name, "", [options], WRITE_DEFAULTS)
 
-    @batch = []
-    yield(self)
-    compacted_map,seen_clevels = compact_mutations!
-    clevel = if options[:consistency] != nil # Override any clevel from individual mutations if 
-               options[:consistency]
-             elsif seen_clevels.length > 1 # Cannot choose which CLevel to use if there are several ones
-               raise "Multiple consistency levels used in the batch, and no override...cannot pick one" 
-             else # if no consistency override has been provided but all the clevels in the batch are the same: use that one
-               seen_clevels.first
-             end
+      @batch = []
+      yield(self)
+      compacted_map,seen_clevels = compact_mutations!
+      clevel = if options[:consistency] != nil # Override any clevel from individual mutations if 
+                 options[:consistency]
+               elsif seen_clevels.length > 1 # Cannot choose which CLevel to use if there are several ones
+                 raise "Multiple consistency levels used in the batch, and no override...cannot pick one" 
+               else # if no consistency override has been provided but all the clevels in the batch are the same: use that one
+                 seen_clevels.first
+               end
 
-    _mutate(compacted_map,clevel)
+      _mutate(compacted_map,clevel)
   ensure
     @batch = nil
+  end
+
+### 2ary Indexing
+
+  def create_index(ks_name, cf_name, c_name, v_class)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    cf_def = client.describe_keyspace(ks_name).cf_defs.find{|x| x.name == cf_name}
+    if !cf_def.nil? and !cf_def.column_metadata.find{|x| x.name == c_name}
+      c_def  = CassandraThrift::ColumnDef.new do |cd|
+        cd.name             = c_name
+        cd.validation_class = "org.apache.cassandra.db.marshal."+v_class
+        cd.index_type       = CassandraThrift::IndexType::KEYS
+      end
+      cf_def.column_metadata.push(c_def)
+      update_column_family(cf_def)
+    end
+  end
+
+  def drop_index(ks_name, cf_name, c_name)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    cf_def = client.describe_keyspace(ks_name).cf_defs.find{|x| x.name == cf_name}
+    if !cf_def.nil? and cf_def.column_metadata.find{|x| x.name == c_name}
+      cf_def.column_metadata.delete_if{|x| x.name == c_name}
+      update_column_family(cf_def)
+    end
+  end
+
+  def create_idx_expr(c_name, value, op)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    CassandraThrift::IndexExpression.new(
+      :column_name => c_name,
+      :value => value,
+      :op => (case op
+                when nil, "EQ", "eq", "=="
+                  CassandraThrift::IndexOperator::EQ
+                when "GTE", "gte", ">="
+                  CassandraThrift::IndexOperator::GTE
+                when "GT", "gt", ">"
+                  CassandraThrift::IndexOperator::GT
+                when "LTE", "lte", "<="
+                  CassandraThrift::IndexOperator::LTE
+                when "LT", "lt", "<"
+                  CassandraThrift::IndexOperator::LT
+              end ))
+  end
+
+  def create_idx_clause(idx_expressions, start = "", count = 100)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    CassandraThrift::IndexClause.new(
+      :start_key    => start,
+      :expressions  => idx_expressions,
+      :count        => count)
+  end
+
+  # TODO: Supercolumn support.
+  def get_indexed_slices(column_family, idx_clause, *columns_and_options)
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    column_family, columns, _, options =
+      extract_and_validate_params(column_family, [], columns_and_options, READ_DEFAULTS)
+    key_slices = _get_indexed_slices(column_family, idx_clause, columns, options[:count], options[:start],
+      options[:finish], options[:reversed], options[:consistency])
+
+    key_slices.inject({}){|h, key_slice| h[key_slice.key] = key_slice.columns; h}
   end
 
   protected
@@ -604,5 +891,33 @@ class Cassandra
   #
   def new_client
     thrift_client_class.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
+  end
+
+  def client
+    if @client.nil? || @client.current_server.nil?
+      reconnect!
+      @client.set_keyspace(@keyspace)
+    end
+    @client
+  end
+
+  def reconnect!
+    @servers = all_nodes
+    @client = new_client
+  end
+
+  def all_nodes
+    if @auto_discover_nodes && !@keyspace.eql?("system")
+      temp_client = new_client
+      begin
+        ips = (temp_client.describe_ring(@keyspace).map {|range| range.endpoints}).flatten.uniq
+        port = @servers.first.split(':').last
+        ips.map{|ip| "#{ip}:#{port}" }
+      ensure
+        temp_client.disconnect!
+      end
+    else
+      @servers
+    end
   end
 end

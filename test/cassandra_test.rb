@@ -16,6 +16,9 @@ class CassandraTest < Test::Unit::TestCase
     @type_conversions = Cassandra.new('TypeConversions', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :exception_classes => [])
     @type_conversions.clear_keyspace!
 
+    Cassandra::WRITE_DEFAULTS[:consistency] = Cassandra::Consistency::ONE
+    Cassandra::READ_DEFAULTS[:consistency]  = Cassandra::Consistency::ONE
+
     @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
     @longs = (0..6).map {|i| Long.new(Time.at(2**(24+i))) }
   end
