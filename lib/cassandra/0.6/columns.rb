@@ -3,6 +3,25 @@ class Cassandra
   module Columns #:nodoc:
     private
 
+    def is_super(column_family)
+      @is_super[column_family] ||= column_family_property(column_family, 'Type') == "Super"
+    end
+
+    def column_name_class(column_family)
+      @column_name_class[column_family] ||= column_name_class_for_key(column_family, "CompareWith")
+    end
+
+    def sub_column_name_class(column_family)
+      @sub_column_name_class[column_family] ||= column_name_class_for_key(column_family, "CompareSubcolumnsWith")
+    end
+
+    def column_family_property(column_family, key)
+      unless schema[column_family]
+        raise AccessError, "Invalid column family \"#{column_family}\""
+      end
+      schema[column_family][key]
+    end
+
     def _standard_insert_mutation(column_family, column_name, value, timestamp, _=nil)
       CassandraThrift::Mutation.new(
         :column_or_supercolumn => CassandraThrift::ColumnOrSuperColumn.new(
