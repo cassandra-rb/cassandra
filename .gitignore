@@ -1,3 +1,5 @@
 pkg
 *.rbc
 .redcar
+doc/
+.yardoc/
