@@ -2,12 +2,22 @@
 A Ruby client for the Cassandra distributed database.
 
 * [Getting Started](#getting-started)
+* [License](#license)
 * [Cassandra Version](#cassandra-version)
 * [Read/Write API Method Reference](#read-write-api-method-reference)
 
 ## Getting Started
 
-This is where we'll specify a simple list of operations.
+Here is a quick sample of the general use (more details in Read/Write
+API below):
+
+    require 'cassandra'
+    client = Cassandra.new('Twitter', '127.0.0.1:9160')
+    client.insert(:Users, "5", {'screen_name' => "buttonscat"})
+
+## License
+
+Copyright 2009, 2010 Twitter, Inc. See included LICENSE file. Portions copyright 2004-2009 David Heinemeier Hansson, and used with permission.
 
 ## Cassandra Version
 
@@ -77,3 +87,7 @@ tombstone) columns or super columns.
 * columns\_and\_options - The columns or super columns to insert.
 * options - Valid options are:
   * :consistency - Uses the default read consistency if none specified.
+
+## Reporting Problems
+
+The Github issue tracker is [here](http://github.com/fauna/cassandra/issues). If you have problems with this library or Cassandra itself, please use the [cassandra-user mailing list](http://mail-archives.apache.org/mod_mbox/incubator-cassandra-user/).
