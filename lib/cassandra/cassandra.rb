@@ -79,10 +79,25 @@ class Cassandra
     @servers = Array(servers)
   end
 
+  ##
+  # This method will prevent us from trying to auto-discover all the
+  # server addresses, and only use the list of servers provided on
+  # initialization.
+
+  # This is primarily helpful when the cassandra cluster is communicating
+  # internally on a different ip address than what you are using to connect.
+  # A prime example of this would be when using EC2 to host a cluster.
+  # Typically, the cluster would be communicating over the local ip
+  # addresses issued by Amazon, but any clients connecting from outside EC2
+  # would need to use the public ip.
+  #
   def disable_node_auto_discovery!
     @auto_discover_nodes = false
   end
 
+  ##
+  # Disconnect the current client connection.
+  #
   def disconnect!
     if @client
       @client.disconnect!
@@ -90,35 +105,67 @@ class Cassandra
     end
   end
 
+  ##
+  # Returns an array of available keyspaces.
+  #
   def keyspaces
     @keyspaces ||= client.describe_keyspaces()
   end
-  
+
+  ##
+  # Issues a login attempt using the username and password specified.
+  #
+  # * username
+  # * password
+  #
   def login!(username, password)
     @auth_request = CassandraThrift::AuthenticationRequest.new
     @auth_request.credentials = {'username' => username, 'password' => password}
     client.login(@keyspace, @auth_request)
   end
-  
+
   def inspect
     "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       schema(false).map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
     }}, @servers=#{servers.inspect}>"
   end
 
+  ##
+  # The initial default consistency is set to ONE, but you can use this method
+  # to override the normal default with your specified value. Use this if you
+  # do not want to specify a write consistency for each insert statement.
+  #
   def default_write_consistency=(value)
     WRITE_DEFAULTS[:consistency] = value
   end
 
+  ##
+  # The initial default consistency is set to ONE, but you can use this method
+  # to override the normal default with your specified value. Use this if you
+  # do not want to specify a read consistency for each query.
+  #
   def default_read_consistency=(value)
     READ_DEFAULTS[:consistency] = value
   end
 
-### Write
-
-  # Insert a row for a key. Pass a flat hash for a regular column family, and
-  # a nested hash for a super column family. Supports the <tt>:consistency</tt>,
-  # <tt>:timestamp</tt> and <tt>:ttl</tt> options.
+  ##
+  # This is the main method used to insert rows into cassandra. If the
+  # column\_family that you are inserting into is a SuperColumnFamily then
+  # the hash passed in should be a nested hash, otherwise it should be a
+  # flat hash.
+  #
+  # This method can also be called while in batch mode. If in batch mode
+  # then we queue up the mutations (an insert in this case) and pass them to
+  # cassandra in a single batch at the end of the block.
+  #
+  # * column\_family - The column\_family that you are inserting into.
+  # * key - The row key to insert.
+  # * hash - The columns or super columns to insert.
+  # * options - Valid options are:
+  #   * :timestamp - Uses the current time if none specified.
+  #   * :consistency - Uses the default write consistency if none specified.
+  #   * :ttl - If specified this is the number of seconds after the insert that this value will be available.
+  #
   def insert(column_family, key, hash, options = {})
     column_family, _, _, options = extract_and_validate_params(column_family, key, [options], WRITE_DEFAULTS)
 
@@ -141,12 +188,22 @@ class Cassandra
   end
 
 
-  ## Delete
-
-  # _mutate the element at the column_family:key:[column]:[sub_column]
-  # path you request. Supports the <tt>:consistency</tt> and <tt>:timestamp</tt>
-  # options.
+  ##
+  # This method is used to delete (actually marking them as deleted with a
+  # tombstone) columns or super columns.
+  #
+  # This method can also be used in batch mode. If in batch mode then we
+  # queue up the mutations (a deletion in this case)
+  #
+  # * column\_family - The column\_family that you are inserting into.
+  # * key - The row key to insert.
+  # * columns\_and\_options - The columns or super columns to insert.
+  # * options - Valid options are:
+  #   * :timestamp - Uses the current time if none specified.
+  #   * :consistency - Uses the default write consistency if none specified.
+  #
   # TODO: we could change this function or add another that support multi-column removal (by list or predicate)
+  #
   def remove(column_family, key, *columns_and_options)
     column_family, column, sub_column, options = extract_and_validate_params(column_family, key, columns_and_options, WRITE_DEFAULTS)
 
@@ -168,62 +225,134 @@ class Cassandra
     end
   end
 
-### Read
-
-  # Count the elements at the column_family:key:[super_column] path you
-  # request. Supports the <tt>:consistency</tt> option.
+  ##
+  # Count the columns for the provided parameters.
+  #
+  # * column_family - The column_family that you are inserting into.
+  # * key - The row key to insert.
+  # * columns - Either a single super_column or a list of columns.
+  # * sub_columns - The list of sub_columns to select.
+  # * options - Valid options are:
+  #   * :consistency - Uses the default read consistency if none specified.
+  #
   def count_columns(column_family, key, *columns_and_options)
     column_family, super_column, _, options = 
       extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)      
     _count_columns(column_family, key, super_column, options[:consistency])
   end
 
-  # Multi-key version of Cassandra#count_columns. Supports options <tt>:count</tt>,
-  # <tt>:start</tt>, <tt>:finish</tt>, <tt>:reversed</tt>, and <tt>:consistency</tt>.
-  # FIXME Not real multi; needs server support
+  ##
+  # Multi-key version of Cassandra#count_columns. Please note that this
+  # queries the server for each key passed in.
+  #
+  # Supports same parameters as Cassandra#count_columns.
+  #
+  # * column_family - The column_family that you are inserting into.
+  # * key - The row key to insert.
+  # * columns - Either a single super_column or a list of columns.
+  # * sub_columns - The list of sub_columns to select.
+  # * options - Valid options are:
+  #   * :consistency - Uses the default read consistency if none specified.
+  #
+  # FIXME: Not real multi; needs server support
   def multi_count_columns(column_family, keys, *options)
     OrderedHash[*keys.map { |key| [key, count_columns(column_family, key, *options)] }._flatten_once]
   end
 
-  # Return a list of single values for the elements at the
-  # column_family:key:column[s]:[sub_columns] path you request. Supports the
-  # <tt>:consistency</tt> option.
+  ##
+  # Return a hash of column value pairs for the path you request. 
+  #
+  # * column_family - The column_family that you are inserting into.
+  # * key - The row key to insert.
+  # * columns - Either a single super_column or a list of columns.
+  # * sub_columns - The list of sub_columns to select.
+  # * options - Valid options are:
+  #   * :consistency - Uses the default read consistency if none specified.
+  #
   def get_columns(column_family, key, *columns_and_options)
     column_family, columns, sub_columns, options = 
       extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)      
     _get_columns(column_family, key, columns, sub_columns, options[:consistency])
   end
 
-  # Multi-key version of Cassandra#get_columns. Supports the <tt>:consistency</tt>
-  # option.
+  ##
+  # Multi-key version of Cassandra#get_columns. Please note that this
+  # queries the server for each key passed in.
+  #
+  # Supports same parameters as Cassandra#get_columns
+  #
+  # * column_family - The column_family that you are inserting into.
+  # * key - The row key to insert.
+  # * columns - Either a single super_column or a list of columns.
+  # * sub_columns - The list of sub_columns to select.
+  # * options - Valid options are:
+  #   * :consistency - Uses the default read consistency if none specified.
+  #
   # FIXME Not real multi; needs to use a Column predicate
   def multi_get_columns(column_family, keys, *options)
     OrderedHash[*keys.map { |key| [key, get_columns(column_family, key, *options)] }._flatten_once]
   end
 
+  ##
   # Return a hash (actually, a Cassandra::OrderedHash) or a single value
   # representing the element at the column_family:key:[column]:[sub_column]
-  # path you request. Supports options <tt>:count</tt>, <tt>:start</tt>,
-  # <tt>:finish</tt>, <tt>:reversed</tt>, and <tt>:consistency</tt>.
+  # path you request. 
+  #
+  # * column_family - The column_family that you are inserting into.
+  # * key - The row key to insert.
+  # * columns - Either a single super_column or a list of columns.
+  # * sub_columns - The list of sub_columns to select.
+  # * options - Valid options are:
+  #   * :count    - The number of columns requested to be returned.
+  #   * :start    - The starting value for selecting a range of columns.
+  #   * :finish   - The final value for selecting a range of columns.
+  #   * :reversed - If set to true the results will be returned in
+  #                 reverse order.
+  #   * :consistency - Uses the default read consistency if none specified.
+  #
   def get(column_family, key, *columns_and_options)
     multi_get(column_family, [key], *columns_and_options)[key]
   end
 
-  # Multi-key version of Cassandra#get. Supports options <tt>:count</tt>,
-  # <tt>:start</tt>, <tt>:finish</tt>, <tt>:reversed</tt>, and <tt>:consistency</tt>.
+  ##
+  # Multi-key version of Cassandra#get.
+  #
+  # Supports the same parameters as Cassandra#get.
+  #
+  # * column_family - The column_family that you are inserting into.
+  # * key - The row key to insert.
+  # * columns - Either a single super_column or a list of columns.
+  # * sub_columns - The list of sub_columns to select.
+  # * options - Valid options are:
+  #   * :count    - The number of columns requested to be returned.
+  #   * :start    - The starting value for selecting a range of columns.
+  #   * :finish   - The final value for selecting a range of columns.
+  #   * :reversed - If set to true the results will be returned in reverse order.
+  #   * :consistency - Uses the default read consistency if none specified.
+  #
   def multi_get(column_family, keys, *columns_and_options)
     column_family, column, sub_column, options = 
       extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS)
 
     hash = _multiget(column_family, keys, column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency])
+
     # Restore order
     ordered_hash = OrderedHash.new
     keys.each { |key| ordered_hash[key] = hash[key] || (OrderedHash.new if is_super(column_family) and !sub_column) }
     ordered_hash
   end
 
+  ##
   # Return true if the column_family:key:[column]:[sub_column] path you
-  # request exists. Supports the <tt>:consistency</tt> option.
+  # request exists.
+  #
+  # * column_family - The column_family that you are inserting into.
+  # * key - The row key to insert.
+  # * columns - Either a single super_column or a list of columns.
+  # * sub_columns - The list of sub_columns to select.
+  # * options - Valid options are:
+  #   * :consistency - Uses the default read consistency if none specified.
+  #
   def exists?(column_family, key, *columns_and_options)
     column_family, column, sub_column, options = 
       extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
@@ -234,17 +363,47 @@ class Cassandra
     end
   end
 
-  # Return an OrderedHash containing the columns specified for the given
-  # range of keys in the column_family you request. Only works well if
-  # the table is partitioned with OrderPreservingPartitioner. Supports the
-  # <tt>:key_count</tt>, <tt>:start_key</tt>, <tt>:finish_key</tt>,
-  # <tt>:columns</tt>, <tt>:start</tt>, <tt>:finish</tt>, <tt>:count</tt>,
-  # and <tt>:consistency</tt> options. Please note that Cassandra returns
-  # a row for each row that has existed in the system since gc_grace_seconds.
-  # This is because deleted row keys are marked as deleted, but left in the
-  # system until the cluster has had resonable time to replicate the deletion.
+  ##
+  # Return an Cassandra::OrderedHash containing the columns specified for the given
+  # range of keys in the column_family you request.
+  #
+  # This method is just a convenience wrapper around Cassandra#get_range_single
+  # and Cassandra#get_range_batch. If :key_size, :batch_size, or a block
+  # is passed in Cassandra#get_range_batch will be called. Otherwise
+  # Cassandra#get_range_single will be used.
+  #
+  # The start_key and finish_key parameters are only useful for iterating of all records
+  # as is done in the Cassandra#each and Cassandra#each_key methods if you are using the 
+  # RandomPartitioner.
+  #
+  # If the table is partitioned with OrderPreservingPartitioner you may
+  # use the start_key and finish_key params to select all records with
+  # the same prefix value.
+  #
+  # If a block is passed in we will yield the row key and columns for
+  # each record returned.
+  #
+  # Please note that Cassandra returns a row for each row that has existed in the
+  # system since gc_grace_seconds. This is because deleted row keys are marked as 
+  # deleted, but left in the system until the cluster has had resonable time to replicate the deletion.
   # This function attempts to suppress deleted rows (actually any row returned without
   # columns is suppressed).
+  #
+  # * column_family - The column_family that you are inserting into.
+  # * key - The row key to insert.
+  # * columns - Either a single super_column or a list of columns.
+  # * sub_columns - The list of sub_columns to select.
+  # * options - Valid options are:
+  #   * :start_key    - The starting value for selecting a range of keys (only useful with OPP).
+  #   * :finish_key   - The final value for selecting a range of keys (only useful with OPP).
+  #   * :key_count    - The total number of keys to return from the query. (see note regarding deleted records)
+  #   * :batch_size   - The maximum number of keys to return per query. If specified will loop until :key_count is obtained or all records have been returned.
+  #   * :count        - The number of columns requested to be returned.
+  #   * :start        - The starting value for selecting a range of columns.
+  #   * :finish       - The final value for selecting a range of columns.
+  #   * :reversed     - If set to true the results will be returned in reverse order.
+  #   * :consistency  - Uses the default read consistency if none specified.
+  #
   def get_range(column_family, options = {})
     if block_given? || options[:key_count] || options[:batch_size]
       get_range_batch(column_family, options)
@@ -253,6 +412,12 @@ class Cassandra
     end
   end
 
+  ##
+  # Return an Cassandra::OrderedHash containing the columns specified for the given
+  # range of keys in the column_family you request.
+  #
+  # See Cassandra#get_range for more details.
+  #
   def get_range_single(column_family, options = {})
     return_empty_rows = options.delete(:return_empty_rows) || false
 
@@ -278,6 +443,15 @@ class Cassandra
     multi_key_slices_to_hash(column_family, results, return_empty_rows)
   end
 
+  ##
+  # Return an Cassandra::OrderedHash containing the columns specified for the given
+  # range of keys in the column_family you request.
+  #
+  # If a block is passed in we will yield the row key and columns for
+  # each record returned.
+  #
+  # See Cassandra#get_range for more details.
+  #
   def get_range_batch(column_family, options = {})
     batch_size    = options.delete(:batch_size) || 100
     count         = options.delete(:key_count)
@@ -307,53 +481,64 @@ class Cassandra
     result
   end
 
-  # Count all rows in the column_family you request. Supports the <tt>:start_key</tt>,
-  # <tt>:finish_key</tt>, and <tt>:consistency</tt> options.  Please note that 
-  # <tt>:start_key</tt> and <tt>:finish_key</tt> only work properly when
-  # OrderPreservingPartitioner.
+  ##
+  # Count all rows in the column_family you request.
+  #
+  # This method just calls Cassandra#get_range_keys and returns the
+  # number of records returned.
+  #
+  # See Cassandra#get_range for options.
+  #
   def count_range(column_family, options = {})
     get_range_keys(column_family, options).length
   end
 
-  # Return an Array containing all of the keys within a given range. (Only works
-  # properly if the Cassandra cluster is using the OrderPreservingPartitioner.)
-  # Supports <tt>:start_key</tt>, <tt>:finish_key</tt>, <tt>:count</tt>, and
-  # <tt>:consistency</tt> options.
+  ##
+  # Return an Array containing all of the keys within a given range.
+  #
+  # This method just calls Cassandra#get_range and returns the
+  # row keys for the records returned.
+  #
+  # See Cassandra#get_range for options.
+  #
   def get_range_keys(column_family, options = {})
     get_range(column_family,options.merge!(:count => 1)).keys
   end
 
+  ##
   # Iterate through each key within the given parameters. This function can be
-  # used to iterate over each key in the given column family. However, if you
-  # only want to walk through a range of keys you need to have your cluster
-  # setup with OrderPreservingPartitioner. Please note that this function walks
-  # the list of keys in batches using the passed in <tt>:count</tt> option.
-  # Supports <tt>:start_key</tt>, <tt>:finish_key</tt>, <tt>:count</tt>, and
-  # <tt>:consistency</tt> options.
+  # used to iterate over each key in the given column family.
+  #
+  # This method just calls Cassandra#get_range and yields each row key.
+  #
+  # See Cassandra#get_range for options.
+  #
   def each_key(column_family, options = {})
     get_range_batch(column_family, options) do |key, columns|
       yield key
     end
   end
 
-  # Iterate through each row and yields each key and value within the given parameters.
-  # This function can be used to iterate over each key in the given column family.
-  # However, if you only want to walk through a range of keys you need to have your
-  # cluster setup with OrderPreservingPartitioner. Please note that this function walks
-  # the list of keys in batches using the passed in <tt>:count</tt> option.
-  # Supports the <tt>:key_count</tt>, <tt>:start_key</tt>, <tt>:finish_key</tt>,
-  # <tt>:columns</tt>, <tt>:start</tt>, <tt>:finish</tt>, <tt>:count</tt>,
-  # and <tt>:consistency</tt> options.
+  ##
+  # Iterate through each row in the given column family
+  #
+  # This method just calls Cassandra#get_range and yields each row key.
+  #
+  # See Cassandra#get_range for options.
+  #
   def each(column_family, options = {})
     get_range_batch(column_family, options) do |key, columns|
       yield key, columns
     end
   end
 
+  ##
   # Open a batch operation and yield self. Inserts and deletes will be queued
-  # until the block closes, and then sent atomically to the server.  Supports
-  # the <tt>:consistency</tt> option, which overrides the consistency set in
+  # until the block closes, and then sent atomically to the server.
+  #
+  # Supports the :consistency option, which overrides the consistency set in
   # the individual commands.
+  #
   def batch(options = {})
     _, _, _, options = 
       extract_and_validate_params(schema.keys.first, "", [options], WRITE_DEFAULTS)
@@ -368,19 +553,21 @@ class Cassandra
              else # if no consistency override has been provided but all the clevels in the batch are the same: use that one
                seen_clevels.first
              end
-        
+
     _mutate(compacted_map,clevel)
   ensure
     @batch = nil
   end
-  
+
   protected
 
   def calling_method
     "#{self.class}##{caller[0].split('`').last[0..-3]}"
   end
 
+  ##
   # Roll up queued mutations, to improve atomicity (and performance).
+  #
   def compact_mutations!
     used_clevels = {} # hash that lists the consistency levels seen in the batch array. key is the clevel, value is true
     by_key = Hash.new{|h,k | h[k] = {}}
@@ -412,8 +599,10 @@ class Cassandra
     [by_key, used_clevels.keys]
   end
 
+  ##
+  # Creates a new client as specified by Cassandra.thrift_client_options[:thrift_client_class]
+  #
   def new_client
     thrift_client_class.new(CassandraThrift::Cassandra::Client, @servers, @thrift_client_options)
   end
-  
 end
