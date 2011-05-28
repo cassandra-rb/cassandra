@@ -55,18 +55,28 @@ class Cassandra
 
   ## Delete
 
+  ##
   # Remove all rows in the column family you request.
+  #
+  # * column_family
+  # * options
+  #   * consitency
+  #   * timestamp
+  #
   def truncate!(column_family)
     client.truncate(column_family.to_s)
   end
   alias clear_column_family! truncate!
 
+  ##
   # Remove all rows in the keyspace.
+  #
+  # This method calls Cassandra#truncate! for each column family in the
+  # current keyspace.
+  #
   def clear_keyspace!
     schema.cf_defs.each { |cfdef| truncate!(cfdef.name) }
   end
-
-### Read
 
   def add_column_family(cf_def)
     begin

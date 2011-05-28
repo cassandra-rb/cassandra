@@ -2,13 +2,15 @@ class Cassandra
   def self.DEFAULT_TRANSPORT_WRAPPER
     Thrift::BufferedTransport
   end
-  
-  ## Delete
 
-  # Remove all rows in the column family you request. Supports options
-  # <tt>:consistency</tt> and <tt>:timestamp</tt>.
-  # FIXME May not currently delete all records without multiple calls. Waiting
-  # for ranged remove support in Cassandra.
+  ##
+  # Remove all rows in the column family you request.
+  #
+  # * column_family
+  # * options
+  #   * consitency
+  #   * timestamp
+  #
   def clear_column_family!(column_family, options = {})
     each_key(column_family) do |key|
       remove(column_family, key, options)

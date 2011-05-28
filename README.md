@@ -3,7 +3,7 @@ A Ruby client for the Cassandra distributed database.
 
 * [Getting Started](#getting-started)
 * [Cassandra Version](#cassandra-version)
-* [API Method Reference](#api-method-reference)
+* [Read/Write API Method Reference](#read-write-api-method-reference)
 
 ## Getting Started
 
@@ -37,48 +37,7 @@ version you are using:
 Then you would use the default require as listed above:
     require 'cassandra'
 
-## API Method Reference
-
-### disable\_node\_auto\_discovery!
-
-This method will prevent us from trying to auto-discover all the
-server addresses, and only use the list of servers provided on
-initialization.
-
-This is primarily helpful when the cassandra cluster is communicating
-internally on a different ip address than what you are using to connect.
-A prime example of this would be when using EC2 to host a cluster.
-Typically, the cluster would be communicating over the local ip
-addresses issued by Amazon, but any clients connecting from outside EC2
-would need to use the public ip.
-
-### disconnect!
-
-This method will disconnect the current client.
-
-### keyspaces
-
-Returns an array of the available keyspaces.
-
-### login!
-
-* username
-* password
-
-Issues a login attempt using the username and password specified.
-
-### default\_write\_consistency=
-
-The initial default consistency is set to ONE, but you can use
-this method to override the normal default with your specified value.
-Use this if you do not want to specify a write consistency for each
-insert statement.
-
-### default\_read\_consistency=
-
-The initial default consistency is set to ONE, but you can use
-this method to override the normal default with your specified value.
-Use this if you do not want to specify a read consistency for each query.
+## Read/Write API Method Reference
 
 ### insert
 
