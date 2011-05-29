@@ -5,6 +5,7 @@ v0.11.1
 - Add way to specify a default read/write consistency.
 - Consolidate 0.7 and 0.8 functions, and move 0.6 specific functions into lib/cassandra/0.6/
 - Use 0.8-rc1 as 0.8 install target.
+- Updated get_index_slices API to allow passing an array of hashes instead of IndexClause instance. (Maintains backward compatibility.)
 
 v0.11.0
 - Remove direct thrift dependency. Allow thrift_client to require it.

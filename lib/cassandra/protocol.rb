@@ -101,7 +101,7 @@ class Cassandra
     end
 
     # TODO: Supercolumn support
-    def _get_indexed_slices(column_family, idx_clause, column, count, start, finish, reversed, consistency)
+    def _get_indexed_slices(column_family, index_clause, column, count, start, finish, reversed, consistency)
       column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family)
       if column
         predicate = CassandraThrift::SlicePredicate.new(:column_names => [column])
@@ -113,7 +113,7 @@ class Cassandra
             :start => start,
             :finish => finish))
       end
-      client.get_indexed_slices(column_parent, idx_clause, predicate, consistency)
+      client.get_indexed_slices(column_parent, index_clause, predicate, consistency)
     end
   end
 end

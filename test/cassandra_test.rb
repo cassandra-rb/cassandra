@@ -645,6 +645,30 @@ class CassandraTest < Test::Unit::TestCase
 
       @twitter.insert(:Statuses, 'row11', { 'x' => [0,30].pack("NN")  })
 
+      expressions = [{:column_name => 'x', :value => [0,20].pack("NN"), :comparison => "=="}]
+
+      # verify multiples will be returned
+      assert_equal 9, @twitter.get_indexed_slices(:Statuses, expressions).length
+
+      # verify that GT and LT queries perform properly
+      expressions   =  [
+                          {:column_name => 'x',           :value => [0,20].pack("NN"),  :comparison => "=="},
+                          {:column_name => 'non_indexed', :value => [5].pack("N*"),     :comparison => ">"}
+                       ]
+      assert_equal(5, @twitter.get_indexed_slices(:Statuses, expressions).length)
+    end
+
+    def test_old_get_indexed_slices
+      @twitter.create_index('Twitter', 'Statuses', 'x', 'LongType')
+
+      @twitter.insert(:Statuses, 'row1', { 'x' => [0,10].pack("NN")  })
+
+      (2..10).to_a.each do |i|
+        @twitter.insert(:Statuses, 'row' + i.to_s, { 'x' => [0,20].pack("NN"), 'non_indexed' => [i].pack('N*') })
+      end
+
+      @twitter.insert(:Statuses, 'row11', { 'x' => [0,30].pack("NN")  })
+
       idx_expr   = @twitter.create_idx_expr('x', [0,20].pack("NN"), "==")
 
       # verify count is observed

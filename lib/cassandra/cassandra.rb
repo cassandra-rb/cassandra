@@ -256,11 +256,11 @@ class Cassandra
     res
   end
 
-  def drop_column_family(cf_name)
+  def drop_column_family(column_family)
     return false if Cassandra.VERSION.to_f < 0.7
 
     begin
-      res = client.system_drop_column_family(cf_name)
+      res = client.system_drop_column_family(column_family)
     rescue CassandraThrift::TimedOutException => te
       puts "Timed out: #{te.inspect}"
     end
@@ -306,17 +306,17 @@ class Cassandra
     res
   end
 
-  def drop_keyspace(ks_name)
+  def drop_keyspace(keyspace)
     return false if Cassandra.VERSION.to_f < 0.7
 
     begin
-      res = client.system_drop_keyspace(ks_name)
+      res = client.system_drop_keyspace(keyspace)
     rescue CassandraThrift::TimedOutException => toe
       puts "Timed out: #{toe.inspect}"
     rescue Thrift::TransportException => te
       puts "Timed out: #{te.inspect}"
     end
-    keyspace = "system" if ks_name.eql?(@keyspace)
+    keyspace = "system" if keyspace.eql?(@keyspace)
     @keyspaces = nil
     res
   end
@@ -778,16 +778,22 @@ class Cassandra
     @batch = nil
   end
 
-### 2ary Indexing
-
-  def create_index(ks_name, cf_name, c_name, v_class)
+  ##
+  # Create secondary index.
+  #
+  # * keyspace
+  # * column_family
+  # * column_name
+  # * validation_class
+  #
+  def create_index(keyspace, column_family, column_name, validation_class)
     return false if Cassandra.VERSION.to_f < 0.7
 
-    cf_def = client.describe_keyspace(ks_name).cf_defs.find{|x| x.name == cf_name}
-    if !cf_def.nil? and !cf_def.column_metadata.find{|x| x.name == c_name}
+    cf_def = client.describe_keyspace(keyspace).cf_defs.find{|x| x.name == column_family}
+    if !cf_def.nil? and !cf_def.column_metadata.find{|x| x.name == column_name}
       c_def  = CassandraThrift::ColumnDef.new do |cd|
-        cd.name             = c_name
-        cd.validation_class = "org.apache.cassandra.db.marshal."+v_class
+        cd.name             = column_name
+        cd.validation_class = "org.apache.cassandra.db.marshal."+validation_class
         cd.index_type       = CassandraThrift::IndexType::KEYS
       end
       cf_def.column_metadata.push(c_def)
@@ -795,23 +801,38 @@ class Cassandra
     end
   end
 
-  def drop_index(ks_name, cf_name, c_name)
+  ##
+  # Delete secondary index.
+  #
+  # * keyspace
+  # * column_family
+  # * column_name
+  #
+  def drop_index(keyspace, column_family, column_name)
     return false if Cassandra.VERSION.to_f < 0.7
 
-    cf_def = client.describe_keyspace(ks_name).cf_defs.find{|x| x.name == cf_name}
-    if !cf_def.nil? and cf_def.column_metadata.find{|x| x.name == c_name}
-      cf_def.column_metadata.delete_if{|x| x.name == c_name}
+    cf_def = client.describe_keyspace(keyspace).cf_defs.find{|x| x.name == column_family}
+    if !cf_def.nil? and cf_def.column_metadata.find{|x| x.name == column_name}
+      cf_def.column_metadata.delete_if{|x| x.name == column_name}
       update_column_family(cf_def)
     end
   end
 
-  def create_idx_expr(c_name, value, op)
+  ##
+  # This method is mostly used internally by get_index_slices to create
+  # a CassandraThrift::IndexExpression for the given options.
+  #
+  # * column_name - Column to be compared
+  # * value       - Value to compare against
+  # * comparison  - Type of comparison to do.
+  #
+  def create_index_expression(column_name, value, comparison)
     return false if Cassandra.VERSION.to_f < 0.7
 
     CassandraThrift::IndexExpression.new(
-      :column_name => c_name,
+      :column_name => column_name,
       :value => value,
-      :op => (case op
+      :op => (case comparison
                 when nil, "EQ", "eq", "=="
                   CassandraThrift::IndexOperator::EQ
                 when "GTE", "gte", ">="
@@ -824,23 +845,61 @@ class Cassandra
                   CassandraThrift::IndexOperator::LT
               end ))
   end
+  alias :create_idx_expr :create_index_expression
 
-  def create_idx_clause(idx_expressions, start = "", count = 100)
+  ##
+  # This method takes an array if CassandraThrift::IndexExpression
+  # objects and creates a CassandraThrift::IndexClause for use in the
+  # Cassandra#get_index_slices
+  #
+  # * index_expressions - Array of CassandraThrift::IndexExpressions.
+  # * start             - The starting row key.
+  # * count             - The count of items to be returned
+  #
+  def create_index_clause(index_expressions, start = "", count = 100)
     return false if Cassandra.VERSION.to_f < 0.7
 
     CassandraThrift::IndexClause.new(
       :start_key    => start,
-      :expressions  => idx_expressions,
+      :expressions  => index_expressions,
       :count        => count)
   end
+  alias :create_idx_clause :create_index_clause
 
+  ##
+  # This method is used to query a secondary index with a set of
+  # provided search parameters
+  #
+  # Please note that you can either specify a
+  # CassandraThrift::IndexClause or an array of hashes with the
+  # format as below.
+  #
+  # * column_family     - The Column Family this operation will be run on.
+  # * index_clause      - This can either be a CassandraThrift::IndexClause or an array of hashes with the following keys:
+  #   * :column_name - Column to be compared
+  #   * :value       - Value to compare against
+  #   * :comparison  - Type of comparison to do.
+  # * options
+  #   * :key_count    - Set maximum number of rows to return. (Only works if CassandraThrift::IndexClause is not passed in.)
+  #   * :key_start    - Set starting row key for search. (Only works if CassandraThrift::IndexClause is not passed in.)
+  #   * :consistency
+  #
   # TODO: Supercolumn support.
-  def get_indexed_slices(column_family, idx_clause, *columns_and_options)
+  def get_indexed_slices(column_family, index_clause, *columns_and_options)
     return false if Cassandra.VERSION.to_f < 0.7
 
     column_family, columns, _, options =
-      extract_and_validate_params(column_family, [], columns_and_options, READ_DEFAULTS)
-    key_slices = _get_indexed_slices(column_family, idx_clause, columns, options[:count], options[:start],
+      extract_and_validate_params(column_family, [], columns_and_options, READ_DEFAULTS.merge(:key_count => 100, :key_start => ""))
+
+    if index_clause.class != CassandraThrift::IndexClause
+      index_expressions = index_clause.collect do |exoression|
+        create_index_expression(exoression[:column_name], exoression[:value], exoression[:comparison])
+      end
+
+      index_clause = create_index_clause(index_expressions, options[:key_start], options[:key_count])
+    end
+
+    key_slices = _get_indexed_slices(column_family, index_clause, columns, options[:count], options[:start],
       options[:finish], options[:reversed], options[:consistency])
 
     key_slices.inject({}){|h, key_slice| h[key_slice.key] = key_slice.columns; h}
