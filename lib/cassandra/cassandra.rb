@@ -244,6 +244,10 @@ class Cassandra
     schema.cf_defs.each { |cfdef| truncate!(cfdef.name) }
   end
 
+  ##
+  # Creates a new column family from the passed in
+  # Cassandra::ColumnFamily instance, and returns the schema id.
+  #
   def add_column_family(cf_def)
     return false if Cassandra.VERSION.to_f < 0.7
 
@@ -256,6 +260,11 @@ class Cassandra
     res
   end
 
+  ##
+  # Delete the specified column family.  Return the new schema id.
+  #
+  # * column_family - The column_family name to drop.
+  #
   def drop_column_family(column_family)
     return false if Cassandra.VERSION.to_f < 0.7
 
@@ -268,6 +277,12 @@ class Cassandra
     res
   end
 
+  ##
+  # Rename a column family. Returns the new schema id.
+  #
+  # * old_name - The current column_family name.
+  # * new_name - The desired column_family name.
+  #
   def rename_column_family(old_name, new_name)
     return false if Cassandra.VERSION.to_f < 0.7
 
@@ -280,6 +295,9 @@ class Cassandra
     res
   end
 
+  ##
+  # Update the column family based on the passed in definition.
+  #
   def update_column_family(cf_def)
     return false if Cassandra.VERSION.to_f < 0.7
 
@@ -292,6 +310,11 @@ class Cassandra
     res
   end
 
+  ##
+  # Add keyspace using the passed in keyspace definition.
+  #
+  # Returns the new schema id.
+  #
   def add_keyspace(ks_def)
     return false if Cassandra.VERSION.to_f < 0.7
 
@@ -306,6 +329,11 @@ class Cassandra
     res
   end
 
+  ##
+  # Deletes keyspace using the passed in keyspace name.
+  #
+  # Returns the new schema id.
+  #
   def drop_keyspace(keyspace)
     return false if Cassandra.VERSION.to_f < 0.7
 
@@ -321,6 +349,13 @@ class Cassandra
     res
   end
 
+  ##
+  # Renames keyspace.
+  #
+  # * old_name - Current keyspace name.
+  # * new_name - Desired keyspace name.
+  #
+  # Returns the new schema id
   def rename_keyspace(old_name, new_name)
     return false if Cassandra.VERSION.to_f < 0.7
 
@@ -336,6 +371,9 @@ class Cassandra
     res
   end
 
+  ##
+  # Update the keyspace using the passed in keyspace definition.
+  #
   def update_keyspace(ks_def)
     return false if Cassandra.VERSION.to_f < 0.7
 
