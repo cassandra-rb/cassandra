@@ -126,8 +126,11 @@ class Cassandra
       end
     end
 
-    def exists?(column_family, key, column=nil)
-      !!get(column_family, key, column)
+    def exists?(column_family, key, *columns_and_options)
+      column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, [key], columns_and_options, READ_DEFAULTS)
+      results = get(column_family, key, column, sub_column)
+
+      ![{}, nil].include?(results)
     end
 
     def multi_get(column_family, keys, *columns_and_options)

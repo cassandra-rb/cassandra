@@ -146,9 +146,25 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal 5, @twitter.get(:Statuses, k, :start => "body-0", :finish => "body-4", :count => 7).length
   end
 
-  def test_exists_with_only_key
+  def test_exists
     @twitter.insert(:Statuses, key, {'body' => 'v'})
-    assert @twitter.exists?(:Statuses, key)
+    assert_equal true, @twitter.exists?(:Statuses, key)
+    assert_equal false, @twitter.exists?(:Statuses, 'bogus')
+
+    columns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
+
+    # verify return value when searching by key
+    assert_equal true, @twitter.exists?(:StatusRelationships, key)
+    assert_equal false, @twitter.exists?(:StatusRelationships, 'bogus')
+
+    # verify return value when searching by key and column
+    assert_equal true, @twitter.exists?(:StatusRelationships, key, 'user_timelines')
+    assert_equal false, @twitter.exists?(:StatusRelationships, key, 'bogus')
+
+    # verify return value when searching by key and column and subcolumn
+    assert_equal true, @twitter.exists?(:StatusRelationships, key, 'user_timelines', @uuids[1])
+    assert_equal false, @twitter.exists?(:StatusRelationships, key, 'user_timelines', @uuids[3])
   end
 
   def test_get_super_key
@@ -210,7 +226,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal(columns.keys.sort, @twitter.get(:StatusRelationships, key, 'user_timelines').timestamps.keys.sort)
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus', 'user_timelines'))
     # FIXME Not sure if this is valid
-    # assert_nil @twitter.exists?(:StatusRelationships, 'bogus', 'user_timelines')
+    assert_equal false, @twitter.exists?(:StatusRelationships, 'bogus', 'user_timelines')
   end
 
   def test_get_super_value

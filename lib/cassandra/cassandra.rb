@@ -603,6 +603,12 @@ class Cassandra
   # Return true if the column_family:key:[column]:[sub_column] path you
   # request exists.
   #
+  # If passed in only a row key it will query for any columns (limiting
+  # to 1) for that row key. If a column is passed in it will query for
+  # that specific column/super column.
+  #
+  # This method will return true or false.
+  #
   # * column_family - The column_family that you are inserting into.
   # * key - The row key to insert.
   # * columns - Either a single super_column or a list of columns.
@@ -613,11 +619,13 @@ class Cassandra
   def exists?(column_family, key, *columns_and_options)
     column_family, column, sub_column, options = 
       extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
-    if column
-      _multiget(column_family, [key], column, sub_column, 1, nil, nil, nil, options[:consistency])[key]
-    else
-      _multiget(column_family, [key], nil, nil, 1, '', '', false, options[:consistency])[key]
-    end
+    result = if column
+               _multiget(column_family, [key], column, sub_column, 1, '', '', false, options[:consistency])[key]
+             else
+               _multiget(column_family, [key], nil, nil, 1, '', '', false, options[:consistency])[key]
+             end
+
+    ![{}, nil].include?(result)
   end
 
   ##
