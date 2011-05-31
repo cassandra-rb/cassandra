@@ -930,8 +930,8 @@ class Cassandra
       extract_and_validate_params(column_family, [], columns_and_options, READ_DEFAULTS.merge(:key_count => 100, :key_start => ""))
 
     if index_clause.class != CassandraThrift::IndexClause
-      index_expressions = index_clause.collect do |exoression|
-        create_index_expression(exoression[:column_name], exoression[:value], exoression[:comparison])
+      index_expressions = index_clause.collect do |expression|
+        create_index_expression(expression[:column_name], expression[:value], expression[:comparison])
       end
 
       index_clause = create_index_clause(index_expressions, options[:key_start], options[:key_count])

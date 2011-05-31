@@ -266,17 +266,23 @@ class Cassandra
       end
     end
 
-    def create_idx_expr(c_name, value, op)
+    def create_index_expression(c_name, value, op)
       {:column_name => c_name, :value => value, :comparison => op}
     end
+    alias :create_idx_expr :create_index_expression
 
-    def create_idx_clause(idx_expressions, start = "", count = 100)
-      {:start => start, :index_expressions => idx_expressions, :count => count}
+    def create_index_clause(idx_expressions, start = "", count = 100)
+      {:start => start, :index_expressions => idx_expressions, :count => count, :type => :index_clause}
     end
+    alias :create_idx_clause :create_index_clause
 
     def get_indexed_slices(column_family, idx_clause, *columns_and_options)
       column_family, columns, _, options =
-        extract_and_validate_params_for_real(column_family, [], columns_and_options, READ_DEFAULTS)
+        extract_and_validate_params_for_real(column_family, [], columns_and_options, READ_DEFAULTS.merge(:key_count => 100, :key_start => ""))
+
+      unless [Hash, OrderedHash].include?(idx_clause.class) && idx_clause[:type] == :index_clause
+        idx_clause = create_index_clause(idx_clause, options[:key_start], options[:key_count])
+      end
 
       ret = {}
       cf(column_family).each do |key, row|
