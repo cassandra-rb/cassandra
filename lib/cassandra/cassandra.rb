@@ -454,7 +454,8 @@ class Cassandra
   #
   # * column\_family - The column\_family that you are inserting into.
   # * key - The row key to insert.
-  # * columns\_and\_options - The columns or super columns to insert.
+  # * columns - Either a single super_column or a list of columns.
+  # * sub_columns - The list of sub\_columns to select.
   # * options - Valid options are:
   #   * :timestamp - Uses the current time if none specified.
   #   * :consistency - Uses the default write consistency if none specified.
@@ -574,10 +575,14 @@ class Cassandra
   ##
   # Multi-key version of Cassandra#get.
   #
+  # This method allows you to select multiple rows with a single query.
+  # If a key that is passed in doesn't exist an empty hash will be
+  # returned.
+  #
   # Supports the same parameters as Cassandra#get.
   #
   # * column_family - The column_family that you are inserting into.
-  # * key - The row key to insert.
+  # * key - An array of keys to.
   # * columns - Either a single super_column or a list of columns.
   # * sub_columns - The list of sub_columns to select.
   # * options - Valid options are:
@@ -787,7 +792,8 @@ class Cassandra
   ##
   # Iterate through each row in the given column family
   #
-  # This method just calls Cassandra#get_range and yields each row key.
+  # This method just calls Cassandra#get_range and yields the key and
+  # columns.
   #
   # See Cassandra#get_range for options.
   #
