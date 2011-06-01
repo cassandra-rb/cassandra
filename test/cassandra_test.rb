@@ -4,14 +4,20 @@ class CassandraTest < Test::Unit::TestCase
   include Cassandra::Constants
 
   def setup
-    @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :exception_classes => [])
+    @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :exception_classes => [])
     @twitter.clear_keyspace!
 
-    @blogs = Cassandra.new('Multiblog', "127.0.0.1:9160",:retries => 2, :exception_classes => [])
+    @blogs = Cassandra.new('Multiblog', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :exception_classes => [])
     @blogs.clear_keyspace!
 
-    @blogs_long = Cassandra.new('MultiblogLong', "127.0.0.1:9160",:retries => 2, :exception_classes => [])
+    @blogs_long = Cassandra.new('MultiblogLong', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :exception_classes => [])
     @blogs_long.clear_keyspace!
+
+    @type_conversions = Cassandra.new('TypeConversions', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :exception_classes => [])
+    @type_conversions.clear_keyspace!
+
+    Cassandra::WRITE_DEFAULTS[:consistency] = Cassandra::Consistency::ONE
+    Cassandra::READ_DEFAULTS[:consistency]  = Cassandra::Consistency::ONE
 
     @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
     @longs = (0..6).map {|i| Long.new(Time.at(2**(24+i))) }
@@ -24,11 +30,35 @@ class CassandraTest < Test::Unit::TestCase
     end
   end
 
+  def test_setting_default_consistency
+    assert_nothing_raised do
+      @twitter.default_read_consistency = Cassandra::Consistency::ALL
+    end
+    assert_equal(Cassandra::READ_DEFAULTS[:consistency], Cassandra::Consistency::ALL)
+
+    assert_nothing_raised do
+      @twitter.default_write_consistency = Cassandra::Consistency::ALL
+    end
+    assert_equal(Cassandra::WRITE_DEFAULTS[:consistency], Cassandra::Consistency::ALL)
+  end
+
   def test_get_key
+    
     @twitter.insert(:Users, key, {'body' => 'v', 'user' => 'v'})
     assert_equal({'body' => 'v', 'user' => 'v'}, @twitter.get(:Users, key))
     assert_equal(['body', 'user'].sort, @twitter.get(:Users, key).timestamps.keys.sort)
     assert_equal({}, @twitter.get(:Users, 'bogus'))
+  end
+
+  def test_get_single_column_returns_single_value
+    @twitter.insert(:Users, key, {'body' => 'body_text', 'user' => 'user_name'})
+    assert_equal('body_text', @twitter.get(:Users, key, 'body'))
+    assert_equal('user_name', @twitter.get(:Users, key, 'user'))
+
+    @blogs.insert(:Blogs, key,
+      {@uuids[0] => 'I like this cat', @uuids[1] => 'Buttons is cuter', @uuids[2] => 'I disagree'})
+
+    assert_equal('I like this cat', @blogs.get(:Blogs, key, @uuids[0]))
   end
 
   def test_get_key_preserving_order
@@ -116,9 +146,25 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal 5, @twitter.get(:Statuses, k, :start => "body-0", :finish => "body-4", :count => 7).length
   end
 
-  def test_exists_with_only_key
+  def test_exists
     @twitter.insert(:Statuses, key, {'body' => 'v'})
-    assert @twitter.exists?(:Statuses, key)
+    assert_equal true, @twitter.exists?(:Statuses, key)
+    assert_equal false, @twitter.exists?(:Statuses, 'bogus')
+
+    columns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
+    @twitter.insert(:StatusRelationships, key, {'user_timelines' => columns})
+
+    # verify return value when searching by key
+    assert_equal true, @twitter.exists?(:StatusRelationships, key)
+    assert_equal false, @twitter.exists?(:StatusRelationships, 'bogus')
+
+    # verify return value when searching by key and column
+    assert_equal true, @twitter.exists?(:StatusRelationships, key, 'user_timelines')
+    assert_equal false, @twitter.exists?(:StatusRelationships, key, 'bogus')
+
+    # verify return value when searching by key and column and subcolumn
+    assert_equal true, @twitter.exists?(:StatusRelationships, key, 'user_timelines', @uuids[1])
+    assert_equal false, @twitter.exists?(:StatusRelationships, key, 'user_timelines', @uuids[3])
   end
 
   def test_get_super_key
@@ -180,7 +226,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal(columns.keys.sort, @twitter.get(:StatusRelationships, key, 'user_timelines').timestamps.keys.sort)
     assert_equal({}, @twitter.get(:StatusRelationships, 'bogus', 'user_timelines'))
     # FIXME Not sure if this is valid
-    # assert_nil @twitter.exists?(:StatusRelationships, 'bogus', 'user_timelines')
+    assert_equal false, @twitter.exists?(:StatusRelationships, 'bogus', 'user_timelines')
   end
 
   def test_get_super_value
@@ -190,16 +236,16 @@ class CassandraTest < Test::Unit::TestCase
     assert_nil @twitter.get(:StatusRelationships, 'bogus', 'user_timelines', columns.keys.first)
   end
 
-  def test_get_range_with_key_range
-    skip('This test requires the use of OrderPreservingPartitioner on the cluster to work properly.')
-    k = key
-    @twitter.insert(:Statuses, k + '2', {'body' => '1'})
-    @twitter.insert(:Statuses, k + '3', {'body' => '1'})
-    @twitter.insert(:Statuses, k + '4', {'body' => '1'})
-    @twitter.insert(:Statuses, k + '5', {'body' => '1'})
-    @twitter.insert(:Statuses, k + '6', {'body' => '1'})
-    assert_equal([k + '3', k + '4', k + '5'], @twitter.get_range(:Statuses, :start_key => k + '3', :finish_key => k + '5').keys)
-  end
+#  def test_get_range_with_key_range
+#    skip('This test requires the use of OrderPreservingPartitioner on the cluster to work properly.')
+#    k = key
+#    @twitter.insert(:Statuses, k + '2', {'body' => '1'})
+#    @twitter.insert(:Statuses, k + '3', {'body' => '1'})
+#    @twitter.insert(:Statuses, k + '4', {'body' => '1'})
+#    @twitter.insert(:Statuses, k + '5', {'body' => '1'})
+#    @twitter.insert(:Statuses, k + '6', {'body' => '1'})
+#    assert_equal([k + '3', k + '4', k + '5'], @twitter.get_range(:Statuses, :start_key => k + '3', :finish_key => k + '5').keys)
+#  end
 
   def test_get_range
     # make sure that deleted rows are not included in the iteration
@@ -524,6 +570,73 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({'user' => 'user'}, @twitter.get(:Users, k))
   end
 
+  def test_each_key
+    num_users = rand(60)
+    num_users.times do |twit_counter|
+      @twitter.insert(:Users, "Twitter : #{twit_counter}", {'body' => 'v1', 'user' => 'v1'})
+    end
+    counter = 0
+    @twitter.each_key(:Users) do |_, _|
+      counter += 1
+    end
+    assert_equal num_users, counter
+  end
+
+  def test_each_with_column_predicate
+    num_users = rand(60)
+    num_users.times do |twit_counter|
+      @twitter.insert(:Users, "Twitter : #{twit_counter}", {'body' => 'v1', 'user' => 'v1'})
+    end
+    counter = 0
+    @twitter.each(:Users, :batch_size => 10, :start => 'body', :finish => 'body') do |key, columns|
+      assert_equal 1, columns.length
+      counter += 1
+    end
+    assert_equal num_users, counter
+  end
+
+  def test_each_with_super_column
+    num_users = rand(50)
+    block_name = key
+    num_users.times do |twit_counter|
+      @twitter.insert(:StatusRelationships, block_name + twit_counter.to_s, {
+      'user_timelines' => {@uuids[1] => 'v1', @uuids[2] => 'v2'},
+      'mentions_timelines' => {@uuids[3] => 'v3'}})
+    end
+
+    counter = 0
+    # Restrict to one super column ::
+    @twitter.each(:StatusRelationships, :batch_size => 10, :start => 'user_timelines', :finish => 'user_timelines') do |key, columns|
+      columns.each do |_, column_value|
+          assert_equal 2, column_value.length
+      end
+      counter += 1
+    end
+
+    #Both super columns
+    @twitter.each(:StatusRelationships, :batch_size => 10, :start => 'mentions_timelines', :finish => 'user_timelines') do |key,columns|
+      assert_equal 2, columns.length
+      counter += 1
+    end
+
+    assert_equal num_users*2, counter
+
+  end
+
+  def test_each_column_types
+    num_users = rand(60)
+    num_users.times do |twit_counter|
+      @type_conversions.insert(:UUIDColumnConversion, twit_counter.to_s, {@uuids[1] => 'v1'})
+    end
+    counter = 0
+     @type_conversions.each(:UUIDColumnConversion) do |_, columns|
+      counter += 1
+      columns.keys.each {|column_name| assert_equal SimpleUUID::UUID, column_name.class}
+    end
+    assert_equal num_users, counter
+  end
+
+
   if CASSANDRA_VERSION.to_f >= 0.7
     def test_creating_and_dropping_new_index
       @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
@@ -541,14 +654,83 @@ class CassandraTest < Test::Unit::TestCase
       @twitter.create_index('Twitter', 'Statuses', 'x', 'LongType')
 
       @twitter.insert(:Statuses, 'row1', { 'x' => [0,10].pack("NN")  })
-      @twitter.insert(:Statuses, 'row2', { 'x' => [0,20].pack("NN")  })
+
+      (2..10).to_a.each do |i|
+        @twitter.insert(:Statuses, 'row' + i.to_s, { 'x' => [0,20].pack("NN"), 'non_indexed' => [i].pack('N*') })
+      end
+
+      @twitter.insert(:Statuses, 'row11', { 'x' => [0,30].pack("NN")  })
+
+      expressions = [{:column_name => 'x', :value => [0,20].pack("NN"), :comparison => "=="}]
+
+      # verify multiples will be returned
+      assert_equal 9, @twitter.get_indexed_slices(:Statuses, expressions).length
+
+      # verify that GT and LT queries perform properly
+      expressions   =  [
+                          {:column_name => 'x',           :value => [0,20].pack("NN"),  :comparison => "=="},
+                          {:column_name => 'non_indexed', :value => [5].pack("N*"),     :comparison => ">"}
+                       ]
+      assert_equal(5, @twitter.get_indexed_slices(:Statuses, expressions).length)
+    end
+
+    def test_old_get_indexed_slices
+      @twitter.create_index('Twitter', 'Statuses', 'x', 'LongType')
+
+      @twitter.insert(:Statuses, 'row1', { 'x' => [0,10].pack("NN")  })
+
+      (2..10).to_a.each do |i|
+        @twitter.insert(:Statuses, 'row' + i.to_s, { 'x' => [0,20].pack("NN"), 'non_indexed' => [i].pack('N*') })
+      end
+
+      @twitter.insert(:Statuses, 'row11', { 'x' => [0,30].pack("NN")  })
 
       idx_expr   = @twitter.create_idx_expr('x', [0,20].pack("NN"), "==")
-      idx_clause = @twitter.create_idx_clause([idx_expr])
 
-      indexed_row = @twitter.get_indexed_slices(:Statuses, idx_clause)
-      assert_equal(1,      indexed_row.length)
-      assert_equal('row2', indexed_row.keys.first)
+      # verify count is observed
+      idx_clause = @twitter.create_idx_clause([idx_expr], "", 1)
+      assert_equal 1, @twitter.get_indexed_slices(:Statuses, idx_clause).length
+
+      # verify multiples will be returned
+      idx_clause = @twitter.create_idx_clause([idx_expr])
+      assert_equal 9, @twitter.get_indexed_slices(:Statuses, idx_clause).length
+
+      # verify that GT and LT queries perform properly
+      idx_expr   =  [
+                      @twitter.create_idx_expr('x', [0,20].pack("NN"), "=="),
+                      @twitter.create_idx_expr('non_indexed', [5].pack("N*"), ">")
+                    ]
+      idx_clause = @twitter.create_idx_clause(idx_expr)
+      assert_equal(5, @twitter.get_indexed_slices(:Statuses, idx_clause).length)
+    end
+  end
+
+  if CASSANDRA_VERSION.to_f >= 0.8
+    def test_adding_getting_value_in_counter
+      assert_nil @twitter.add(:UserCounters, 'bob', 5, 'tweet_count')
+      assert_equal(5, @twitter.get(:UserCounters, 'bob', 'tweet_count'))
+      assert_nil @twitter.get(:UserCounters, 'bogus', 'tweet_count')
+    end
+
+    def test_get_counter_slice
+      assert_nil @twitter.add(:UserCounters, 'bob', 5, 'tweet_count')
+      assert_equal({'tweet_count' => 5}, @twitter.get(:UserCounters, 'bob', :start => "tweet_count", :finish => "tweet_count"))
+    end
+
+    def test_adding_getting_value_in_multiple_counters
+      assert_nil @twitter.add(:UserCounters, 'bob', 5, 'tweet_count')
+      assert_nil @twitter.add(:UserCounters, 'bob', 7, 'follower_count')
+      assert_equal(5, @twitter.get(:UserCounters, 'bob', 'tweet_count'))
+      assert_nil @twitter.get(:UserCounters, 'bogus', 'tweet_count')
+      assert_equal([5, 7], @twitter.get_columns(:UserCounters, 'bob', ['tweet_count', 'follower_count']))
+      assert_equal([5, 7, nil], @twitter.get_columns(:UserCounters, 'bob', ['tweet_count', 'follower_count', 'bogus']))
+    end
+
+    def test_adding_getting_value_in_multiple_counters_with_super_columns
+      assert_nil @twitter.add(:UserCounterAggregates, 'bob', 1, 'DAU', 'today')
+      assert_nil @twitter.add(:UserCounterAggregates, 'bob', 2, 'DAU', 'tomorrow')
+      assert_equal(1, @twitter.get(:UserCounterAggregates, 'bob', 'DAU', 'today'))
+      assert_equal(2, @twitter.get(:UserCounterAggregates, 'bob', 'DAU', 'tomorrow'))
     end
   end
 

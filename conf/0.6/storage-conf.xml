@@ -91,6 +91,16 @@
       <EndPointSnitch>org.apache.cassandra.locator.EndPointSnitch</EndPointSnitch>
     </Keyspace>
 
+    <Keyspace Name="TypeConversions">
+      <KeysCachedFraction>0.01</KeysCachedFraction>
+      <ColumnFamily CompareWith="TimeUUIDType" Name="UUIDColumnConversion"/>
+      <ColumnFamily CompareWith="TimeUUIDType" CompareSubcolumnsWith="UTF8Type" ColumnType="Super" Name="SuperUUID"/>
+
+      <ReplicaPlacementStrategy>org.apache.cassandra.locator.RackUnawareStrategy</ReplicaPlacementStrategy>
+      <ReplicationFactor>1</ReplicationFactor>
+      <EndPointSnitch>org.apache.cassandra.locator.EndPointSnitch</EndPointSnitch>
+    </Keyspace>
+
     <Keyspace Name="CassandraObject">
       <KeysCachedFraction>0.01</KeysCachedFraction>
       <ColumnFamily CompareWith="UTF8Type" Name="Customers" />

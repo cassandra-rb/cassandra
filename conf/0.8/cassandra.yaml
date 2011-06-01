@@ -42,7 +42,7 @@ incremental_backups: false
 snapshot_before_compaction: false
 column_index_size_in_kb: 64
 in_memory_compaction_limit_in_mb: 64
-compaction_multithreading: false
+concurrent_compactors: 1
 compaction_throughput_mb_per_sec: 16
 compaction_preheat_key_cache: true
 rpc_timeout_in_ms: 10000

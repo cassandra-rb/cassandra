@@ -34,6 +34,14 @@ class Cassandra
       @data[column_family.to_sym] = OrderedHash.new
     end
 
+    def default_write_consistency=(value)
+      WRITE_DEFAULTS[:consistency] = value
+    end
+
+    def default_read_consistency=(value)
+      READ_DEFAULTS[:consistency] = value
+    end
+
     def insert(column_family, key, hash_or_array, options = {})
       if @batch
         @batch << [:insert, column_family, key, hash_or_array, options]
@@ -118,8 +126,11 @@ class Cassandra
       end
     end
 
-    def exists?(column_family, key, column=nil)
-      !!get(column_family, key, column)
+    def exists?(column_family, key, *columns_and_options)
+      column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, [key], columns_and_options, READ_DEFAULTS)
+      results = get(column_family, key, column, sub_column)
+
+      ![{}, nil].include?(results)
     end
 
     def multi_get(column_family, keys, *columns_and_options)
@@ -258,21 +269,28 @@ class Cassandra
       end
     end
 
-    def create_idx_expr(c_name, value, op)
+    def create_index_expression(c_name, value, op)
       {:column_name => c_name, :value => value, :comparison => op}
     end
+    alias :create_idx_expr :create_index_expression
 
-    def create_idx_clause(idx_expressions, start = "")
-      {:start => start, :index_expressions => idx_expressions}
+    def create_index_clause(idx_expressions, start = "", count = 100)
+      {:start => start, :index_expressions => idx_expressions, :count => count, :type => :index_clause}
     end
+    alias :create_idx_clause :create_index_clause
 
     def get_indexed_slices(column_family, idx_clause, *columns_and_options)
       column_family, columns, _, options =
-        extract_and_validate_params_for_real(column_family, [], columns_and_options, READ_DEFAULTS)
+        extract_and_validate_params_for_real(column_family, [], columns_and_options, READ_DEFAULTS.merge(:key_count => 100, :key_start => ""))
+
+      unless [Hash, OrderedHash].include?(idx_clause.class) && idx_clause[:type] == :index_clause
+        idx_clause = create_index_clause(idx_clause, options[:key_start], options[:key_count])
+      end
 
       ret = {}
       cf(column_family).each do |key, row|
         next if idx_clause[:start] != '' && key < idx_clause[:start]
+        next if ret.length == idx_clause[:count]
 
         matches = []
         idx_clause[:index_expressions].each do |expr|
@@ -286,6 +304,23 @@ class Cassandra
       end
 
       ret
+    end
+
+    def add(column_family, key, value, *columns_and_options)
+      column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, WRITE_DEFAULTS)
+
+      if is_super(column_family)
+        cf(column_family)[key]                      ||= OrderedHash.new
+        cf(column_family)[key][column]              ||= OrderedHash.new
+        cf(column_family)[key][column][sub_column]  ||= 0
+        cf(column_family)[key][column][sub_column]  += value
+      else
+        cf(column_family)[key]                      ||= OrderedHash.new
+        cf(column_family)[key][column]              ||= 0
+        cf(column_family)[key][column]              += value
+      end
+
+      nil
     end
 
     def schema(load=true)
@@ -310,9 +345,11 @@ class Cassandra
         break if ret.keys.size >= key_count
         if (start_key.nil? || key >= start_key) && (finish_key.nil? || key <= finish_key)
           if columns
-            ret[key] = columns.inject(OrderedHash.new){|hash, column_name| hash[column_name] = cf(column_family)[key][column_name]; hash;}
+            #ret[key] = columns.inject(OrderedHash.new){|hash, column_name| hash[column_name] = cf(column_family)[key][column_name]; hash;}
+            ret[key] = columns_to_hash(column_family, cf(column_family)[key].select{|k,v| columns.include?(k)})
           else
-            ret[key] = apply_range(cf(column_family)[key], column_family, start, finish, !is_super(column_family))
+            #ret[key] = apply_range(cf(column_family)[key], column_family, start, finish, !is_super(column_family))
+            ret[key] = apply_range(columns_to_hash(column_family, cf(column_family)[key]), column_family, start, finish)
           end
         end
       end

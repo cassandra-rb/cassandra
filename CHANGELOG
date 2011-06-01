@@ -1,4 +1,11 @@
 v0.11.1
+- Add counter support for Cassandra 0.8. (Thanks Swrve team!)
+- Add additional rake tasks to start and stop cassandra in the background.
+- Fix issue with non-utf8 column names not being encoded/decoded properly.
+- Add way to specify a default read/write consistency.
+- Consolidate 0.7 and 0.8 functions, and move 0.6 specific functions into lib/cassandra/0.6/
+- Use 0.8-rc1 as 0.8 install target.
+- Updated get_index_slices API to allow passing an array of hashes instead of IndexClause instance. (Maintains backward compatibility.)
 - Fix permissions issue.
 
 v0.11.0

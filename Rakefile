@@ -10,19 +10,21 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
     p.summary = "A Ruby client for the Cassandra distributed database."
     p.rubygems_version = ">= 0.8"
     p.dependencies = ['thrift_client >=0.6.0', 'json', 'rake', 'simple_uuid >=0.1.0']
-    p.ignore_pattern = /^(data|vendor\/cassandra|cassandra|vendor\/thrift)/
+    p.ignore_pattern = /^(data|vendor\/cassandra|cassandra|vendor\/thrift|.*\.rbc)/
     p.rdoc_pattern = /^(lib|bin|tasks|ext)|^README|^CHANGELOG|^TODO|^LICENSE|^COPYING$/
+    p.retain_gemspec = true
   end
 end
 
 CassandraBinaries = {
   '0.6' => 'http://www.apache.org/dist/cassandra/0.6.13/apache-cassandra-0.6.13-bin.tar.gz',
   '0.7' => 'http://www.apache.org/dist/cassandra/0.7.5/apache-cassandra-0.7.5-bin.tar.gz',
-  '0.8' => 'http://www.apache.org/dist/cassandra/0.8.0/apache-cassandra-0.8.0-beta1-bin.tar.gz'
+  '0.8' => 'http://www.apache.org/dist/cassandra/0.8.0/apache-cassandra-0.8.0-rc1-bin.tar.gz'
 }
 
 CASSANDRA_HOME = ENV['CASSANDRA_HOME'] || "#{ENV['HOME']}/cassandra"
 CASSANDRA_VERSION = ENV['CASSANDRA_VERSION'] || '0.7'
+CASSANDRA_PIDFILE = ENV['CASSANDRA_PIDFILE'] || "#{CASSANDRA_HOME}/cassandra.pid"
 
 def setup_cassandra_version(version = CASSANDRA_VERSION)
   FileUtils.mkdir_p CASSANDRA_HOME
@@ -57,14 +59,50 @@ def setup_environment
   env
 end
 
+def running?(pid_file = nil)
+  pid_file ||= CASSANDRA_PIDFILE
+
+  if File.exists?(pid_file)
+    pid = File.new(pid_file).read.to_i
+    begin
+      Process.kill(0, pid)
+      return true
+    rescue
+      File.delete(pid_file)
+    end
+  end
+
+  false
+end
+
+namespace :cassandra do
+  desc "Start Cassandra"
+  task :start, :daemonize, :needs => :java do |t, args|
+    args.with_defaults(:daemonize => true)
+
+    setup_cassandra_version
+
+    env = setup_environment
+
+    Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
+      sh("env #{env} bin/cassandra #{'-f' unless args.daemonize} -p #{CASSANDRA_PIDFILE}")
+    end
+  end
+
+  desc "Stop Cassandra"
+  task :stop => :java do
+    setup_cassandra_version
+    env = setup_environment
+    sh("kill $(cat #{CASSANDRA_PIDFILE})")
+  end
+end
+
 desc "Start Cassandra"
 task :cassandra => :java do
-  setup_cassandra_version
-
-  env = setup_environment
-
-  Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
-    sh("env #{env} bin/cassandra -f")
+  begin
+    Rake::Task["cassandra:start"].invoke(false)
+  rescue RuntimeError => e
+    raise e unless e.message =~ /Command failed with status \(130\)/ # handle keyboard interupt errors
   end
 end
 

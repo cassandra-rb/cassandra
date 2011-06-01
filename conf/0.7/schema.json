@@ -44,5 +44,14 @@
     "Comments":{
       "comparator_type":"org.apache.cassandra.db.marshal.LongType",
       "column_type":"Standard"}
+  },
+"TypeConversions":{
+    "UUIDColumnConversion":{
+      "comparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "column_type":"Standard"},
+    "SuperUUID":{
+      "subcomparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "comparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "column_type":"Super"}
   }
 }

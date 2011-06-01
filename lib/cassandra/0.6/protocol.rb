@@ -19,6 +19,7 @@ class Cassandra
       )
     end
 
+    # FIXME: add support for start, stop, count functionality
     def _get_columns(column_family, key, columns, sub_columns, consistency)
       result = if is_super(column_family)
         if sub_columns
@@ -60,7 +61,7 @@ class Cassandra
             :count => count, 
             :start => start, 
             :finish => finish))
-        
+
         if is_super(column_family) and column
           column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => column)
           multi_sub_columns_to_hash!(column_family, client.multiget_slice(@keyspace, keys, column_parent, predicate, consistency))
