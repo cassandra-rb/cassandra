@@ -120,3 +120,9 @@ task :thrift do
     rm -rf gen-rb &&
     thrift -gen rb #{CASSANDRA_HOME}/interface/cassandra.thrift")
 end
+
+task :fix_perms do
+  chmod_R 0755, './'
+end
+
+task :pkg => [:fix_perms]

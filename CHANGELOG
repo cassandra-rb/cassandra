@@ -1,3 +1,6 @@
+v0.11.1
+- Fix permissions issue.
+
 v0.11.0
 - Remove direct thrift dependency. Allow thrift_client to require it.
 - Add functions for each and each_key to iterate through key ranges.
