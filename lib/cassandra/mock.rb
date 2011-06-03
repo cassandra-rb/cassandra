@@ -215,7 +215,7 @@ class Cassandra
     end
 
     def count_range(column_family, options = {})
-      get_range(column_family, options).select{|k,v| v.length > 0}.keys.compact.length
+      Hash[get_range(column_family, options).select{|k,v| v.length > 0}].keys.compact.length
     end
 
     def each_key(column_family, options = {})

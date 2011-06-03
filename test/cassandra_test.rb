@@ -176,9 +176,10 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_several_super_keys
-    columns = {
-      'mentions_timelines' => {@uuids[2]  => 'v2'},
-      'user_timelines' => {@uuids[1]  => 'v1'}}
+    columns = OrderedHash[
+      'mentions_timelines', {@uuids[2]  => 'v2'},
+      'user_timelines', {@uuids[1]  => 'v1'}
+    ]
 
     @twitter.insert(:StatusRelationships, key, columns)
 

@@ -132,7 +132,7 @@ class Cassandra
 
   class OrderedHash < OrderedHashInt #:nodoc:
     def initialize(*args, &block)
-      @timestamps = Hash.new
+      @timestamps = OrderedHashInt.new
       super
     end
 
