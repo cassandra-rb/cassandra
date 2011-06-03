@@ -1,6 +1,8 @@
 # cassandra 
 A Ruby client for the Cassandra distributed database.
 
+Supports 1.8.7, 1.9.2, and rubinius on Cassandra 0.6.13, 0.7.5, 0.8.0.
+
 ## Getting Started
 
 Here is a quick sample of the general use (more details in Read/Write
