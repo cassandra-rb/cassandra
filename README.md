@@ -1,11 +1,6 @@
 # cassandra 
 A Ruby client for the Cassandra distributed database.
 
-* [Getting Started](#getting-started)
-* [License](#license)
-* [Cassandra Version](#cassandra-version)
-* [Read/Write API Method Reference](#read-write-api-method-reference)
-
 ## Getting Started
 
 Here is a quick sample of the general use (more details in Read/Write
@@ -31,10 +26,12 @@ The default version is the currently stable release of cassandra.  (0.7
 at this time, but 0.8 is looming in the near future.)
 
 To use the default version simply use a normal require:
+
     require 'cassandra'
 
 To use a specific version (0.7 in this example) you would use a 
 slightly differently formatted require:
+
     require 'cassandra/0.7'
 
 #### Environment Variable Method
@@ -42,12 +39,14 @@ These mechanisms work well when you are using the cassandra gem in your
 own projects or irb, but if you would rather not hard code your app to a
 specific version you can always specify an environment variable with the
 version you are using:
+
     export CASSANDRA_VERSION=0.7
 
 Then you would use the default require as listed above:
+
     require 'cassandra'
 
-## Read/Write API Method Reference
+## Read/Write API Method Reference 
 
 ### insert
 
@@ -90,6 +89,7 @@ This method is used to delete (actually marking them as deleted with a
 tombstone) columns or super columns.
 
 Example:
+
     @client.insert(:Statuses, key, {'body' => 'v', 'subject' => 'v'})
 
     @client.remove(:Statuses, key, 'body')    # removes the 'body' column
@@ -107,6 +107,7 @@ Count the columns for the provided parameters.
   * :consistency - Uses the default read consistency if none specified.
 
 Example:
+
     @client.insert(:Statuses, key, {'body' => 'v1', 'user' => 'v2'})
     @client.count_columns(:Statuses, key)     # returns 2
 
@@ -129,6 +130,7 @@ path you request.
   * :consistency - Uses the default read consistency if none specified.
 
 Example:
+
     @client.insert(:Users, key, {'body' => 'v', 'user' => 'v'})
     @client.get(:Users, key))           # returns {'body' => 'v', 'user' => 'v'}
 
@@ -255,7 +257,7 @@ Return an Array containing all of the keys within a given range.
 This method just calls Cassandra#get\_range and returns the
 row keys for the records returned.
 
-See [Cassandra#get\_range](#get-range) for options.
+See Cassandra#get\_range for options.
 
 ### get\_range\_keys
 
@@ -264,7 +266,7 @@ Return an Array containing all of the keys within a given range.
 This method just calls Cassandra#get\_range and returns the
 row keys for the records returned.
 
-See [Cassandra#get\_range](#get-range) for options.
+See Cassandra#get\_range for options.
 
 ### each\_key
 Iterate through each key within the given range parameters. This function can be
@@ -272,7 +274,7 @@ used to iterate over each key in the given column family.
 
 This method just calls Cassandra#get\_range and yields each row key.
 
-See [Cassandra#get\_range](#get-range) for options.
+See Cassandra#get\_range for options.
 
 Example:
     10.times do |i|
@@ -291,7 +293,7 @@ Iterate through each row within the given column\_family.
 This method just calls Cassandra#get\_range and yields the key and
 columns.
 
-See [Cassandra#get\_range](#get-range) for options.
+See Cassandra#get\_range for options.
 
 ### get\_index\_slices
 This method is used to query a secondary index with a set of
@@ -312,6 +314,7 @@ format as below.
   * :consistency
 
 Example:
+
     @client.create_index('Twitter', 'Statuses', 'x', 'LongType')
 
     @client.insert(:Statuses, 'row1', { 'x' => [0,10].pack("NN")  })
