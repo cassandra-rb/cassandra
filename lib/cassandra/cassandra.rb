@@ -1007,7 +1007,6 @@ class Cassandra
   def client
     if @client.nil? || @client.current_server.nil?
       reconnect!
-      @client.set_keyspace(@keyspace)
     end
     @client
   end
@@ -1015,6 +1014,10 @@ class Cassandra
   def reconnect!
     @servers = all_nodes
     @client = new_client
+    @client.add_callback :post_connect do |cli|
+      # Set the active keyspace after connecting
+      cli.set_keyspace(@keyspace)
+    end
   end
 
   def all_nodes
