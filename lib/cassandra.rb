@@ -1,5 +1,5 @@
 require 'rubygems'
-gem 'thrift_client', '~> 0.6.0'
+gem 'thrift_client', '~> 0.6.3'
 require 'thrift_client'
 gem 'simple_uuid' , '~> 0.1.0'
 require 'simple_uuid'
