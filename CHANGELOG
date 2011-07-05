@@ -1,3 +1,6 @@
+v0.11.3
+- Fix login after reconnect
+
 v0.11.2
 - Update thrift_client gem to deal with failover bug.
 
