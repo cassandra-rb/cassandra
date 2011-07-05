@@ -116,9 +116,15 @@ class Cassandra
   # * password
   #
   def login!(username, password)
-    @auth_request = CassandraThrift::AuthenticationRequest.new
-    @auth_request.credentials = {'username' => username, 'password' => password}
-    client.login(@auth_request)
+    request = CassandraThrift::AuthenticationRequest.new
+    request.credentials = {'username' => username, 'password' => password}
+    ret = client.login(request)
+
+    # To avoid a double login on the initial connect, we set
+    # @auth_request after the first successful login.
+    #
+    @auth_request = request
+    ret
   end
 
   def inspect
@@ -1007,7 +1013,6 @@ class Cassandra
   def client
     if @client.nil? || @client.current_server.nil?
       reconnect!
-      @client.set_keyspace(@keyspace)
     end
     @client
   end
@@ -1015,6 +1020,13 @@ class Cassandra
   def reconnect!
     @servers = all_nodes
     @client = new_client
+    @client.add_callback :post_connect do |cli|
+      # Set the active keyspace after connecting
+      cli.set_keyspace(@keyspace)
+
+      # If using an authenticated keyspace, ensure we relogin
+      cli.login(@auth_request) if @auth_request
+    end
   end
 
   def all_nodes
