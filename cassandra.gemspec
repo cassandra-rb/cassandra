@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{cassandra}
-  s.version = "0.11.2"
+  s.version = "0.11.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0.8") if s.respond_to? :required_rubygems_version=
   s.authors = [%q{Evan Weaver, Ryan King}]
-  s.date = %q{2011-06-30}
+  s.date = %q{2011-07-05}
   s.description = %q{A Ruby client for the Cassandra distributed database.}
   s.email = %q{}
   s.executables = [%q{cassandra_helper}]
