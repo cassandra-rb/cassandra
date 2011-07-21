@@ -259,6 +259,23 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal(4, @twitter.get_range_keys(:Statuses, :key_count => 4).size)
   end
 
+  def test_get_range_block
+    k = key
+    5.times do |i|
+      @twitter.insert(:Statuses, k+i.to_s, {"body-#{i.to_s}" => 'v'})
+    end
+
+    values = (0..4).collect{|n| { :key => "test_get_range_block#{n}", :columns => { "body-#{n}" => "v" }} }.reverse
+
+    @twitter.get_range(:Statuses, :start_key => k.to_s, :key_count => 5) { |key,columns|
+       expected = values.pop
+       assert_equal expected[:key], key
+       assert_equal expected[:columns], columns
+    }
+    assert_equal [],values
+
+  end
+
   def test_each_key
     k = key
     keys_yielded = []
