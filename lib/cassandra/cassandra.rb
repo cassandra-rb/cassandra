@@ -680,11 +680,11 @@ class Cassandra
   #   * :reversed     - If set to true the results will be returned in reverse order.
   #   * :consistency  - Uses the default read consistency if none specified.
   #
-  def get_range(column_family, options = {})
+  def get_range(column_family, options = {}, &blk)
     if block_given? || options[:key_count] || options[:batch_size]
-      get_range_batch(column_family, options)
+      get_range_batch(column_family, options, &blk)
     else
-      get_range_single(column_family, options)
+      get_range_single(column_family, options, &blk)
     end
   end
 
