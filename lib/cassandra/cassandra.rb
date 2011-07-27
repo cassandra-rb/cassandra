@@ -700,7 +700,7 @@ class Cassandra
     column_family, _, _, options = 
       extract_and_validate_params(column_family, "", [options], 
                                   READ_DEFAULTS.merge(:start_key  => '',
-                                                      :end_key    => '',
+                                                      :finish_key => '',
                                                       :key_count  => 100,
                                                       :columns    => nil
                                                      )
