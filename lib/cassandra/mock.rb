@@ -100,7 +100,7 @@ class Cassandra
         row[column]
       else
         row = apply_range(row, column_family, options[:start], options[:finish])
-        apply_count(row, options[:count], options[:reversed])
+        row = apply_count(row, options[:count], options[:reversed])
       end
     end
 
@@ -119,7 +119,7 @@ class Cassandra
         else
           row = row[column] || OrderedHash.new
           row = apply_range(row, column_family, options[:start], options[:finish], false)
-          apply_count(row, options[:count], options[:reversed])
+          row = apply_count(row, options[:count], options[:reversed])
         end
       else
         row
@@ -349,13 +349,12 @@ class Cassandra
           if columns
             #ret[key] = columns.inject(OrderedHash.new){|hash, column_name| hash[column_name] = cf(column_family)[key][column_name]; hash;}
             ret[key] = columns_to_hash(column_family, cf(column_family)[key].select{|k,v| columns.include?(k)})
-            ret[key] = ret[key].reverse if reversed
+            ret[key] = apply_count(ret[key], count, reversed)
             blk.call(key,ret[key]) unless blk.nil?
           else
             #ret[key] = apply_range(cf(column_family)[key], column_family, start, finish, !is_super(column_family))
-            row = columns_to_hash(column_family, cf(column_family)[key])
-            row = row.reverse if reversed
-            ret[key] = apply_range(row, column_family, start, finish)
+            ret[key] = apply_range(columns_to_hash(column_family, cf(column_family)[key]), column_family, start, finish)
+            ret[key] = apply_count(ret[key], count, reversed)
             blk.call(key,ret[key]) unless blk.nil?
           end
         end
