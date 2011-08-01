@@ -150,9 +150,9 @@ class Cassandra
       else
         if column
           if sub_column
-            cf(column_family)[key][column].delete(sub_column.to_s)
+            cf(column_family)[key][column].delete(sub_column.to_s) if cf(column_family)[key][column]
           else
-            cf(column_family)[key].delete(column.to_s)
+            cf(column_family)[key].delete(column.to_s)  if cf(column_family)[key]
           end
         else
           cf(column_family).delete(key)
