@@ -198,6 +198,11 @@ class OrderedHashTestInt < Test::Unit::TestCase
     assert_same original, @ordered_hash
     assert_equal @other_ordered_hash.keys, @ordered_hash.keys
   end
+  
+  def test_reverse
+    assert_equal @keys.reverse, @ordered_hash.reverse.keys
+    assert_equal @values.reverse, @ordered_hash.reverse.values
+  end
 end
 
 class OrderedHashTest < Test::Unit::TestCase

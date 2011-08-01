@@ -664,6 +664,9 @@ class Cassandra
   # deleted, but left in the system until the cluster has had resonable time to replicate the deletion.
   # This function attempts to suppress deleted rows (actually any row returned without
   # columns is suppressed).
+  # 
+  # Please note that when enabling the :reversed option, :start and :finish should be swapped (e.g.
+  # reversal happens before selecting the range).
   #
   # * column_family - The column_family that you are inserting into.
   # * key - The row key to insert.
@@ -702,7 +705,8 @@ class Cassandra
                                   READ_DEFAULTS.merge(:start_key  => '',
                                                       :finish_key => '',
                                                       :key_count  => 100,
-                                                      :columns    => nil
+                                                      :columns    => nil,
+                                                      :reversed   => false
                                                      )
                                  )
 
@@ -714,7 +718,8 @@ class Cassandra
                           options[:start].to_s,
                           options[:finish].to_s,
                           options[:count],
-                          options[:consistency] )
+                          options[:consistency],
+                          options[:reversed] )
 
     multi_key_slices_to_hash(column_family, results, return_empty_rows)
   end
