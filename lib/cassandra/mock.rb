@@ -13,6 +13,8 @@ class Cassandra
     include ::Cassandra::Helpers
     include ::Cassandra::Columns
 
+    attr_reader :keyspace
+
     def initialize(keyspace, schema)
       @is_super = {}
       @keyspace = keyspace
@@ -332,6 +334,13 @@ class Cassandra
     def column_family_property(column_family, key)
       schema[column_family.to_s][key]
     end
+
+    def add_column_family(cf)
+      @schema[cf.name.to_s] ||= OrderedHash.new 
+      @schema[cf.name.to_s]["comparator_type"] = cf.comparator_type
+      @schema[cf.name.to_s]["column_type"] = cf.column_type || "Standard"
+    end
+
 
     private
 
