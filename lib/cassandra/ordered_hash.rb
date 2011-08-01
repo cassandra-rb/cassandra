@@ -122,6 +122,10 @@ class Cassandra
         @keys = other.keys
         self
       end
+      
+      def reverse
+        OrderedHashInt[self.to_a.reverse]
+      end
 
     private
 
