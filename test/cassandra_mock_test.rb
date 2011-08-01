@@ -43,6 +43,19 @@ class CassandraMockTest < CassandraTest
     @twitter.insert(:Statuses, 'a', {:text => 'foo'})
     assert_equal ['a'], @twitter.get_range(:Statuses, :key_count => 1).keys
   end
+  
+  def test_get_range_reversed
+    data = 3.times.map { |i| ["body-#{i.to_s}", "v"] }
+    hash = Cassandra::OrderedHash[data]
+    reversed_hash = Cassandra::OrderedHash[data.reverse]
+    
+    @twitter.insert(:Statuses, "all-keys", hash)
+    
+    columns = @twitter.get_range(:Statuses, :reversed => true)["all-keys"]
+    columns.each do |column|
+      assert_equal reversed_hash.shift, column
+    end
+  end
 
   def test_inserting_array_for_indices
     @twitter.insert(:TimelinishThings, 'a', ['1','2'])
