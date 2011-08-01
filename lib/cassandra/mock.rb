@@ -198,7 +198,8 @@ class Cassandra
                                                                           READ_DEFAULTS.merge(:start_key  => '',
                                                                                               :end_key    => '',
                                                                                               :key_count  => 100,
-                                                                                              :columns    => nil
+                                                                                              :columns    => nil,
+                                                                                              :reversed   => false
                                                                                              )
                                                                          )
       _get_range(column_family,
@@ -209,7 +210,8 @@ class Cassandra
                  options[:start],
                  options[:finish],
                  options[:count],
-                 options[:consistency], &blk)
+                 options[:consistency],
+                 options[:reversed], &blk)
     end
 
     def get_range_keys(column_family, options = {})
@@ -346,7 +348,7 @@ class Cassandra
       @schema
     end
 
-    def _get_range(column_family, start_key, finish_key, key_count, columns, start, finish, count, consistency, &blk)
+    def _get_range(column_family, start_key, finish_key, key_count, columns, start, finish, count, consistency, reversed, &blk)
       ret = OrderedHash.new
       start  = to_compare_with_type(start,  column_family)
       finish = to_compare_with_type(finish, column_family)
@@ -356,10 +358,13 @@ class Cassandra
           if columns
             #ret[key] = columns.inject(OrderedHash.new){|hash, column_name| hash[column_name] = cf(column_family)[key][column_name]; hash;}
             ret[key] = columns_to_hash(column_family, cf(column_family)[key].select{|k,v| columns.include?(k)})
+            ret[key] = ret[key].reverse if reversed
             blk.call(key,ret[key]) unless blk.nil?
           else
             #ret[key] = apply_range(cf(column_family)[key], column_family, start, finish, !is_super(column_family))
-            ret[key] = apply_range(columns_to_hash(column_family, cf(column_family)[key]), column_family, start, finish)
+            row = columns_to_hash(column_family, cf(column_family)[key])
+            row = row.reverse if reversed
+            ret[key] = apply_range(row, column_family, start, finish)
             blk.call(key,ret[key]) unless blk.nil?
           end
         end
