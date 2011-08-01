@@ -13,6 +13,8 @@ class Cassandra
     include ::Cassandra::Helpers
     include ::Cassandra::Columns
 
+    attr_reader :keyspace
+
     def initialize(keyspace, schema)
       @is_super = {}
       @keyspace = keyspace
@@ -100,7 +102,7 @@ class Cassandra
         row[column]
       else
         row = apply_range(row, column_family, options[:start], options[:finish])
-        apply_count(row, options[:count], options[:reversed])
+        row = apply_count(row, options[:count], options[:reversed])
       end
     end
 
@@ -119,7 +121,7 @@ class Cassandra
         else
           row = row[column] || OrderedHash.new
           row = apply_range(row, column_family, options[:start], options[:finish], false)
-          apply_count(row, options[:count], options[:reversed])
+          row = apply_count(row, options[:count], options[:reversed])
         end
       else
         row
@@ -148,9 +150,9 @@ class Cassandra
       else
         if column
           if sub_column
-            cf(column_family)[key][column].delete(sub_column.to_s)
+            cf(column_family)[key][column].delete(sub_column.to_s) if cf(column_family)[key][column]
           else
-            cf(column_family)[key].delete(column.to_s)
+            cf(column_family)[key].delete(column.to_s)  if cf(column_family)[key]
           end
         else
           cf(column_family).delete(key)
@@ -196,7 +198,8 @@ class Cassandra
                                                                           READ_DEFAULTS.merge(:start_key  => '',
                                                                                               :end_key    => '',
                                                                                               :key_count  => 100,
-                                                                                              :columns    => nil
+                                                                                              :columns    => nil,
+                                                                                              :reversed   => false
                                                                                              )
                                                                          )
       _get_range(column_family,
@@ -207,7 +210,8 @@ class Cassandra
                  options[:start],
                  options[:finish],
                  options[:count],
-                 options[:consistency], &blk)
+                 options[:consistency],
+                 options[:reversed], &blk)
     end
 
     def get_range_keys(column_family, options = {})
@@ -331,13 +335,20 @@ class Cassandra
       schema[column_family.to_s][key]
     end
 
+    def add_column_family(cf)
+      @schema[cf.name.to_s] ||= OrderedHash.new 
+      @schema[cf.name.to_s]["comparator_type"] = cf.comparator_type
+      @schema[cf.name.to_s]["column_type"] = cf.column_type || "Standard"
+    end
+
+
     private
 
     def schema_for_keyspace(keyspace)
       @schema
     end
 
-    def _get_range(column_family, start_key, finish_key, key_count, columns, start, finish, count, consistency, &blk)
+    def _get_range(column_family, start_key, finish_key, key_count, columns, start, finish, count, consistency, reversed, &blk)
       ret = OrderedHash.new
       start  = to_compare_with_type(start,  column_family)
       finish = to_compare_with_type(finish, column_family)
@@ -347,10 +358,12 @@ class Cassandra
           if columns
             #ret[key] = columns.inject(OrderedHash.new){|hash, column_name| hash[column_name] = cf(column_family)[key][column_name]; hash;}
             ret[key] = columns_to_hash(column_family, cf(column_family)[key].select{|k,v| columns.include?(k)})
+            ret[key] = apply_count(ret[key], count, reversed)
             blk.call(key,ret[key]) unless blk.nil?
           else
             #ret[key] = apply_range(cf(column_family)[key], column_family, start, finish, !is_super(column_family))
             ret[key] = apply_range(columns_to_hash(column_family, cf(column_family)[key]), column_family, start, finish)
+            ret[key] = apply_count(ret[key], count, reversed)
             blk.call(key,ret[key]) unless blk.nil?
           end
         end
