@@ -745,6 +745,7 @@ module CassandraThrift
       STRATEGY_OPTIONS = 3
       REPLICATION_FACTOR = 4
       CF_DEFS = 5
+      DURABLE_WRITES = 6
 
       FIELDS = {
         NAME => {:type => ::Thrift::Types::STRING, :name => 'name'},
@@ -752,7 +753,8 @@ module CassandraThrift
         STRATEGY_OPTIONS => {:type => ::Thrift::Types::MAP, :name => 'strategy_options', :key => {:type => ::Thrift::Types::STRING}, :value => {:type => ::Thrift::Types::STRING}, :optional => true},
         # @deprecated
         REPLICATION_FACTOR => {:type => ::Thrift::Types::I32, :name => 'replication_factor', :optional => true},
-        CF_DEFS => {:type => ::Thrift::Types::LIST, :name => 'cf_defs', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::CfDef}}
+        CF_DEFS => {:type => ::Thrift::Types::LIST, :name => 'cf_defs', :element => {:type => ::Thrift::Types::STRUCT, :class => CassandraThrift::CfDef}},
+        DURABLE_WRITES => {:type => ::Thrift::Types::BOOL, :name => 'durable_writes', :default => true, :optional => true}
       }
 
       def struct_fields; FIELDS; end

@@ -13,8 +13,10 @@ module CassandraThrift
       EACH_QUORUM = 4
       ALL = 5
       ANY = 6
-      VALUE_MAP = {1 => "ONE", 2 => "QUORUM", 3 => "LOCAL_QUORUM", 4 => "EACH_QUORUM", 5 => "ALL", 6 => "ANY"}
-      VALID_VALUES = Set.new([ONE, QUORUM, LOCAL_QUORUM, EACH_QUORUM, ALL, ANY]).freeze
+      TWO = 7
+      THREE = 8
+      VALUE_MAP = {1 => "ONE", 2 => "QUORUM", 3 => "LOCAL_QUORUM", 4 => "EACH_QUORUM", 5 => "ALL", 6 => "ANY", 7 => "TWO", 8 => "THREE"}
+      VALID_VALUES = Set.new([ONE, QUORUM, LOCAL_QUORUM, EACH_QUORUM, ALL, ANY, TWO, THREE]).freeze
     end
 
     module IndexOperator
