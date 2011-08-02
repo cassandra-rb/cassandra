@@ -21,7 +21,7 @@ create column family StatusRelationships with
   comparator = 'UTF8Type' and
   column_type = 'Super' and
   subcomparator = 'TimeUUIDType';
-create column family Index with
+create column family Indexes with
   comparator = 'UTF8Type' and
   column_type = 'Super';
 create column family TimelinishThings with

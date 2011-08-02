@@ -31,7 +31,7 @@
       "subcomparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
       "comparator_type":"org.apache.cassandra.db.marshal.UTF8Type",
       "column_type":"Super"},
-    "Index":{
+    "Indexes":{
       "comparator_type":"org.apache.cassandra.db.marshal.UTF8Type",
       "column_type":"Super"},
     "TimelinishThings":{

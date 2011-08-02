@@ -568,7 +568,7 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_nil_sub_column_value
-    @twitter.insert(:Index, 'asdf', {"thing" => {'jkl' => ''} })
+    @twitter.insert(:Indexes, 'asdf', {"thing" => {'jkl' => ''} })
   end
 
   def test_disconnect!
