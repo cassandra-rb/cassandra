@@ -10,7 +10,7 @@ here = File.expand_path(File.dirname(__FILE__))
 
 class Cassandra ; end
 unless Cassandra.respond_to?(:VERSION)
-  require "#{here}/cassandra/0.7"
+  require "#{here}/cassandra/0.8"
 end
 
 $LOAD_PATH << "#{here}/../vendor/#{Cassandra.VERSION}/gen-rb"

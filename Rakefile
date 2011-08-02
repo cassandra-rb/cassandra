@@ -23,7 +23,7 @@ CassandraBinaries = {
 }
 
 CASSANDRA_HOME = ENV['CASSANDRA_HOME'] || "#{ENV['HOME']}/cassandra"
-CASSANDRA_VERSION = ENV['CASSANDRA_VERSION'] || '0.7'
+CASSANDRA_VERSION = ENV['CASSANDRA_VERSION'] || '0.8'
 CASSANDRA_PIDFILE = ENV['CASSANDRA_PIDFILE'] || "#{CASSANDRA_HOME}/cassandra.pid"
 
 def setup_cassandra_version(version = CASSANDRA_VERSION)
