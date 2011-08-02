@@ -1,7 +1,7 @@
 # cassandra 
 A Ruby client for the Cassandra distributed database.
 
-Supports 1.8.7, 1.9.2, and rubinius on Cassandra 0.6.13, 0.7.5, 0.8.0.
+Supports 1.8.7, 1.9.2, and rubinius on Cassandra 0.6.13, 0.7.8, 0.8.2.
 
 ## Getting Started
 
@@ -14,7 +14,7 @@ API below):
 
 ## License
 
-Copyright 2009, 2010 Twitter, Inc. See included LICENSE file. Portions copyright 2004-2009 David Heinemeier Hansson, and used with permission.
+Copyright 2009-2011 Twitter, Inc. See included LICENSE file. Portions copyright 2004-2009 David Heinemeier Hansson, and used with permission.
 
 ## Cassandra Version
 
@@ -24,8 +24,8 @@ with.  We have set up an easy sure fire mechanism for selecting the
 specific version that you are connecting to while requiring the gem.
 
 #### Require Method
-The default version is the currently stable release of cassandra.  (0.7
-at this time, but 0.8 is looming in the near future.)
+The default version is the currently stable release of cassandra.  (0.8
+at this time.)
 
 To use the default version simply use a normal require:
 
