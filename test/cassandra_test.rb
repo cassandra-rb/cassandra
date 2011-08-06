@@ -335,7 +335,7 @@ class CassandraTest < Test::Unit::TestCase
 
     keys_yielded = []
     @twitter.each(:Statuses, :columns => ['single_column_lookup'], :batch_size => 5) do |key, columns|
-      assert_equal key_columns[key].reject {|k,v| k != 'single_column_lookup'}, columns
+      assert_equal key_columns[key].reject {|k2,v| k2 != 'single_column_lookup'}, columns
       keys_yielded << key
     end
 
@@ -523,7 +523,7 @@ class CassandraTest < Test::Unit::TestCase
       @twitter.remove(:Users, k + '1') # Full row 
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Not yet removed
 
-      @twitter.remove(:Users, k +'0', 'delete_me') # A single column of the row
+      @twitter.remove(:Users, k + '0', 'delete_me') # A single column of the row
       assert_equal({'delete_me' => 'v0', 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # Not yet removed
       
       @twitter.remove(:Users, k + '4')
@@ -555,7 +555,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({'body' => 'v'}.keys.sort, @twitter.get(:Statuses, k + '3').timestamps.keys.sort) # Written
 
     # Final result: initial_subcolumns - initial_subcolumns.first + new_subcolumns
-    resulting_subcolumns = initial_subcolumns.merge(new_subcolumns).reject{|k,v| k == subcolumn_to_delete }
+    resulting_subcolumns = initial_subcolumns.merge(new_subcolumns).reject{|k2,v| k2 == subcolumn_to_delete }
     assert_equal(resulting_subcolumns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
     assert_equal({}, @twitter.get(:StatusRelationships, key, 'dummy_supercolumn')) # dummy supercolumn deleted 
 
