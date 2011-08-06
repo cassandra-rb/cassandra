@@ -77,7 +77,7 @@ end
 
 namespace :cassandra do
   desc "Start Cassandra"
-  task :start, :daemonize, :needs => :java do |t, args|
+  task :start, [:daemonize] => :java do |t, args|
     args.with_defaults(:daemonize => true)
 
     setup_cassandra_version
