@@ -195,8 +195,8 @@ class Cassandra
 
     def get_range(column_family, options = {}, &blk)
       column_family, _, _, options = extract_and_validate_params_for_real(column_family, "", [options], 
-                                                                          READ_DEFAULTS.merge(:start_key  => '',
-                                                                                              :end_key    => '',
+                                                                          READ_DEFAULTS.merge(:start_key  => nil,
+                                                                                              :finish_key => nil,
                                                                                               :key_count  => 100,
                                                                                               :columns    => nil,
                                                                                               :reversed   => false
