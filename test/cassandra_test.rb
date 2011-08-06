@@ -259,6 +259,25 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal(4, @twitter.get_range_keys(:Statuses, :key_count => 4).size)
   end
 
+  def test_get_range_with_count
+    @twitter.insert(:Statuses, key + '1', {'test_column1' => '1', 'test_column2' => '2', 'test_column3' => '2', 'deleted_column' => '1'})
+    @twitter.insert(:Statuses, key + '2', {'test_column4' => '3', 'test_column5' => '4', 'test_column6' => '2', 'deleted_column' => '2'})
+
+    @twitter.get_range(:Statuses, :count => 3) do |key, columns|
+      assert_equal columns.count, 3
+    end
+
+    assert_equal 2, @twitter.get_range(:Statuses, :start_key => key + '1', :finish_key => key + '1', :count => 2)[key + '1'].count
+
+    @twitter.remove(:Statuses, key + '1', 'deleted_column')
+    @twitter.remove(:Statuses, key + '2', 'deleted_column')
+
+    @twitter.get_range(:Statuses, :count => 2) do |key, columns|
+      assert_equal columns.count, 2
+    end
+
+  end
+
   def test_get_range_block
     k = key
     5.times do |i|
