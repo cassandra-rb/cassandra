@@ -175,8 +175,10 @@ class Cassandra
       end
     end
 
-    def count_columns(column_family, key, column=nil)
-      get(column_family, key, column).keys.length
+    def count_columns(column_family, key, *columns_and_options)
+      column_family, columns, sub_columns, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, READ_DEFAULTS)
+      
+      get(column_family, key, columns, options).keys.length
     end
 
     def multi_get_columns(column_family, keys, columns)

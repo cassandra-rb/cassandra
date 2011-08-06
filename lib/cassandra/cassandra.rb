@@ -502,7 +502,7 @@ class Cassandra
   def count_columns(column_family, key, *columns_and_options)
     column_family, super_column, _, options = 
       extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)      
-    _count_columns(column_family, key, super_column, options[:consistency])
+    _count_columns(column_family, key, super_column, options[:start], options[:stop], options[:count], options[:consistency])
   end
 
   ##

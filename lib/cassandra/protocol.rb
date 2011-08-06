@@ -11,14 +11,14 @@ class Cassandra
       client.remove(key, column_path, timestamp, consistency_level)
     end
 
-    # FIXME: Add support for start, stop, count
-    def _count_columns(column_family, key, super_column, consistency)
+    def _count_columns(column_family, key, super_column, start, stop, count, consistency)
       client.get_count(key,
         CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => super_column),
         CassandraThrift::SlicePredicate.new(:slice_range =>
                                             CassandraThrift::SliceRange.new(
-                                              :start => '',
-                                              :finish => ''
+                                              :start  => start  || '',
+                                              :finish => stop   || '',
+                                              :count  => count  || 100
                                             )),
         consistency
       )
