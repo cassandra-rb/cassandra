@@ -492,6 +492,9 @@ class CassandraTest < Test::Unit::TestCase
     
     @twitter.insert(:Statuses, key, columns)
     assert_equal 200, @twitter.count_columns(:Statuses, key, :count => 200)
+    assert_equal 100, @twitter.count_columns(:Statuses, key)    
+    assert_equal 55, @twitter.count_columns(:Statuses, key, :count => 55)
+    
   end
 
   def test_count_super_columns
