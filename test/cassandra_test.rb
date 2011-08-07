@@ -758,6 +758,41 @@ class CassandraTest < Test::Unit::TestCase
       idx_clause = @twitter.create_idx_clause(idx_expr)
       assert_equal(5, @twitter.get_indexed_slices(:Statuses, idx_clause).length)
     end
+
+    def test_column_family_mutation
+      k = key
+
+      if @twitter.schema.cf_defs.map(&:name).include?(k)
+        @twitter.drop_column_family(k)
+      end
+
+      # Verify add_column_family works as desired.
+      @twitter.add_column_family(
+        Cassandra::ColumnFamily.new(
+          :keyspace => 'Twitter',
+          :name     => k
+        )
+      )
+      assert @twitter.schema.cf_defs.map(&:name).include?(k)
+
+      if CASSANDRA_VERSION.to_f == 0.7
+        # Verify rename_column_family works properly
+        @twitter.rename_column_family(k, k + '_renamed')
+        assert @twitter.schema.cf_defs.map(&:name).include?(k + '_renamed')
+
+        # Change it back and validate
+        @twitter.rename_column_family(k + '_renamed', k)
+        assert @twitter.schema.cf_defs.map(&:name).include?(k)
+      end
+
+      temp_cf_def = @twitter.schema.cf_defs.select{|cf_def| cf_def.name == k}.first
+      temp_cf_def.comment = k
+      @twitter.update_column_family(temp_cf_def)
+      assert @twitter.schema.cf_defs.map(&:comment).include?(k)
+
+      @twitter.drop_column_family(k)
+      assert !@twitter.schema.cf_defs.map(&:name).include?(k)
+    end
   end
 
   if CASSANDRA_VERSION.to_f >= 0.8
