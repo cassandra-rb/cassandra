@@ -42,7 +42,7 @@ own projects or irb, but if you would rather not hard code your app to a
 specific version you can always specify an environment variable with the
 version you are using:
 
-    export CASSANDRA_VERSION=0.7
+    export CASSANDRA_VERSION=0.8
 
 Then you would use the default require as listed above:
 
@@ -79,16 +79,18 @@ Example:
 
 ### remove
 
-* column\_family - The column\_family that you are inserting into.
-* key - The row key to insert.
-* columns - Either a single super_column or a list of columns.
-* sub_columns - The list of sub\_columns to select.
+* column\_family - The column\_family that you are working with.
+* key - The row key to remove (or remove columns from).
+* columns - Either a single super_column or a list of columns to remove.
+* sub_columns - The list of sub\_columns to remove.
 * options - Valid options are:
   * :timestamp - Uses the current time if none specified.
   * :consistency - Uses the default write consistency if none specified.
 
 This method is used to delete (actually marking them as deleted with a
-tombstone) columns or super columns.
+tombstone) rows, columns, or super columns depending on the parameters 
+passed.  If only a key is passed the entire row will be marked as deleted.
+If a column name is passed in that column will be deleted.
 
 Example:
 
@@ -101,11 +103,14 @@ Example:
 
 Count the columns for the provided parameters.
 
-* column\_family - The column\_family that you are inserting into.
-* key - The row key to insert.
+* column\_family - The column\_family that you are working with.
+* key - The row key.
 * columns - Either a single super_column or a list of columns.
 * sub_columns - The list of sub\_columns to select.
 * options - Valid options are:
+  * :start - The column name to start from.
+  * :stop - The column name to stop at.
+  * :count - The maximum count of columns to return. (By default cassandra will count up to 100 columns)
   * :consistency - Uses the default read consistency if none specified.
 
 Example:
@@ -119,8 +124,8 @@ Return a hash (actually, a Cassandra::OrderedHash) or a single value
 representing the element at the column_family:key:[column]:[sub_column]
 path you request. 
 
-* column\_family - The column\_family that you are inserting into.
-* key - The row key to insert.
+* column\_family - The column\_family that you are working with.
+* key - The row key to select.
 * columns - Either a single super\_column or a list of columns.
 * sub\_columns - The list of sub\_columns to select.
 * options - Valid options are:
@@ -146,8 +151,8 @@ returned.
 
 Supports the same parameters as Cassandra#get.
 
-* column_family - The column_family that you are inserting into.
-* key - An array of keys to.
+* column_family - The column_family that you are working with.
+* key - An array of keys to select.
 * columns - Either a single super_column or a list of columns.
 * sub_columns - The list of sub\_columns to select.
 * options - Valid options are:
@@ -180,10 +185,10 @@ that specific column/super column.
 
 This method will return true or false.
 
-* column\_family - The column\_family that you are inserting into.
-* key - The row key to insert.
+* column\_family - The column\_family that you are working with.
+* key - The row key to check.
 * columns - Either a single super\_column or a list of columns.
-* sub\_columns - The list of sub\_columns to select.
+* sub\_columns - The list of sub\_columns to check.
 * options - Valid options are:
   * :consistency - Uses the default read consistency if none specified.
 
@@ -221,15 +226,13 @@ deleted, but left in the system until the cluster has had resonable time to repl
 This function attempts to suppress deleted rows (actually any row returned without
 columns is suppressed).
 
-* column\_family - The column\_family that you are inserting into.
-* key - The row key to insert.
-* columns - Either a single super\_column or a list of columns.
-* sub\_columns - The list of sub\_columns to select.
+* column\_family - The column\_family that you are working with.
 * options - Valid options are:
   * :start\_key    - The starting value for selecting a range of keys (only useful with OPP).
   * :finish\_key   - The final value for selecting a range of keys (only useful with OPP).
   * :key\_count    - The total number of keys to return from the query. (see note regarding deleted records)
   * :batch\_size   - The maximum number of keys to return per query. If specified will loop until :key\_count is obtained or all records have been returned.
+  * :columns 	  - A list of columns to return.
   * :count        - The number of columns requested to be returned.
   * :start        - The starting value for selecting a range of columns.
   * :finish       - The final value for selecting a range of columns.

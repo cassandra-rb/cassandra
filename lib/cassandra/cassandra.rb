@@ -453,7 +453,9 @@ class Cassandra
 
   ##
   # This method is used to delete (actually marking them as deleted with a
-  # tombstone) columns or super columns.
+  # tombstone)  rows, columns, or super columns depending on the parameters 
+  # passed.  If only a key is passed the entire row will be marked as deleted.
+  # If a column name is passed in that column will be deleted.
   #
   # This method can also be used in batch mode. If in batch mode then we
   # queue up the mutations (a deletion in this case)
@@ -497,6 +499,9 @@ class Cassandra
   # * columns - Either a single super_column or a list of columns.
   # * sub_columns - The list of sub_columns to select.
   # * options - Valid options are:
+  #   * :start - The column name to start from.
+  #   * :stop - The column name to stop at.
+  #   * :count - The maximum count of columns to return. (By default cassandra will count up to 100 columns)
   #   * :consistency - Uses the default read consistency if none specified.
   #
   def count_columns(column_family, key, *columns_and_options)
@@ -587,16 +592,16 @@ class Cassandra
   #
   # Supports the same parameters as Cassandra#get.
   #
-  # * column_family - The column_family that you are inserting into.
-  # * key - An array of keys to.
-  # * columns - Either a single super_column or a list of columns.
-  # * sub_columns - The list of sub_columns to select.
-  # * options - Valid options are:
-  #   * :count    - The number of columns requested to be returned.
-  #   * :start    - The starting value for selecting a range of columns.
-  #   * :finish   - The final value for selecting a range of columns.
-  #   * :reversed - If set to true the results will be returned in reverse order.
-  #   * :consistency - Uses the default read consistency if none specified.
+  # * column_family   - The column_family that you are inserting into.
+  # * keys            - An array of keys to select.
+  # * columns         - Either a single super_column or a list of columns.
+  # * sub_columns     - The list of sub_columns to select.
+  # * options         - Valid options are:
+  #   * :count        - The number of columns requested to be returned.
+  #   * :start        - The starting value for selecting a range of columns.
+  #   * :finish       - The final value for selecting a range of columns.
+  #   * :reversed     - If set to true the results will be returned in reverse order.
+  #   * :consistency  - Uses the default read consistency if none specified.
   #
   def multi_get(column_family, keys, *columns_and_options)
     column_family, column, sub_column, options = 
@@ -669,14 +674,12 @@ class Cassandra
   # reversal happens before selecting the range).
   #
   # * column_family - The column_family that you are inserting into.
-  # * key - The row key to insert.
-  # * columns - Either a single super_column or a list of columns.
-  # * sub_columns - The list of sub_columns to select.
   # * options - Valid options are:
   #   * :start_key    - The starting value for selecting a range of keys (only useful with OPP).
   #   * :finish_key   - The final value for selecting a range of keys (only useful with OPP).
   #   * :key_count    - The total number of keys to return from the query. (see note regarding deleted records)
   #   * :batch_size   - The maximum number of keys to return per query. If specified will loop until :key_count is obtained or all records have been returned.
+  #   * :columns 	    - A list of columns to return.
   #   * :count        - The number of columns requested to be returned.
   #   * :start        - The starting value for selecting a range of columns.
   #   * :finish       - The final value for selecting a range of columns.
