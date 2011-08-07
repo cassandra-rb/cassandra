@@ -762,7 +762,7 @@ class CassandraTest < Test::Unit::TestCase
     def test_column_family_mutation
       k = key
 
-      if @twitter.schema.cf_defs.map(&:name).include?(k)
+      if @twitter.column_families.include?(k)
         @twitter.drop_column_family(k)
       end
 
@@ -773,25 +773,25 @@ class CassandraTest < Test::Unit::TestCase
           :name     => k
         )
       )
-      assert @twitter.schema.cf_defs.map(&:name).include?(k)
+      assert @twitter.column_families.include?(k)
 
       if CASSANDRA_VERSION.to_f == 0.7
         # Verify rename_column_family works properly
         @twitter.rename_column_family(k, k + '_renamed')
-        assert @twitter.schema.cf_defs.map(&:name).include?(k + '_renamed')
+        assert @twitter.column_families.include?(k + '_renamed')
 
         # Change it back and validate
         @twitter.rename_column_family(k + '_renamed', k)
-        assert @twitter.schema.cf_defs.map(&:name).include?(k)
+        assert @twitter.column_families.include?(k)
       end
 
-      temp_cf_def = @twitter.schema.cf_defs.select{|cf_def| cf_def.name == k}.first
+      temp_cf_def = @twitter.column_families[k]
       temp_cf_def.comment = k
       @twitter.update_column_family(temp_cf_def)
-      assert @twitter.schema.cf_defs.map(&:comment).include?(k)
+      assert @twitter.column_families.include?(k)
 
       @twitter.drop_column_family(k)
-      assert !@twitter.schema.cf_defs.map(&:name).include?(k)
+      assert !@twitter.column_families.include?(k)
     end
   end
 

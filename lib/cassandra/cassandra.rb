@@ -155,6 +155,15 @@ class Cassandra
   end
 
   ##
+  # Return a hash of column_family definitions indexed by their
+  # names
+  def column_families
+    return false if Cassandra.VERSION.to_f < 0.7
+
+    schema.cf_defs.inject(Hash.new){|memo, cf_def| memo[cf_def.name] = cf_def; memo;}
+  end
+
+  ##
   # Return a Cassandra::Keyspace object loaded with the current
   # keyspaces schema.
   #
