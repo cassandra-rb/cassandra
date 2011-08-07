@@ -60,8 +60,8 @@ class Cassandra
   }
 
   THRIFT_DEFAULTS = {
-    :transport_wrapper => Thrift::BufferedTransport,
-    :thrift_client_class => ThriftClient
+    :transport_wrapper    => Thrift::FramedTransport,
+    :thrift_client_class  => ThriftClient
   }
 
   attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client_class, :auth_request
