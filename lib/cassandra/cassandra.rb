@@ -290,7 +290,7 @@ class Cassandra
   # * new_name - The desired column_family name.
   #
   def rename_column_family(old_name, new_name)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if Cassandra.VERSION.to_f != 0.7
 
     begin
       res = client.system_rename_column_family(old_name, new_name)
