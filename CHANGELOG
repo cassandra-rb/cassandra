@@ -1,3 +1,5 @@
+v0.12.0 Changed thrift_client dependency to 0.7.0
+
 v0.11.4
 - Fix get_range to invoke blocks
 - Fix current distribution urls in Rakfile. Resolves Issue# 97.
