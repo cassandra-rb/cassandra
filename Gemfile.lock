@@ -5,7 +5,7 @@ PATH
       json
       rake
       simple_uuid (>= 0.1.0)
-      thrift_client (>= 0.6.3)
+      thrift_client (>= 0.7.0)
 
 GEM
   remote: http://rubygems.org/
@@ -26,9 +26,9 @@ GEM
     rubyforge (2.0.4)
       json_pure (>= 1.1.7)
     simple_uuid (0.1.2)
-    thrift (0.6.0)
-    thrift_client (0.6.3)
-      thrift (~> 0.6.0)
+    thrift (0.7.0)
+    thrift_client (0.7.0)
+      thrift (~> 0.7.0)
 
 PLATFORMS
   ruby
