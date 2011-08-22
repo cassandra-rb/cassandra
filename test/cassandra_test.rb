@@ -286,12 +286,14 @@ class CassandraTest < Test::Unit::TestCase
 
     values = (0..4).collect{|n| { :key => "test_get_range_block#{n}", :columns => { "body-#{n}" => "v" }} }.reverse
 
-    @twitter.get_range(:Statuses, :start_key => k.to_s, :key_count => 5) { |key,columns|
+    returned_value = @twitter.get_range(:Statuses, :start_key => k.to_s, :key_count => 5) do |key,columns|
        expected = values.pop
        assert_equal expected[:key], key
        assert_equal expected[:columns], columns
-    }
+    end
+
     assert_equal [],values
+    assert_nil returned_values
 
   end
   

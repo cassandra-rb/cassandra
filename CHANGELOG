@@ -1,4 +1,6 @@
-v0.12.1 Fix issue with simple_uuid dependency.
+v0.12.1
+- Fix issue with simple_uuid dependency.
+- Fix issue with get_range & get_range_batch keeping all results when a block is given. Resolves Issue# 112.
 
 v0.12.0 Changed thrift_client dependency to 0.7.0
 

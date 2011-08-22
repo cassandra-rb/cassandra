@@ -764,14 +764,17 @@ class Cassandra
         next if result.length == count
 
         unless columns == {}
-          yield key, columns if block_given?
-          result[key] = columns
+          if block_given?
+            yield key, columns
+          else
+            result[key] = columns
+          end
         end
         last_key = key
       end
     end
 
-    result
+    result if !block_given?
   end
 
   ##
