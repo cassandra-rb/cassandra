@@ -204,7 +204,7 @@ class Cassandra
                                                                                               :reversed   => false
                                                                                              )
                                                                          )
-      _get_range(column_family,
+      res = _get_range(column_family,
                  options[:start_key],
                  options[:finish_key],
                  options[:key_count],
@@ -214,6 +214,12 @@ class Cassandra
                  options[:count],
                  options[:consistency],
                  options[:reversed], &blk)
+
+      if blk.nil?
+        res
+      else
+        nil
+      end
     end
 
     def get_range_keys(column_family, options = {})

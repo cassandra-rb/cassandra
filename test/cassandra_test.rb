@@ -292,9 +292,8 @@ class CassandraTest < Test::Unit::TestCase
        assert_equal expected[:columns], columns
     end
 
-    assert_equal [],values
-    assert_nil returned_values
-
+    assert_equal [], values
+    assert_nil returned_value
   end
   
   def test_get_range_reversed
