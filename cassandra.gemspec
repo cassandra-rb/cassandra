@@ -27,17 +27,17 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<thrift_client>, [">= 0.7.0"])
       s.add_runtime_dependency(%q<json>, [">= 0"])
       s.add_runtime_dependency(%q<rake>, [">= 0"])
-      s.add_runtime_dependency(%q<simple_uuid>, [">= 0.1.0"])
+      s.add_runtime_dependency(%q<simple_uuid>, [">= 0.2.0"])
     else
       s.add_dependency(%q<thrift_client>, [">= 0.7.0"])
       s.add_dependency(%q<json>, [">= 0"])
       s.add_dependency(%q<rake>, [">= 0"])
-      s.add_dependency(%q<simple_uuid>, [">= 0.1.0"])
+      s.add_dependency(%q<simple_uuid>, [">= 0.2.0"])
     end
   else
     s.add_dependency(%q<thrift_client>, [">= 0.7.0"])
     s.add_dependency(%q<json>, [">= 0"])
     s.add_dependency(%q<rake>, [">= 0"])
-    s.add_dependency(%q<simple_uuid>, [">= 0.1.0"])
+    s.add_dependency(%q<simple_uuid>, [">= 0.2.0"])
   end
 end
