@@ -24,5 +24,6 @@ class CompositeTypesTest < Test::Unit::TestCase
     assert_equal(@col_parts[0], col2[0])
     assert_equal(@col_parts[1], col2[1])
     assert_equal(@col_parts[2], col2[2])
+    assert_equal(@col, col2)
   end
 end

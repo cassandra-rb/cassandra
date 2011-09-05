@@ -1,8 +1,12 @@
 
 class Cassandra
   class Composite
+    include ::Comparable
+    attr_accessor :parts
     def initialize(*parts)
-      if parts.length == 1 && parts[0].instance_of?(String)
+      if parts.length == 1 && parts[0].instance_of?(self.class)
+        @parts = parts[0].parts
+      elsif parts.length == 1 && parts[0].instance_of?(String)
         @parts = unpack(parts[0])
       else
         @parts = parts
@@ -19,6 +23,22 @@ class Cassandra
 
     def to_s
       return pack
+    end
+
+    def <=>(other)
+      return nil if !other.instance_of?(self.class)
+      @parts.zip(other.parts).each do |a, b|
+        next if a == b
+        return -1 if a.nil?
+        return 1 if b.nil?
+        return -1 if a < b
+        return 1 if a > b
+      end
+      return 0
+    end
+
+    def inspect
+      return @parts.inspect
     end
 
     private
