@@ -11,12 +11,13 @@ class Cassandra
         options = parts.pop
       end
       @column_slice = options[:slice]
+      raise ArgumentError if @column_slice != nil && ![:before, :after].include?(@column_slice)
 
       if parts.length == 1 && parts[0].instance_of?(self.class)
         @column_slice = parts[0].column_slice
         @parts = parts[0].parts
       elsif parts.length == 1 && parts[0].instance_of?(String) && @column_slice.nil? && valid_packed_composite?(parts[0])
-        @parts = unpack(parts[0])
+        unpack(parts[0])
       else
         @parts = parts
       end
@@ -42,11 +43,23 @@ class Cassandra
     end
 
     def <=>(other)
-      return nil if !other.instance_of?(self.class)
+      if !other.instance_of?(self.class)
+        return @parts.first <=> other
+      end
+      eoc = slice_end_of_component.unpack('c')[0]
+      other_eoc = other.slice_end_of_component.unpack('c')[0]
       @parts.zip(other.parts).each do |a, b|
         next if a == b
-        return -1 if a.nil?
-        return 1 if b.nil?
+        if a.nil? && b.nil?
+          return eoc <=> other_eoc
+        end
+
+        if a.nil?
+          return @column_slice == :after ? 1 : -1
+        end
+        if b.nil?
+          return other.column_slice == :after ? -1 : 1
+        end
         return -1 if a < b
         return 1 if a > b
       end
@@ -54,23 +67,29 @@ class Cassandra
     end
 
     def inspect
-      return @parts.inspect
+      return "#<Composite:#{@column_slice} #{@parts.inspect}>"
+    end
+
+    def slice_end_of_component
+      return "\x01" if @column_slice == :after
+      return "\xFF" if @column_slice == :before
+      return "\x00"
     end
 
     private
-    def slice_end_of_component
-      return "\x01" if @column_slice == :inclusive
-      return "\xFF" if @column_slice == :exclusive
-    end
-
     def unpack(packed_string)
       parts = []
+      end_of_component = nil
       while packed_string.length > 0
         length = packed_string.slice(0, 2).unpack('n')[0]
         parts << packed_string.slice(2, length)
+        end_of_component = packed_string.slice(2 + length, 1)
+
         packed_string = packed_string.slice(3 + length, packed_string.length)
       end
-      return parts
+      @column_slice = :after if end_of_component == "\x01"
+      @column_slice = :before if end_of_component == "\xFF"
+      @parts = parts
     end
 
     def valid_packed_composite?(packed_string)
@@ -79,7 +98,9 @@ class Cassandra
         return false if length.nil? || length + 3 > packed_string.length
 
         end_of_component = packed_string.slice(2 + length, 1)
-        return false if end_of_component != "\x00"
+        if length + 3 != packed_string.length
+          return false if end_of_component != "\x00"
+        end
 
         packed_string = packed_string.slice(3 + length, packed_string.length)
       end

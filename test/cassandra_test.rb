@@ -846,23 +846,26 @@ class CassandraTest < Test::Unit::TestCase
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
         :start => Cassandra::Composite.new([1].pack('N')),
-        :finish => Cassandra::Composite.new([10].pack('N'), :slice => :exclusive),
+        :finish => Cassandra::Composite.new([10].pack('N')),
       ).keys
-
       assert_equal(columns_in_order[0..-2], column_slice)
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
         :start => Cassandra::Composite.new([5].pack('N')),
-        :finish => Cassandra::Composite.new([5].pack('N'), :slice => :inclusive),
+        :finish => Cassandra::Composite.new([5].pack('N'), :slice => :after),
       ).keys
-
       assert_equal(columns_in_order[1..2], column_slice)
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
-        :start => Cassandra::Composite.new([5].pack('N'), :slice => :exclusive),
+        :start => Cassandra::Composite.new([5].pack('N'), :slice => :after).to_s,
       ).keys
+      assert_equal([columns_in_order[-1]], column_slice)
 
-      assert_equal(columns_in_order[1..-1], column_slice)
+      column_slice = @type_conversions.get(:CompositeColumnConversion, key,
+        :finish => Cassandra::Composite.new([10].pack('N'), :slice => :before).to_s,
+      ).keys
+      assert_equal(columns_in_order[0..-2], column_slice)
+
     end
   end
 
