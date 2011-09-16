@@ -57,6 +57,24 @@ class CassandraMockTest < CassandraTest
     end
   end
   
+  def test_get_range_reversed_slice
+    data = 4.times.map { |i| ["body-#{i.to_s}", "v"] }
+    hash = Cassandra::OrderedHash[data]
+    sliced_hash = Cassandra::OrderedHash[data.reverse[1..-1]]
+    
+    @twitter.insert(:Statuses, "all-keys", hash)
+    
+    columns = @twitter.get_range(
+      :Statuses,
+      :start => sliced_hash.keys.first,
+      :reversed => true
+    )["all-keys"]
+    
+    columns.each do |column|
+      assert_equal sliced_hash.shift, column
+    end
+  end
+  
   def test_get_range_count
     data = 3.times.map { |i| ["body-#{i.to_s}", "v"] }
     hash = Cassandra::OrderedHash[data]
