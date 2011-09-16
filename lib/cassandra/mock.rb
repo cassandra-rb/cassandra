@@ -398,6 +398,7 @@ class Cassandra
             blk.call(key,ret[key]) unless blk.nil?
           else
             #ret[key] = apply_range(cf(column_family)[key], column_family, start, finish, !is_super(column_family))
+            start, finish = finish, start if reversed
             ret[key] = apply_range(columns_to_hash(column_family, cf(column_family)[key]), column_family, start, finish)
             ret[key] = apply_count(ret[key], count, reversed)
             blk.call(key,ret[key]) unless blk.nil?
