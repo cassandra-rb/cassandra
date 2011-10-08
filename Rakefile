@@ -19,7 +19,8 @@ end
 CassandraBinaries = {
   '0.6' => 'http://archive.apache.org/dist/cassandra/0.6.13/apache-cassandra-0.6.13-bin.tar.gz',
   '0.7' => 'http://archive.apache.org/dist/cassandra/0.7.9/apache-cassandra-0.7.9-bin.tar.gz',
-  '0.8' => 'http://archive.apache.org/dist/cassandra/0.8.6/apache-cassandra-0.8.6-bin.tar.gz'
+  '0.8' => 'http://archive.apache.org/dist/cassandra/0.8.6/apache-cassandra-0.8.6-bin.tar.gz',
+  '1.0' => 'http://archive.apache.org/dist/cassandra/1.0.0/apache-cassandra-1.0.0-rc2-bin.tar.gz'
 }
 
 CASSANDRA_HOME = ENV['CASSANDRA_HOME'] || "#{ENV['HOME']}/cassandra"

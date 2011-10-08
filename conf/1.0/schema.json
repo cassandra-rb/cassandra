@@ -1,0 +1,66 @@
+{"Twitter":{
+    "Users":{
+      "comparator_type":"org.apache.cassandra.db.marshal.UTF8Type",
+      "column_type":"Standard"},
+    "UserAudits":{
+      "comparator_type":"org.apache.cassandra.db.marshal.UTF8Type",
+      "column_type":"Standard"},
+    "UserCounters":{
+      "comparator_type":"org.apache.cassandra.db.marshal.UTF8Type",
+      "column_type":"Standard",
+      "default_validation_class":"CounterColumnType"},
+    "UserCounterAggregates":{
+      "subcomparator_type":"org.apache.cassandra.db.marshal.UTF8Type",
+      "comparator_type":"org.apache.cassandra.db.marshal.UTF8Type",
+      "column_type":"Super",
+      "default_validation_class":"CounterColumnType"},
+    "UserRelationships":{
+      "subcomparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "comparator_type":"org.apache.cassandra.db.marshal.UTF8Type",
+      "column_type":"Super"},
+    "Usernames":{
+      "comparator_type":"org.apache.cassandra.db.marshal.UTF8Type",
+      "column_type":"Standard"},
+    "Statuses":{
+      "comparator_type":"org.apache.cassandra.db.marshal.UTF8Type",
+      "column_type":"Standard"},
+    "StatusAudits":{
+      "comparator_type":"org.apache.cassandra.db.marshal.UTF8Type",
+      "column_type":"Standard"},
+    "StatusRelationships":{
+      "subcomparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "comparator_type":"org.apache.cassandra.db.marshal.UTF8Type",
+      "column_type":"Super"},
+    "Indexes":{
+      "comparator_type":"org.apache.cassandra.db.marshal.UTF8Type",
+      "column_type":"Super"},
+    "TimelinishThings":{
+      "comparator_type":"org.apache.cassandra.db.marshal.BytesType",
+      "column_type":"Standard"}
+  },
+"Multiblog":{
+    "Blogs":{
+      "comparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "column_type":"Standard"},
+    "Comments":{
+      "comparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "column_type":"Standard"}
+  },
+"MultiblogLong":{
+    "Blogs":{
+      "comparator_type":"org.apache.cassandra.db.marshal.LongType",
+      "column_type":"Standard"},
+    "Comments":{
+      "comparator_type":"org.apache.cassandra.db.marshal.LongType",
+      "column_type":"Standard"}
+  },
+"TypeConversions":{
+    "UUIDColumnConversion":{
+      "comparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "column_type":"Standard"},
+    "SuperUUID":{
+      "subcomparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "comparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
+      "column_type":"Super"}
+  }
+}

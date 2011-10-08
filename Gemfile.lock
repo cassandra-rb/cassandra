@@ -4,7 +4,7 @@ PATH
     cassandra (0.12.1)
       json
       rake
-      simple_uuid (>= 0.1.0)
+      simple_uuid (>= 0.2.0)
       thrift_client (>= 0.7.0)
 
 GEM
