@@ -153,10 +153,12 @@ task :test => 'data:load'
 # desc "Regenerate thrift bindings for Cassandra" # Dev only
 task :thrift do
   puts "Generating Thrift bindings"
+  FileUtils.mkdir_p "vendor/#{CASSANDRA_VERSION}"
+
   system(
-    "cd vendor &&
+    "cd vendor/#{CASSANDRA_VERSION} &&
     rm -rf gen-rb &&
-    thrift -gen rb #{CASSANDRA_HOME}/interface/cassandra.thrift")
+    thrift -gen rb #{File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")}/interface/cassandra.thrift")
 end
 
 task :fix_perms do
