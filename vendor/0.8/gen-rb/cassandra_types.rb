@@ -604,16 +604,24 @@ module CassandraThrift
       ::Thrift::Struct.generate_accessors self
     end
 
+    # A TokenRange describes part of the Cassandra ring, it is a mapping from a range to
+    # endpoints responsible for that range.
+    # @param start_token The first token in the range
+    # @param end_token The last token in the range
+    # @param endpoints The endpoints responsible for the range (listed by their configured listen_address)
+    # @param rpc_endpoints The endpoints responsible for the range (listed by their configured rpc_address)
     class TokenRange
       include ::Thrift::Struct, ::Thrift::Struct_Union
       START_TOKEN = 1
       END_TOKEN = 2
       ENDPOINTS = 3
+      RPC_ENDPOINTS = 4
 
       FIELDS = {
         START_TOKEN => {:type => ::Thrift::Types::STRING, :name => 'start_token'},
         END_TOKEN => {:type => ::Thrift::Types::STRING, :name => 'end_token'},
-        ENDPOINTS => {:type => ::Thrift::Types::LIST, :name => 'endpoints', :element => {:type => ::Thrift::Types::STRING}}
+        ENDPOINTS => {:type => ::Thrift::Types::LIST, :name => 'endpoints', :element => {:type => ::Thrift::Types::STRING}},
+        RPC_ENDPOINTS => {:type => ::Thrift::Types::LIST, :name => 'rpc_endpoints', :element => {:type => ::Thrift::Types::STRING}, :optional => true}
       }
 
       def struct_fields; FIELDS; end
