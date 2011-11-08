@@ -280,33 +280,44 @@ class CassandraTest < Test::Unit::TestCase
 
   def test_get_range_block
     k = key
+
+    values = {}
     5.times do |i|
-      @twitter.insert(:Statuses, k+i.to_s, {"body-#{i.to_s}" => 'v'})
+      values[k+i.to_s] = {"body-#{i.to_s}" => 'v'}
     end
 
-    values = (0..4).collect{|n| { :key => "test_get_range_block#{n}", :columns => { "body-#{n}" => "v" }} }.reverse
+    values.each {|key, columns| @twitter.insert(:Statuses, key, columns) }
 
     returned_value = @twitter.get_range(:Statuses, :start_key => k.to_s, :key_count => 5) do |key,columns|
-       expected = values.pop
-       assert_equal expected[:key], key
-       assert_equal expected[:columns], columns
+       expected = values.delete(key)
+       assert_equal expected, columns
     end
 
-    assert_equal [], values
+    assert values.length < 5
     assert_nil returned_value
   end
-  
+
   def test_get_range_reversed
     data = 3.times.map { |i| ["body-#{i.to_s}", "v"] }
     hash = Cassandra::OrderedHash[data]
     reversed_hash = Cassandra::OrderedHash[data.reverse]
-    
+
     @twitter.insert(:Statuses, "all-keys", hash)
-    
+
     columns = @twitter.get_range(:Statuses, :reversed => true)["all-keys"]
     columns.each do |column|
       assert_equal reversed_hash.shift, column
     end
+  end
+
+  def test_get_range_with_start_key_and_key_count
+    hash = {"name" => "value"}
+    @twitter.insert(:Statuses, "a-key", hash)
+    @twitter.insert(:Statuses, "b-key", hash)
+    @twitter.insert(:Statuses, "c-key", hash)
+
+    results = @twitter.get_range(:Statuses, :start_key => "b-key", :key_count => 1)
+    assert_equal ["b-key"], results.keys
   end
 
   def test_each_key

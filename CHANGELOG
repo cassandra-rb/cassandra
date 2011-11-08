@@ -1,4 +1,5 @@
 v0.12.2
+- Respect the start_key in get_range. Resolves Issue #127.
 - Fix issue with differences in gemspec and what is required. Resolves Issue #125.
 - Update to Cassandra 0.8.7 and 1.0.2.
 
