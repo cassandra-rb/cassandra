@@ -755,6 +755,8 @@ class Cassandra
     last_key  = nil
 
     while first_key != last_key && (count.nil? || count > num_results)
+      first_key = last_key
+
       res = get_range_single(column_family, options.merge!(:start_key => first_key,
                                                            :key_count => batch_size,
                                                            :return_empty_rows => true
@@ -773,8 +775,6 @@ class Cassandra
         end
         last_key = key
       end
-
-      first_key = last_key
     end
 
     result
