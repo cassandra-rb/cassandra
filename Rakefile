@@ -53,8 +53,6 @@ def setup_environment
     env << "CASSANDRA_CONF=#{File.expand_path(Dir.pwd)}/conf/#{CASSANDRA_VERSION}"
   else
     env << "CASSANDRA_INCLUDE=#{ENV['CASSANDRA_INCLUDE']} "
-    env << "CASSANDRA_HOME=#{ENV['CASSANDRA_HOME']} "
-    env << "CASSANDRA_CONF=#{ENV['CASSANDRA_CONF']}"
   end
 
   env
