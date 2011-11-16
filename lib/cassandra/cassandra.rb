@@ -611,17 +611,96 @@ class Cassandra
   #   * :finish       - The final value for selecting a range of columns.
   #   * :reversed     - If set to true the results will be returned in reverse order.
   #   * :consistency  - Uses the default read consistency if none specified.
+  #   * :batch_size   - The maximum number of columns return per query and key. If specified will loop until at least :count columns are obtained or all records have been returned.
   #
   def multi_get(column_family, keys, *columns_and_options)
     column_family, column, sub_column, options = 
-      extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS)
+      extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS.merge(:batch_size => nil))
 
-    hash = _multiget(column_family, keys, column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency])
+    if options[:batch_size]
+      hash = multi_get_batch(column_family, keys, column, sub_column, options)
+    else
+      hash = _multiget(column_family, keys, column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency])
+    end
 
     # Restore order
     ordered_hash = OrderedHash.new
     keys.each { |key| ordered_hash[key] = hash[key] || (OrderedHash.new if is_super(column_family) and !sub_column) }
     ordered_hash
+  end
+
+  
+  ##
+  # Multi-key batched get
+  #
+  # This method is a wrapper around Cassandra#multi_get.
+  # It fetches up to :batch_size columns per key at once and continues
+  # until no more data is available or the given :count limit is
+  # breached.
+  #
+  # Supports similar parameters as Cassandra#multi_get.
+  #
+  # * column_family   - The column_family that you are inserting into.
+  # * keys            - An array of keys to select.
+  # * columns         - Either a single super_column or a list of columns.
+  # * sub_columns     - The list of sub_columns to select.
+  # * options         - Valid options are:
+  #   * :count        - The number of columns requested to be returned.
+  #   * :start        - The starting value for selecting a range of columns.
+  #   * :finish       - The final value for selecting a range of columns.
+  #   * :reversed     - If set to true the results will be returned in reverse order.
+  #   * :consistency  - Uses the default read consistency if none specified.
+  #   * :batch_size   - The maximum number of columns return per query and key. If specified will loop until at least :count columns are obtained or all records have been returned. Default is 100.
+  #
+  def multi_get_batch(column_family, keys, column, sub_columns, options)
+    batch_size = options.delete(:batch_size) || 100
+    raise "batch_size must be at least 2" if batch_size < 2
+    count = options.delete(:count) || 100
+    result = {}
+    num_results = 0 
+
+    options[:start] ||= ''
+
+    pre_last_col = nil
+    last_col = nil
+    while count.nil? || count > num_results
+      res = _multiget(column_family, keys, column, sub_columns, batch_size, pre_last_col || last_col || options[:start], options[:finish], options[:reversed], options[:consistency])
+      pre_last_col = nil
+      last_col = nil
+
+      new_results = 0
+      res.each do |key, columns|
+	local_max = nil
+	unless columns == {}
+	  if result[key]
+	    columns.each do |k,v|
+	      unless result[key][k]
+		new_results += 1
+	      end
+	      result[key][k] = v
+	    end
+	  else
+	    new_results += columns.keys.length
+	    result[key] = columns
+	  end
+	  last = columns.keys.last
+	  if !local_max or last > local_max
+	    local_max = last
+	  end
+	end
+	if pre_last_col.nil? or local_max < pre_last_col
+	  last_col = pre_last_col
+	  pre_last_col = local_max
+	elsif last_col.nil?
+	  last_col = local_max
+	end
+      end
+      
+      num_results += new_results
+
+      break if new_results == 0
+    end
+    result
   end
 
   ##
