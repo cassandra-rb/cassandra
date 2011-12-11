@@ -612,12 +612,13 @@ class Cassandra
   #   * :reversed     - If set to true the results will be returned in reverse order.
   #   * :consistency  - Uses the default read consistency if none specified.
   #   * :batch_size   - The maximum number of columns return per query and key. If specified will loop until at least :count columns are obtained or all records have been returned.
+  #   * :keys_at_once - The maximum number of keys to fetch from at once. Useful when fetching from a lot of keys. Default is no limit.
   #
   def multi_get(column_family, keys, *columns_and_options)
     column_family, column, sub_column, options = 
-      extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS.merge(:batch_size => nil))
+      extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS.merge(:batch_size => nil, :keys_at_once => nil, :type => nil))
 
-    if options[:batch_size]
+    if options[:batch_size] or options[:keys_at_once]
       hash = multi_get_batch(column_family, keys, column, sub_column, options)
     else
       hash = _multiget(column_family, keys, column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency])
@@ -650,56 +651,67 @@ class Cassandra
   #   * :finish       - The final value for selecting a range of columns.
   #   * :reversed     - If set to true the results will be returned in reverse order.
   #   * :consistency  - Uses the default read consistency if none specified.
-  #   * :batch_size   - The maximum number of columns return per query and key. If specified will loop until at least :count columns are obtained or all records have been returned. Default is 100.
+  #   * :batch_size   - The maximum number of columns to return per query and key. If specified will loop until at least :count columns are obtained or all records have been returned. Default is 100.
+  #   * :keys_at_once - The maximum number of keys to fetch from at once. Useful if you're fetching from a lot of keys. Default is no limit.
   #
-  def multi_get_batch(column_family, keys, column, sub_columns, options)
+  def multi_get_batch(column_family, keys, column, sub_columns, options = {})
     batch_size = options.delete(:batch_size) || 100
+    keys_at_once = options.delete(:keys_at_once)
     raise "batch_size must be at least 2" if batch_size < 2
-    count = options.delete(:count) || 100
+    raise "keys_at_once must be at least 1" if not keys_at_once.nil? and keys_at_once < 1
     result = {}
-    num_results = 0 
+    num_results = 0
+    count = options.delete(:count)
 
     options[:start] ||= ''
 
-    pre_last_col = nil
     last_col = nil
-    while count.nil? || count > num_results
-      res = _multiget(column_family, keys, column, sub_columns, batch_size, pre_last_col || last_col || options[:start], options[:finish], options[:reversed], options[:consistency])
-      pre_last_col = nil
+    my_keys = keys.clone
+
+    begin
+      keys_part = (my_keys.nil? ? nil : my_keys.slice!(0, (keys_at_once.nil? ? my_keys.length : keys_at_once)))
       last_col = nil
 
-      new_results = 0
-      res.each do |key, columns|
-	local_max = nil
-	unless columns == {}
-	  if result[key]
-	    columns.each do |k,v|
-	      unless result[key][k]
-		new_results += 1
-	      end
-	      result[key][k] = v
-	    end
-	  else
-	    new_results += columns.keys.length
-	    result[key] = columns
-	  end
-	  last = columns.keys.last
-	  if !local_max or last > local_max
-	    local_max = last
-	  end
-	end
-	if pre_last_col.nil? or local_max < pre_last_col
-	  last_col = pre_last_col
-	  pre_last_col = local_max
-	elsif last_col.nil?
-	  last_col = local_max
-	end
-      end
-      
-      num_results += new_results
+      while count.nil? || count > num_results
+	res = _multiget(column_family, keys_part, column, sub_columns, batch_size, last_col || options[:start], options[:finish], options[:reversed], options[:consistency])
 
-      break if new_results == 0
-    end
+	last_col = nil
+
+	new_results = 0
+	res.each do |key, columns|
+	  unless columns == {}
+	    if result[key]
+	      columns.each do |k,v|
+		unless result[key][k]
+		  new_results += 1
+		end
+		result[key][k] = v
+	      end
+	    else
+	      new_results += columns.keys.length
+	      result[key] = columns
+	    end
+
+	    last = columns.keys.last
+	    case options[:type]
+	    when :double
+	      last_u = last.nil? ? nil : last.unpack("G").first
+	      last_col_u = last_col.nil? ? nil : last_col.unpack("G").first
+	    else
+	      last_u = last
+	      last_col_u = last_col
+	    end
+	    if not last_col or last_u < last_col_u
+	      last_col = last
+	    end
+	  end
+	end
+
+	num_results += new_results
+
+	break if new_results == 0
+      end
+    end until my_keys.blank?
     result
   end
 
