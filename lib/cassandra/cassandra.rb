@@ -613,20 +613,34 @@ class Cassandra
   #   * :consistency  - Uses the default read consistency if none specified.
   #   * :batch_size   - The maximum number of columns return per query and key. If specified will loop until at least :count columns are obtained or all records have been returned.
   #   * :keys_at_once - The maximum number of keys to fetch from at once. Useful when fetching from a lot of keys. Default is no limit.
+  #   * :no_hash_return - Return nils instead of empty hashes for non-existent keys
   #
   def multi_get(column_family, keys, *columns_and_options)
     column_family, column, sub_column, options = 
-      extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS.merge(:batch_size => nil, :keys_at_once => nil, :type => nil))
+      extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS.merge(:batch_size => nil, :keys_at_once => nil, :type => nil, :no_hash_return => false))
 
     if options[:batch_size] or options[:keys_at_once]
-      hash = multi_get_batch(column_family, keys, column, sub_column, options)
+      multi_get_batch(column_family, keys, column, sub_column, options)
     else
-      hash = _multiget(column_family, keys, column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency])
+      multi_get_single(column_family, keys, column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency], options)
     end
+  end
+
+  def multi_get_single(column_family, keys, column, sub_column, count, start, finish, reversed, consistency, options)
+    hash = _multiget(column_family, keys, column, sub_column, count, start, finish, reversed, consistency)
 
     # Restore order
+    time = Time.now
     ordered_hash = OrderedHash.new
-    keys.each { |key| ordered_hash[key] = hash[key] || (OrderedHash.new if is_super(column_family) and !sub_column) }
+    if options[:no_hash_return]
+      keys.each { |key| h = hash[key]; ordered_hash[key] = h if h }
+    else
+      if is_super(column_family) and !sub_column
+	keys.each { |key| ordered_hash[key] = hash[key] || OrderedHash.new }
+      else
+	keys.each { |key| ordered_hash[key] = hash[key] }
+      end
+    end
     ordered_hash
   end
 
@@ -662,6 +676,7 @@ class Cassandra
     result = {}
     num_results = 0
     count = options.delete(:count)
+    options[:no_hash_return] = false
 
     options[:start] ||= ''
 
@@ -673,19 +688,28 @@ class Cassandra
       last_col = nil
 
       while count.nil? || count > num_results
-	res = _multiget(column_family, keys_part, column, sub_columns, batch_size, last_col || options[:start], options[:finish], options[:reversed], options[:consistency])
+	timeReq = Time.now
+	res = multi_get_single(column_family, keys_part, column, sub_columns, batch_size, last_col || options[:start], options[:finish], options[:reversed], options[:consistency], options)
+	puts "multi_get took #{Time.now - timeReq} seconds"
 
+	timeProc = Time.now
+	last_last_col_u = last_col.nil? ? nil : case options[:type]
+						when :double
+						  last_col.unpack("G").first
+						else
+						  last_col
+						end
 	last_col = nil
 
 	new_results = 0
 	res.each do |key, columns|
-	  unless columns == {}
+	  unless columns.blank?
 	    if result[key]
 	      columns.each do |k,v|
-		unless result[key][k]
+		unless result[key][k] or v.nil?
 		  new_results += 1
+		  result[key][k] = v
 		end
-		result[key][k] = v
 	      end
 	    else
 	      new_results += columns.keys.length
@@ -693,6 +717,7 @@ class Cassandra
 	    end
 
 	    last = columns.keys.last
+
 	    case options[:type]
 	    when :double
 	      last_u = last.nil? ? nil : last.unpack("G").first
@@ -701,15 +726,16 @@ class Cassandra
 	      last_u = last
 	      last_col_u = last_col
 	    end
-	    if not last_col or last_u < last_col_u
+	    if (last_last_col_u.nil? or last_u > last_last_col_u) and (last_col.nil? or last_u < last_col_u)
 	      last_col = last
 	    end
 	  end
 	end
 
 	num_results += new_results
+	puts "Processing took #{Time.now - timeProc} seconds"
 
-	break if new_results == 0
+	break unless last_col
       end
     end until my_keys.blank?
     result
