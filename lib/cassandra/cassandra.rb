@@ -617,7 +617,7 @@ class Cassandra
   #
   def multi_get(column_family, keys, *columns_and_options)
     column_family, column, sub_column, options = 
-      extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS.merge(:batch_size => nil, :keys_at_once => nil, :type => nil, :no_hash_return => false))
+      extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS.merge(:batch_size => nil, :keys_at_once => nil, :coder => nil, :no_hash_return => false))
 
     if options[:batch_size] or options[:keys_at_once]
       multi_get_batch(column_family, keys, column, sub_column, options)
@@ -678,7 +678,7 @@ class Cassandra
     count = options.delete(:count)
     options[:no_hash_return] = false
 
-    options[:start] ||= ''
+    #options[:start] ||= ''
 
     last_col = nil
     my_keys = keys.clone
@@ -693,12 +693,7 @@ class Cassandra
 	puts "multi_get took #{Time.now - timeReq} seconds"
 
 	timeProc = Time.now
-	last_last_col_u = last_col.nil? ? nil : case options[:type]
-						when :double
-						  last_col.unpack("G").first
-						else
-						  last_col
-						end
+	last_last_col_u = last_col ? (options[:coder] ? options[:coder].decode(last_col) : last_col) : nil
 	last_col = nil
 
 	new_results = 0
@@ -718,10 +713,9 @@ class Cassandra
 
 	    last = columns.keys.last
 
-	    case options[:type]
-	    when :double
-	      last_u = last.nil? ? nil : last.unpack("G").first
-	      last_col_u = last_col.nil? ? nil : last_col.unpack("G").first
+	    if options[:coder]
+	      last_u = last ? options[:coder].decode(last) : nil
+	      last_col_u = last_col ? options[:coder].decode(last_col) : nil
 	    else
 	      last_u = last
 	      last_col_u = last_col
