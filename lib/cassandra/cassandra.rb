@@ -749,19 +749,20 @@ class Cassandra
     batch_size    = options.delete(:batch_size) || 100
     count         = options.delete(:key_count)
     result        = (!block_given? && {}) || nil
-    num_results    = 0
+    num_results   = 0
 
     options[:start_key] ||= ''
     last_key  = nil
 
-    while options[:start_key] != last_key && (count.nil? || count > num_results)
-      options[:start_key] = last_key
-      res = get_range_single(column_family, options.merge!(:start_key => last_key,
+    while count.nil? || count > num_results
+      res = get_range_single(column_family, options.merge!(:start_key => last_key || options[:start_key],
                                                            :key_count => batch_size,
                                                            :return_empty_rows => true
                                                           ))
+      break if res.keys.last == last_key
+
       res.each do |key, columns|
-        next if options[:start_key] == key
+        next if last_key == key
         next if num_results == count
 
         unless columns == {}
@@ -772,6 +773,7 @@ class Cassandra
           end
           num_results += 1
         end
+
         last_key = key
       end
     end

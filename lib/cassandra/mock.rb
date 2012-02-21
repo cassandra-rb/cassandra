@@ -393,7 +393,11 @@ class Cassandra
         if (start_key.nil? || key >= start_key) && (finish_key.nil? || key <= finish_key)
           if columns
             #ret[key] = columns.inject(OrderedHash.new){|hash, column_name| hash[column_name] = cf(column_family)[key][column_name]; hash;}
-            ret[key] = columns_to_hash(column_family, cf(column_family)[key].select{|k,v| columns.include?(k)})
+            selected_hash = OrderedHash.new
+            cf(column_family)[key].each do |k, v|
+              selected_hash.[]=(k, v, cf(column_family)[key].timestamps[k]) if columns.include?(k)
+            end
+            ret[key] = columns_to_hash(column_family, selected_hash)
             ret[key] = apply_count(ret[key], count, reversed)
             blk.call(key,ret[key]) unless blk.nil?
           else
@@ -447,7 +451,12 @@ class Cassandra
 
       new_stuff = new_stuff.to_a.inject({}){|h,k| h[k[0].to_s] = k[1]; h }
 
-      OrderedHash[old_stuff.merge(new_stuff).sort{|a,b| a[0] <=> b[0]}]
+      new_stuff.each { |k,v| old_stuff.[]=(k, v, (Time.now.to_f * 1000000).to_i) }
+      hash = OrderedHash.new
+      old_stuff.sort{ |a,b| a[0] <=> b[0] }.each do |k, v|
+        hash.[]=(k, v, old_stuff.timestamps[k])
+      end
+      hash
     end
 
     def columns_to_hash(column_family, columns)
@@ -455,15 +464,17 @@ class Cassandra
       output = OrderedHash.new
 
       columns.each do |column_name, value|
+        timestamp = columns.timestamps[column_name]
         column = column_class.new(column_name)
 
         if [Hash, OrderedHash].include?(value.class)
           output[column] ||= OrderedHash.new
           value.each do |sub_column, sub_column_value|
-            output[column][sub_column_class.new(sub_column)] = sub_column_value
+            timestamp = value.timestamps[sub_column]
+            output[column].[]=(sub_column_class.new(sub_column), sub_column_value, timestamp)
           end
         else
-          output[column_class.new(column_name)] = value
+          output.[]=(column_class.new(column_name), value, timestamp)
         end
       end
 
@@ -476,7 +487,7 @@ class Cassandra
         keys = keys.reverse if reversed
         keys = keys[0...count]
         keys.inject(OrderedHash.new) do |memo, key|
-          memo[key] = row[key]
+          memo.[]=(key, row[key], row.timestamps[key])
           memo
         end
       else
@@ -490,7 +501,7 @@ class Cassandra
       ret = OrderedHash.new
       row.keys.each do |key|
         if (start.nil? || key >= start) && (finish.nil? || key <= finish)
-          ret[key] = row[key]
+          ret.[]=(key, row[key], row.timestamps[key])
         end
       end
       ret

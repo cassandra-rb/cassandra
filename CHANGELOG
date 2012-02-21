@@ -1,3 +1,8 @@
+v0.12.2
+- Respect the start_key in get_range. Resolves Issue #127.
+- Fix issue with differences in gemspec and what is required. Resolves Issue #125.
+- Update to Cassandra 0.8.7 and 1.0.2.
+
 v0.12.1
 - Fix issue with simple_uuid dependency.
 - Fix issue with get_range & get_range_batch keeping all results when a block is given. Resolves Issue# 112.
