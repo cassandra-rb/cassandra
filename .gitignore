@@ -3,3 +3,4 @@ pkg
 .redcar
 doc/
 .yardoc/
+Gemfile.lock

@@ -63,6 +63,24 @@ class CassandraMockTest < CassandraTest
     end
   end
   
+  def test_get_range_reversed_slice
+    data = 4.times.map { |i| ["body-#{i.to_s}", "v"] }
+    hash = Cassandra::OrderedHash[data]
+    sliced_hash = Cassandra::OrderedHash[data.reverse[1..-1]]
+    
+    @twitter.insert(:Statuses, "all-keys", hash)
+    
+    columns = @twitter.get_range(
+      :Statuses,
+      :start => sliced_hash.keys.first,
+      :reversed => true
+    )["all-keys"]
+    
+    columns.each do |column|
+      assert_equal sliced_hash.shift, column
+    end
+  end
+  
   def test_get_range_count
     data = 3.times.map { |i| ["body-#{i.to_s}", "v"] }
     hash = Cassandra::OrderedHash[data]
@@ -81,5 +99,24 @@ class CassandraMockTest < CassandraTest
     assert_raises(ArgumentError) {
       @twitter.insert(:UserRelationships, 'a', ['u1','u2'])
     }
+  end
+  
+  def test_column_timestamps
+    base_time = Time.now
+    @twitter.insert(:Statuses, "time-key", { "body" => "value" })
+
+    results = @twitter.get(:Statuses, "time-key")
+    assert(results.timestamps["body"] / 1000000 >= base_time.to_i)
+  end
+  
+  def test_supercolumn_timestamps
+    base_time = Time.now
+    @twitter.insert(:StatusRelationships, "time-key", { "super" => { @uuids[1] => "value" }})
+
+    results = @twitter.get(:StatusRelationships, "time-key")
+    assert_nil(results.timestamps["super"])
+    
+    columns = results["super"]
+    assert(columns.timestamps[@uuids[1]] / 1000000 >= base_time.to_i)
   end
 end

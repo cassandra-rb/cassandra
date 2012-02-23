@@ -1,6 +1,6 @@
 create keyspace Twitter with
   placement_strategy = 'org.apache.cassandra.locator.SimpleStrategy' AND
-  strategy_options = [{replication_factor:1}];
+  strategy_options = {replication_factor:1};
 use Twitter;
 create column family Users with comparator = 'UTF8Type';
 create column family UserAudits with comparator = 'UTF8Type';
@@ -29,7 +29,7 @@ create column family TimelinishThings with
 
 create keyspace Multiblog with
   placement_strategy = 'org.apache.cassandra.locator.SimpleStrategy' AND
-  strategy_options = [{replication_factor:1}];
+  strategy_options = {replication_factor:1};
 use Multiblog;
 create column family Blogs with comparator = 'TimeUUIDType';
 create column family Comments with comparator = 'TimeUUIDType';
@@ -37,15 +37,15 @@ create column family Comments with comparator = 'TimeUUIDType';
 
 create keyspace MultiblogLong with
   placement_strategy = 'org.apache.cassandra.locator.SimpleStrategy' AND
-  strategy_options = [{replication_factor:1}];
+  strategy_options = {replication_factor:1};
 use MultiblogLong;
 create column family Blogs with comparator = 'LongType';
 create column family Comments with comparator = 'LongType';
 
 create keyspace TypeConversions with
   placement_strategy = 'org.apache.cassandra.locator.SimpleStrategy' AND
-  strategy_options = [{replication_factor:1}];
+  strategy_options = {replication_factor:1};
 use TypeConversions;
 create column family UUIDColumnConversion with comparator = TimeUUIDType;
 create column family SuperUUID with comparator = TimeUUIDType and column_type = Super;
-create column family CompositeColumnConversion with comparator = 'CompositeType(IntegerType, UTF8Type)';
+

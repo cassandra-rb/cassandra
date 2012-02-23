@@ -286,19 +286,20 @@ class CassandraTest < Test::Unit::TestCase
 
   def test_get_range_block
     k = key
+
+    values = {}
     5.times do |i|
-      @twitter.insert(:Statuses, k+i.to_s, {"body-#{i.to_s}" => 'v'})
+      values[k+i.to_s] = {"body-#{i.to_s}" => 'v'}
     end
 
-    values = (0..4).collect{|n| { :key => "test_get_range_block#{n}", :columns => { "body-#{n}" => "v" }} }.reverse
+    values.each {|key, columns| @twitter.insert(:Statuses, key, columns) }
 
     returned_value = @twitter.get_range(:Statuses, :start_key => k.to_s, :key_count => 5) do |key,columns|
-       expected = values.pop
-       assert_equal expected[:key], key
-       assert_equal expected[:columns], columns
+       expected = values.delete(key)
+       assert_equal expected, columns
     end
 
-    assert_equal [], values
+    assert values.length < 5
     assert_nil returned_value
   end
 
@@ -313,6 +314,16 @@ class CassandraTest < Test::Unit::TestCase
     columns.each do |column|
       assert_equal reversed_hash.shift, column
     end
+  end
+
+  def test_get_range_with_start_key_and_key_count
+    hash = {"name" => "value"}
+    @twitter.insert(:Statuses, "a-key", hash)
+    @twitter.insert(:Statuses, "b-key", hash)
+    @twitter.insert(:Statuses, "c-key", hash)
+
+    results = @twitter.get_range(:Statuses, :start_key => "b-key", :key_count => 1)
+    assert_equal ["b-key"], results.keys
   end
 
   def test_each_key
@@ -867,6 +878,25 @@ class CassandraTest < Test::Unit::TestCase
       assert_equal(columns_in_order[0..-2], column_slice)
 
     end
+  end
+  
+  def test_column_timestamps
+    base_time = Time.now
+    @twitter.insert(:Statuses, "time-key", { "body" => "value" })
+
+    results = @twitter.get(:Statuses, "time-key")
+    assert(results.timestamps["body"] / 1000000 >= base_time.to_i)
+  end
+  
+  def test_supercolumn_timestamps
+    base_time = Time.now
+    @twitter.insert(:StatusRelationships, "time-key", { "super" => { @uuids[1] => "value" }})
+
+    results = @twitter.get(:StatusRelationships, "time-key")
+    assert_nil(results.timestamps["super"])
+    
+    columns = results["super"]
+    assert(columns.timestamps[@uuids[1]] / 1000000 >= base_time.to_i)
   end
 
   private
