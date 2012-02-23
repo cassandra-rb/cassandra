@@ -106,6 +106,13 @@ class Cassandra
       end
       return true
     end
+
+    def hash
+      return to_s.hash
+    end
+
+    def eql?(other)
+      return to_s == other.to_s
+    end
   end
 end
-

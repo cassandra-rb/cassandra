@@ -877,9 +877,10 @@ class CassandraTest < Test::Unit::TestCase
       ).keys
       assert_equal(columns_in_order[0..-2], column_slice)
 
+      assert_equal('value-2', @type_conversions.get(:CompositeColumnConversion, key, columns_in_order.first))
     end
   end
-  
+
   def test_column_timestamps
     base_time = Time.now
     @twitter.insert(:Statuses, "time-key", { "body" => "value" })
