@@ -22,6 +22,12 @@ class CassandraMockTest < CassandraTest
 
     @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
     @longs = (0..6).map {|i| Long.new(Time.at(2**(24+i))) }
+    @composites = [
+      Cassandra::Composite.new([5].pack('N'), "zebra"),
+      Cassandra::Composite.new([5].pack('N'), "aardvark"),
+      Cassandra::Composite.new([1].pack('N'), "elephant"),
+      Cassandra::Composite.new([10].pack('N'), "kangaroo"),
+    ]
   end
 
   def test_setup

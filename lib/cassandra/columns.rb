@@ -18,10 +18,11 @@ class Cassandra
 
     def column_name_class_for_key(column_family, comparator_key)
       property = column_family_property(column_family, comparator_key)
-      property =~ /.*\.(.*?)$/
+      property =~ /[^(]*\.(.*?)$/
       case $1
       when "LongType" then Long
       when "LexicalUUIDType", "TimeUUIDType" then SimpleUUID::UUID
+      when /^CompositeType\(/ then Composite
       else
         String # UTF8, Ascii, Bytes, anything else
       end

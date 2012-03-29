@@ -48,4 +48,4 @@ create keyspace TypeConversions with
 use TypeConversions;
 create column family UUIDColumnConversion with comparator = TimeUUIDType;
 create column family SuperUUID with comparator = TimeUUIDType and column_type = Super;
-
+create column family CompositeColumnConversion with comparator = 'CompositeType(IntegerType, UTF8Type)';
