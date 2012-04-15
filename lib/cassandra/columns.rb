@@ -77,7 +77,6 @@ class Cassandra
         c = c.super_column || c.column || c.counter_column || c.counter_super_column if c.is_a?(CassandraThrift::ColumnOrSuperColumn)
         case c
         when CassandraThrift::CounterSuperColumn
-          puts "==I am here yes!!"
           hash.[]=(column_name_class.new(c.name), columns_to_hash_for_classes(c.columns, sub_column_name_class)) # Pop the class stack, and recurse
         when CassandraThrift::SuperColumn
           hash.[]=(column_name_class.new(c.name), columns_to_hash_for_classes(c.columns, sub_column_name_class)) # Pop the class stack, and recurse
