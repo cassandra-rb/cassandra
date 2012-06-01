@@ -22,6 +22,12 @@ class CassandraMockTest < CassandraTest
 
     @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
     @longs = (0..6).map {|i| Long.new(Time.at(2**(24+i))) }
+    @composites = [
+      Cassandra::Composite.new([5].pack('N'), "zebra"),
+      Cassandra::Composite.new([5].pack('N'), "aardvark"),
+      Cassandra::Composite.new([1].pack('N'), "elephant"),
+      Cassandra::Composite.new([10].pack('N'), "kangaroo"),
+    ]
   end
 
   def test_setup
@@ -93,5 +99,24 @@ class CassandraMockTest < CassandraTest
     assert_raises(ArgumentError) {
       @twitter.insert(:UserRelationships, 'a', ['u1','u2'])
     }
+  end
+  
+  def test_column_timestamps
+    base_time = Time.now
+    @twitter.insert(:Statuses, "time-key", { "body" => "value" })
+
+    results = @twitter.get(:Statuses, "time-key")
+    assert(results.timestamps["body"] / 1000000 >= base_time.to_i)
+  end
+  
+  def test_supercolumn_timestamps
+    base_time = Time.now
+    @twitter.insert(:StatusRelationships, "time-key", { "super" => { @uuids[1] => "value" }})
+
+    results = @twitter.get(:StatusRelationships, "time-key")
+    assert_nil(results.timestamps["super"])
+    
+    columns = results["super"]
+    assert(columns.timestamps[@uuids[1]] / 1000000 >= base_time.to_i)
   end
 end
