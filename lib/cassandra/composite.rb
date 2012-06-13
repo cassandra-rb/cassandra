@@ -108,7 +108,7 @@ class Cassandra
     end
 
     def hash
-      return to_s.hash
+      return parts.hash + column_slice.hash
     end
 
     def eql?(other)
