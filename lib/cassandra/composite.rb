@@ -16,9 +16,7 @@ class Cassandra
       if parts.length == 1 && parts[0].instance_of?(self.class)
         @column_slice = parts[0].column_slice
         @parts = parts[0].parts
-      elsif parts.length == 1 && parts[0].instance_of?(String) && @column_slice.nil? && valid_packed_composite?(parts[0])
-        unpack(parts[0])
-      else
+      elsif !(parts.length == 1 && parts[0].instance_of?(String) && @column_slice.nil? && try_packed_composite(parts[0]))
         @parts = parts
       end
     end
@@ -77,26 +75,14 @@ class Cassandra
     end
 
     private
-    def unpack(packed_string)
+    def try_packed_composite(packed_string)
       parts = []
       end_of_component = nil
       while packed_string.length > 0
         length = packed_string.slice(0, 2).unpack('n')[0]
-        parts << packed_string.slice(2, length)
-        end_of_component = packed_string.slice(2 + length, 1)
-
-        packed_string = packed_string.slice(3 + length, packed_string.length)
-      end
-      @column_slice = :after if end_of_component == "\x01"
-      @column_slice = :before if end_of_component == "\xFF"
-      @parts = parts
-    end
-
-    def valid_packed_composite?(packed_string)
-      while packed_string.length > 0
-        length = packed_string.slice(0, 2).unpack('n')[0]
         return false if length.nil? || length + 3 > packed_string.length
 
+        parts << packed_string.slice(2, length)
         end_of_component = packed_string.slice(2 + length, 1)
         if length + 3 != packed_string.length
           return false if end_of_component != "\x00"
@@ -104,6 +90,11 @@ class Cassandra
 
         packed_string = packed_string.slice(3 + length, packed_string.length)
       end
+
+      @column_slice = :after if end_of_component == "\x01"
+      @column_slice = :before if end_of_component == "\xFF"
+      @parts = parts
+
       return true
     end
 
