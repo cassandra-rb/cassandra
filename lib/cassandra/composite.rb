@@ -16,7 +16,9 @@ class Cassandra
       if parts.length == 1 && parts[0].instance_of?(self.class)
         @column_slice = parts[0].column_slice
         @parts = parts[0].parts
-      elsif !(parts.length == 1 && parts[0].instance_of?(String) && @column_slice.nil? && try_packed_composite(parts[0]))
+      elsif parts.length == 1 && parts[0].instance_of?(String) && @column_slice.nil? && try_packed_composite(parts[0])
+        @hash = parts[0].hash
+      else
         @parts = parts
       end
     end
@@ -99,7 +101,7 @@ class Cassandra
     end
 
     def hash
-      return parts.hash + column_slice.hash
+      return @hash || parts.hash + column_slice.hash
     end
 
     def eql?(other)
