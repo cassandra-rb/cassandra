@@ -840,7 +840,18 @@ class CassandraTest < Test::Unit::TestCase
       assert_equal(1, @twitter.get(:UserCounterAggregates, 'bob', 'DAU', 'today'))
       assert_equal(2, @twitter.get(:UserCounterAggregates, 'bob', 'DAU', 'tomorrow'))
     end
-
+    
+    def test_reading_rows_with_super_column_counter
+      assert_nil @twitter.add(:UserCounterAggregates, 'bob', 1, 'DAU', 'today')
+      assert_nil @twitter.add(:UserCounterAggregates, 'bob', 2, 'DAU', 'tomorrow')
+      result = @twitter.get(:UserCounterAggregates, 'bob')
+      assert_equal(1, result.size)
+      assert_equal(2, result.first.size)
+      assert_equal("DAU", result.first[0])
+      assert_equal(1, result.first[1]["today"])
+      assert_equal(2, result.first[1]["tomorrow"])
+    end  
+    
     def test_composite_column_type_conversion
       columns = {}
       @composites.each_with_index do |c, index|
