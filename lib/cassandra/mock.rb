@@ -58,8 +58,15 @@ class Cassandra
     end
 
     def insert_standard(column_family, key, hash_or_array)
+      validated_column_value_hash = {}
+      hash_or_array.each do |column_name, value|
+        column_family, validated_column, _, _ =
+            extract_and_validate_params_for_real(column_family, [key], [column_name], READ_DEFAULTS)
+        validated_column_value_hash[validated_column] = value
+      end
+
       old = cf(column_family)[key] || OrderedHash.new
-      cf(column_family)[key] = merge_and_sort(old, hash_or_array)
+      cf(column_family)[key] = merge_and_sort(old, validated_column_value_hash)
     end
 
     def insert_super(column_family, key, hash)
@@ -67,8 +74,14 @@ class Cassandra
       cf(column_family)[key] ||= OrderedHash.new
 
       hash.keys.each do |sub_key|
+        validated_column_value_hash = {}
+        hash[sub_key].each do |column_name, value|
+          column_family, validated_column, _, _ =
+              extract_and_validate_params_for_real(column_family, [key], [sub_key,column_name], READ_DEFAULTS)
+          validated_column_value_hash[validated_column] = value
+        end
         old = cf(column_family)[key][sub_key] || OrderedHash.new
-        cf(column_family)[key][sub_key] = merge_and_sort(old, hash[sub_key])
+        cf(column_family)[key][sub_key] = merge_and_sort(old, validated_column_value_hash)
       end
     end
 
