@@ -556,11 +556,13 @@ class CassandraTest < Test::Unit::TestCase
       @twitter.insert(:Users, k + '3', {'body' => 'bogus', 'user' => 'v3'})
       @twitter.insert(:Users, k + '3', {'body' => 'v3', 'location' => 'v3'})
       @twitter.insert(:Statuses, k + '3', {'body' => 'v'})
+      @twitter.add(:UserCounters, 'bob', 5, 'tweet_count') if CASSANDRA_VERSION.to_f >= 0.8
 
       assert_equal({'delete_me' => 'v0', 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # Written
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Written
       assert_equal({}, @twitter.get(:Users, k + '2')) # Not yet written
       assert_equal({}, @twitter.get(:Statuses, k + '3')) # Not yet written
+      assert_equal({}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION.to_f >= 0.8 # Not yet written
 
       @twitter.remove(:Users, k + '1') # Full row
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Not yet removed
@@ -586,6 +588,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}, @twitter.get(:Users, k + '3')) # Written and compacted
     assert_equal({'body' => 'v4', 'user' => 'v4'}, @twitter.get(:Users, k + '4')) # Written
     assert_equal({'body' => 'v'}, @twitter.get(:Statuses, k + '3')) # Written
+    assert_equal({'tweet_count' => 5}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION.to_f >= 0.8 # Written
     assert_equal({}, @twitter.get(:Users, k + '1')) # Removed
 
     assert_equal({ 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # 'delete_me' column removed
@@ -899,14 +902,14 @@ class CassandraTest < Test::Unit::TestCase
     results = @twitter.get(:Statuses, "time-key")
     assert(results.timestamps["body"] / 1000000 >= base_time.to_i)
   end
-  
+
   def test_supercolumn_timestamps
     base_time = Time.now
     @twitter.insert(:StatusRelationships, "time-key", { "super" => { @uuids[1] => "value" }})
 
     results = @twitter.get(:StatusRelationships, "time-key")
     assert_nil(results.timestamps["super"])
-    
+
     columns = results["super"]
     assert(columns.timestamps[@uuids[1]] / 1000000 >= base_time.to_i)
   end
