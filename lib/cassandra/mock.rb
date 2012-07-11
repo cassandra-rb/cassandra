@@ -449,7 +449,7 @@ class Cassandra
         new_stuff = new_stuff.inject({}){|h,k| h[k] = nil; h }
       end
 
-      new_stuff = new_stuff.to_a.inject({}){|h,k| h[k[0]] = k[1]; h }
+      new_stuff = new_stuff.to_a.inject({}){|h,k| h[k[0].to_s] = k[1]; h }
 
       new_stuff.each { |k,v| old_stuff.[]=(k, v, (Time.now.to_f * 1000000).to_i) }
       hash = OrderedHash.new
