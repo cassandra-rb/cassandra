@@ -349,4 +349,4 @@ Example:
 
 ## Reporting Problems
 
-The Github issue tracker is [here](http://github.com/fauna/cassandra/issues). If you have problems with this library or Cassandra itself, please use the [cassandra-user mailing list](http://mail-archives.apache.org/mod_mbox/incubator-cassandra-user/).
+The Github issue tracker is [here](http://github.com/twitter/cassandra/issues). If you have problems with this library or Cassandra itself, please use the [cassandra-user mailing list](http://mail-archives.apache.org/mod_mbox/incubator-cassandra-user/).
