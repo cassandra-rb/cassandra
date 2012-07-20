@@ -64,6 +64,8 @@ class Cassandra
     :thrift_client_class  => ThriftClient
   }
 
+  THRIFT_DEFAULTS[:protocol] = Thrift::BinaryProtocolAccelerated if Thrift.const_defined?(:BinaryProtocolAccelerated)
+
   attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client_class, :auth_request
 
   def self.DEFAULT_TRANSPORT_WRAPPER
