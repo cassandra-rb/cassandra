@@ -19,6 +19,7 @@ Gem::Specification.new do |s|
   s.rubygems_version = "1.8.10"
   s.summary = "A Ruby client for the Cassandra distributed database."
   s.test_files = ["test/cassandra_mock_test.rb", "test/ordered_hash_test.rb", "test/cassandra_client_test.rb", "test/cassandra_test.rb", "test/comparable_types_test.rb", "test/test_helper.rb", "test/eventmachine_test.rb"]
+  s.extensions = ['ext/extconf.rb']
 
   if s.respond_to? :specification_version then
     s.specification_version = 3

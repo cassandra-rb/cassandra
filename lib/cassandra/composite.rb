@@ -1,4 +1,3 @@
-
 class Cassandra
   class Composite
     include ::Comparable
@@ -6,6 +5,8 @@ class Cassandra
     attr_reader :column_slice
 
     def initialize(*parts)
+      return if parts.empty?
+
       options = {}
       if parts.last.is_a?(Hash)
         options = parts.pop
@@ -21,6 +22,12 @@ class Cassandra
       else
         @parts = parts
       end
+    end
+
+    def self.new_from_packed(packed)
+      obj = new
+      obj.fast_unpack(packed)
+      return obj
     end
 
     def [](*args)
@@ -76,6 +83,20 @@ class Cassandra
       return "\x00"
     end
 
+    def fast_unpack(packed_string)
+      end_of_component = packed_string.slice(packed_string.length-1, 1)
+      while packed_string.length > 0
+        length = packed_string.unpack('n')[0]
+        @parts << packed_string.slice(2, length)
+
+        packed_string.slice!(0, length+3)
+      end
+
+      @column_slice = :after if end_of_component == "\x01"
+      @column_slice = :before if end_of_component == "\xFF"
+      @hash = packed_string.hash
+    end
+
     private
     def try_packed_composite(packed_string)
       parts = []
@@ -101,11 +122,17 @@ class Cassandra
     end
 
     def hash
-      return @hash || parts.hash + column_slice.hash
+      return @hash ||= pack.hash
     end
 
     def eql?(other)
       return to_s == other.to_s
     end
   end
+end
+
+begin
+  require "cassandra_native"
+rescue LoadError
+  puts "Unable to load cassandra_native extension. Defaulting to pure Ruby libraries."
 end
