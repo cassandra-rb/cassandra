@@ -510,9 +510,8 @@ class CassandraTest < Test::Unit::TestCase
 
     @twitter.insert(:Statuses, key, columns)
     assert_equal 200, @twitter.count_columns(:Statuses, key, :count => 200)
-    assert_equal 100, @twitter.count_columns(:Statuses, key)
-    assert_equal 55, @twitter.count_columns(:Statuses, key, :count => 55)
-
+    assert_equal 100, @twitter.count_columns(:Statuses, key) if CASSANDRA_VERSION.to_f >= 0.8
+    assert_equal 55, @twitter.count_columns(:Statuses, key, :count => 55) if CASSANDRA_VERSION.to_f >= 0.8
   end
 
   def test_count_super_columns
