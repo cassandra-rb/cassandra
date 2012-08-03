@@ -28,6 +28,12 @@ class CassandraMockTest < CassandraTest
       Cassandra::Composite.new([1].pack('N'), "elephant"),
       Cassandra::Composite.new([10].pack('N'), "kangaroo"),
     ]
+    @dynamic_composites = [
+      Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "zebra"]),
+      Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "aardvark"]),
+      Cassandra::DynamicComposite.new(['IntegerType', [1].pack('N')], ['s', "elephant"]),
+      Cassandra::DynamicComposite.new(['IntegerType', [10].pack('N')], ['s', "kangaroo"]),
+    ]
   end
 
   def test_setup

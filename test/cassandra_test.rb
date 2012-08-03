@@ -27,6 +27,12 @@ class CassandraTest < Test::Unit::TestCase
       Cassandra::Composite.new([1].pack('N'), "elephant"),
       Cassandra::Composite.new([10].pack('N'), "kangaroo"),
     ]
+    @dynamic_composites = [
+      Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "zebra"]),
+      Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "aardvark"]),
+      Cassandra::DynamicComposite.new(['IntegerType', [1].pack('N')], ['s', "elephant"]),
+      Cassandra::DynamicComposite.new(['IntegerType', [10].pack('N')], ['s', "kangaroo"]),
+    ]
   end
 
   def test_inspect
@@ -892,6 +898,46 @@ class CassandraTest < Test::Unit::TestCase
       assert_equal(columns_in_order[0..-2], column_slice)
 
       assert_equal('value-2', @type_conversions.get(:CompositeColumnConversion, key, columns_in_order.first))
+    end
+
+    def test_dynamic_composite_column_type_conversion
+      columns = {}
+      @dynamic_composites.each_with_index do |c, index|
+        columns[c] = "value-#{index}"
+      end
+      @type_conversions.insert(:DynamicComposite, key, columns)
+
+      columns_in_order = [
+        Cassandra::DynamicComposite.new(['IntegerType', [1].pack('N')], ['s', "elephant"]),
+        Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "aardvark"]),
+        Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "zebra"]),
+        Cassandra::DynamicComposite.new(['IntegerType', [10].pack('N')], ['s', "kangaroo"]),
+      ]
+      assert_equal(columns_in_order, @type_conversions.get(:DynamicComposite, key).keys)
+
+      column_slice = @type_conversions.get(:DynamicComposite, key,
+        :start => Cassandra::DynamicComposite.new(['i', [1].pack('N')]),
+        :finish => Cassandra::DynamicComposite.new(['i', [10].pack('N')]),
+      ).keys
+      assert_equal(columns_in_order[0..-2], column_slice)
+
+      column_slice = @type_conversions.get(:DynamicComposite, key,
+        :start => Cassandra::DynamicComposite.new(['IntegerType', [5].pack('N')]),
+        :finish => Cassandra::DynamicComposite.new(['IntegerType', [5].pack('N')], :slice => :after),
+      ).keys
+      assert_equal(columns_in_order[1..2], column_slice)
+
+      column_slice = @type_conversions.get(:DynamicComposite, key,
+        :start => Cassandra::DynamicComposite.new(['i', [5].pack('N')], :slice => :after).to_s,
+      ).keys
+      assert_equal([columns_in_order[-1]], column_slice)
+
+      column_slice = @type_conversions.get(:DynamicComposite, key,
+        :finish => Cassandra::DynamicComposite.new(['i', [10].pack('N')], :slice => :before).to_s,
+      ).keys
+      assert_equal(columns_in_order[0..-2], column_slice)
+
+      assert_equal('value-2', @type_conversions.get(:DynamicComposite, key, columns_in_order.first))
     end
   end
 
