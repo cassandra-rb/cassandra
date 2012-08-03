@@ -74,7 +74,7 @@ class Cassandra
     end
 
     def inspect
-      return "#<Composite:#{@column_slice} #{@parts.inspect}>"
+      return "#<#{self.class}:#{@column_slice} #{@parts.inspect}>"
     end
 
     def slice_end_of_component

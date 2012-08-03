@@ -22,6 +22,7 @@ class Cassandra
       case $1
       when "LongType" then Long
       when "LexicalUUIDType", "TimeUUIDType" then SimpleUUID::UUID
+      when /^DynamicCompositeType\(/ then DynamicComposite
       when /^CompositeType\(/ then Composite
       else
         String # UTF8, Ascii, Bytes, anything else
