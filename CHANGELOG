@@ -2,6 +2,7 @@ v0.14.0
 - Numerous performance improvements (courtesy @nearbuy)
 - Fixed many 0.6 bugs
 - Added batch counter update support to Cassandra::Mock
+- Add support DynamicComposite columns
 
 v0.13.0
 - Support for new thrift gem versions
