@@ -319,20 +319,24 @@ class Cassandra
     end
 
     def add(column_family, key, value, *columns_and_options)
-      column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, WRITE_DEFAULTS)
-
-      if is_super(column_family)
-        cf(column_family)[key]                      ||= OrderedHash.new
-        cf(column_family)[key][column]              ||= OrderedHash.new
-        cf(column_family)[key][column][sub_column]  ||= 0
-        cf(column_family)[key][column][sub_column]  += value
+      if @batch
+        @batch << [:add, column_family, key, value, *columns_and_options]
       else
-        cf(column_family)[key]                      ||= OrderedHash.new
-        cf(column_family)[key][column]              ||= 0
-        cf(column_family)[key][column]              += value
-      end
+        column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, WRITE_DEFAULTS)
 
-      nil
+        if is_super(column_family)
+          cf(column_family)[key]                      ||= OrderedHash.new
+          cf(column_family)[key][column]              ||= OrderedHash.new
+          cf(column_family)[key][column][sub_column]  ||= 0
+          cf(column_family)[key][column][sub_column]  += value
+        else
+          cf(column_family)[key]                      ||= OrderedHash.new
+          cf(column_family)[key][column]              ||= 0
+          cf(column_family)[key][column]              += value
+        end
+
+        nil
+      end
     end
 
     def column_families

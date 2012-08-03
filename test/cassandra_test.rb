@@ -562,7 +562,7 @@ class CassandraTest < Test::Unit::TestCase
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Written
       assert_equal({}, @twitter.get(:Users, k + '2')) # Not yet written
       assert_equal({}, @twitter.get(:Statuses, k + '3')) # Not yet written
-      assert_equal({}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION.to_f >= 0.8 # Not yet written
+      assert_equal({}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION.to_f >= 0.8 # Written
 
       @twitter.remove(:Users, k + '1') # Full row
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Not yet removed
@@ -843,7 +843,7 @@ class CassandraTest < Test::Unit::TestCase
       assert_equal(1, @twitter.get(:UserCounterAggregates, 'bob', 'DAU', 'today'))
       assert_equal(2, @twitter.get(:UserCounterAggregates, 'bob', 'DAU', 'tomorrow'))
     end
-    
+
     def test_reading_rows_with_super_column_counter
       assert_nil @twitter.add(:UserCounterAggregates, 'bob', 1, 'DAU', 'today')
       assert_nil @twitter.add(:UserCounterAggregates, 'bob', 2, 'DAU', 'tomorrow')
@@ -853,8 +853,8 @@ class CassandraTest < Test::Unit::TestCase
       assert_equal("DAU", result.first[0])
       assert_equal(1, result.first[1]["today"])
       assert_equal(2, result.first[1]["tomorrow"])
-    end  
-    
+    end
+
     def test_composite_column_type_conversion
       columns = {}
       @composites.each_with_index do |c, index|
