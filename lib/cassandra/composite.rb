@@ -84,6 +84,9 @@ class Cassandra
     end
 
     def fast_unpack(packed_string)
+      @hash = packed_string.hash
+
+      @parts = []
       end_of_component = packed_string.slice(packed_string.length-1, 1)
       while packed_string.length > 0
         length = packed_string.unpack('n')[0]
@@ -94,7 +97,6 @@ class Cassandra
 
       @column_slice = :after if end_of_component == "\x01"
       @column_slice = :before if end_of_component == "\xFF"
-      @hash = packed_string.hash
     end
 
     private

@@ -20,6 +20,8 @@ class Cassandra
       @keyspace = keyspace
       @column_name_class = {}
       @sub_column_name_class = {}
+      @column_name_maker = {}
+      @sub_column_name_maker = {}
       @indexes = {}
       @schema = schema[keyspace]
       clear_keyspace!
