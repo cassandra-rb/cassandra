@@ -975,14 +975,17 @@ class Cassandra
     return false if Cassandra.VERSION.to_f < 0.7
 
     column_family, columns, _, options =
-      extract_and_validate_params(column_family, [], columns_and_options, READ_DEFAULTS.merge(:key_count => 100, :start_key => ""))
+      extract_and_validate_params(column_family, [], columns_and_options,
+      READ_DEFAULTS.merge(:key_count => 100, :start_key => nil, :key_start => nil))
+
+    start_key = options[:start_key] || options[:key_start] || ""
 
     if index_clause.class != CassandraThrift::IndexClause
       index_expressions = index_clause.collect do |expression|
         create_index_expression(expression[:column_name], expression[:value], expression[:comparison])
       end
 
-      index_clause = create_index_clause(index_expressions, options[:start_key], options[:key_count])
+      index_clause = create_index_clause(index_expressions, start_key, options[:key_count])
     end
 
     key_slices = _get_indexed_slices(column_family, index_clause, columns, options[:count], options[:start],
