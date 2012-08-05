@@ -10,6 +10,7 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
     p.summary = "A Ruby client for the Cassandra distributed database."
     p.rubygems_version = ">= 0.8"
     p.dependencies = ['thrift_client >=0.7.0 <0.9', 'json', 'rake', 'simple_uuid ~>0.2.0']
+    p.development_dependencies = ['echoe']
     p.ignore_pattern = /^(data|vendor\/cassandra|cassandra|vendor\/thrift|.*\.rbc)/
     p.rdoc_pattern = /^(lib|bin|tasks|ext)|^README|^CHANGELOG|^TODO|^LICENSE|^COPYING$/
     p.retain_gemspec = true
