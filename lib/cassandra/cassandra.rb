@@ -954,7 +954,7 @@ class Cassandra
 
   ##
   # This method is used to query a secondary index with a set of
-  # provided search parameters
+  # provided search parameters.
   #
   # Please note that you can either specify a
   # CassandraThrift::IndexClause or an array of hashes with the
@@ -967,7 +967,7 @@ class Cassandra
   #   * :comparison  - Type of comparison to do.
   # * options
   #   * :key_count    - Set maximum number of rows to return. (Only works if CassandraThrift::IndexClause is not passed in.)
-  #   * :key_start    - Set starting row key for search. (Only works if CassandraThrift::IndexClause is not passed in.)
+  #   * :start_key    - Set starting row key for search. (Only works if CassandraThrift::IndexClause is not passed in.)
   #   * :consistency
   #
   # TODO: Supercolumn support.
@@ -975,14 +975,14 @@ class Cassandra
     return false if Cassandra.VERSION.to_f < 0.7
 
     column_family, columns, _, options =
-      extract_and_validate_params(column_family, [], columns_and_options, READ_DEFAULTS.merge(:key_count => 100, :key_start => ""))
+      extract_and_validate_params(column_family, [], columns_and_options, READ_DEFAULTS.merge(:key_count => 100, :start_key => ""))
 
     if index_clause.class != CassandraThrift::IndexClause
       index_expressions = index_clause.collect do |expression|
         create_index_expression(expression[:column_name], expression[:value], expression[:comparison])
       end
 
-      index_clause = create_index_clause(index_expressions, options[:key_start], options[:key_count])
+      index_clause = create_index_clause(index_expressions, options[:start_key], options[:key_count])
     end
 
     key_slices = _get_indexed_slices(column_family, index_clause, columns, options[:count], options[:start],
