@@ -6,7 +6,7 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
 
   Echoe.new("cassandra") do |p|
     p.author = "Evan Weaver, Ryan King"
-    p.project = "fauna"
+    p.url = 'http://github.com/twitter/cassandra'
     p.summary = "A Ruby client for the Cassandra distributed database."
     p.rubygems_version = ">= 0.8"
     p.dependencies = ['thrift_client >=0.7.0 <0.9', 'json', 'rake', 'simple_uuid ~>0.2.0']
