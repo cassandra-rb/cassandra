@@ -983,6 +983,57 @@ class CassandraTest < Test::Unit::TestCase
       assert_equal 250, ic.count
     end
 
+    def test_create_index_expression
+      # EQ operator
+      [nil, "EQ", "eq", "=="].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::EQ, ie.op
+      end
+
+      # GTE operator
+      ["GTE", "gte", ">="].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::GTE, ie.op
+      end
+
+      # GT operator
+      ["GT", "gt", ">"].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::GT, ie.op
+      end
+
+      # LTE operator
+      ["LTE", "lte", "<="].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::LTE, ie.op
+      end
+
+      # LT operator
+      ["LT", "lt", "<"].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::LT, ie.op
+      end
+
+      # unknown operator
+      ie = @twitter.create_index_expression('foo', 'x', '~$')
+      assert_equal nil, ie.op
+    end
+
     def test_column_family_mutation
       k = key
 
