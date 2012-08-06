@@ -295,10 +295,13 @@ class Cassandra
 
     def get_indexed_slices(column_family, idx_clause, *columns_and_options)
       column_family, columns, _, options =
-        extract_and_validate_params_for_real(column_family, [], columns_and_options, READ_DEFAULTS.merge(:key_count => 100, :key_start => ""))
+        extract_and_validate_params_for_real(column_family, [], columns_and_options,
+        READ_DEFAULTS.merge(:key_count => 100, :start_key => nil, :key_start => nil))
+
+      start_key = options[:start_key] || options[:key_start] || ""
 
       unless [Hash, OrderedHash].include?(idx_clause.class) && idx_clause[:type] == :index_clause
-        idx_clause = create_index_clause(idx_clause, options[:key_start], options[:key_count])
+        idx_clause = create_index_clause(idx_clause, start_key, options[:key_count])
       end
 
       ret = {}
