@@ -3,6 +3,10 @@ require File.expand_path(File.dirname(__FILE__) + '/test_helper')
 class CassandraTest < Test::Unit::TestCase
   include Cassandra::Constants
 
+  def assert_has_keys(keys, hash)
+    assert_equal Set.new(keys), Set.new(hash.keys)
+  end
+
   def setup
     @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :connect_timeout => 0.1, :timeout => 5, :exception_classes => [])
     @twitter.clear_keyspace!
@@ -720,69 +724,361 @@ class CassandraTest < Test::Unit::TestCase
 
   if CASSANDRA_VERSION.to_f >= 0.7
     def test_creating_and_dropping_new_index
-      @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
-      assert_nil @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
+      @twitter.create_index('Twitter', 'Statuses', 'column_name', 'BytesType')
+      assert_nil @twitter.create_index('Twitter', 'Statuses', 'column_name', 'BytesType')
 
       @twitter.drop_index('Twitter', 'Statuses', 'column_name')
       assert_nil @twitter.drop_index('Twitter', 'Statuses', 'column_name')
 
       # Recreating and redropping the same index should not error either.
-      @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
+      @twitter.create_index('Twitter', 'Statuses', 'column_name', 'BytesType')
       @twitter.drop_index('Twitter', 'Statuses', 'column_name')
     end
 
     def test_get_indexed_slices
-      @twitter.create_index('Twitter', 'Statuses', 'x', 'LongType')
+      @twitter.insert(:Statuses, 'row_a', {
+        'tags' => 'a',
+        'y' => 'foo'
+      })
+      @twitter.insert(:Statuses, 'row_b', {
+        'tags' => 'b',
+        'y' => 'foo'
+      })
+      [1,2].each do |i|
+        @twitter.insert(:Statuses, "row_c_#{i}", {
+          'tags' => 'c',
+          'y' => 'a'
+        })
+      end
+      [3,4].each do |i|
+        @twitter.insert(:Statuses, "row_c_#{i}", {
+          'tags' => 'c',
+          'y' => 'b'
+        })
+      end
+      @twitter.insert(:Statuses, 'row_d', {
+        'tags' => 'd',
+        'y' => 'foo'
+      })
+      @twitter.insert(:Statuses, 'row_e', {
+        'tags' => 'e',
+        'y' => 'bar'
+      })
 
-      @twitter.insert(:Statuses, 'row1', { 'x' => [0,10].pack("NN")  })
+      # Test == operator (single clause)
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="}
+      ])
+      assert_has_keys %w[row_c_1 row_c_2 row_c_3 row_c_4], rows
 
-      (2..10).to_a.each do |i|
-        @twitter.insert(:Statuses, 'row' + i.to_s, { 'x' => [0,20].pack("NN"), 'non_indexed' => [i].pack('N*') })
+      # Test other operators
+      # Currently (as of Cassandra 1.1) you can't use anything but == as the
+      # primary query -- you must match on == first, and subsequent clauses are
+      # then applied as filters -- so that's what we are doing here.
+
+      # Test > operator
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="},
+        {:column_name => 'y',
+         :value => 'a',
+         :comparison => ">"}
+      ])
+      assert_has_keys %w[row_c_3 row_c_4], rows
+
+      # Test >= operator
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="},
+        {:column_name => 'y',
+         :value => 'a',
+         :comparison => ">="}
+      ])
+      assert_has_keys %w[row_c_1 row_c_2 row_c_3 row_c_4], rows
+
+      # Test < operator
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="},
+        {:column_name => 'y',
+         :value => 'b',
+         :comparison => "<"}
+      ])
+      assert_has_keys %w[row_c_1 row_c_2], rows
+
+      # Test <= operator
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="},
+        {:column_name => 'y',
+         :value => 'b',
+         :comparison => "<="}
+      ])
+      assert_has_keys %w[row_c_1 row_c_2 row_c_3 row_c_4], rows
+
+      # Test query on a non-indexed column
+      unless self.is_a?(CassandraMockTest)
+        assert_raises(CassandraThrift::InvalidRequestException) do
+          @twitter.get_indexed_slices(:Statuses, [
+            {:column_name => 'y',
+             :value => 'foo',
+             :comparison => "=="}
+          ])
+        end
       end
 
-      @twitter.insert(:Statuses, 'row11', { 'x' => [0,30].pack("NN")  })
+      # Test start key
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="},
+      ], :start_key => 'row_c_2')
+      assert_equal 'row_c_2', rows.keys.first
+      # <- can't test any keys after that since it's going to be random
 
-      expressions = [{:column_name => 'x', :value => [0,20].pack("NN"), :comparison => "=="}]
+      # Test key_start option
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="},
+      ], :key_start => 'row_c_2')
+      assert_equal 'row_c_2', rows.keys.first
+      # <- can't test any keys after that since it's going to be random
 
-      # verify multiples will be returned
-      assert_equal 9, @twitter.get_indexed_slices(:Statuses, expressions).length
-
-      # verify that GT and LT queries perform properly
-      expressions   =  [
-                          {:column_name => 'x',           :value => [0,20].pack("NN"),  :comparison => "=="},
-                          {:column_name => 'non_indexed', :value => [5].pack("N*"),     :comparison => ">"}
-                       ]
-      assert_equal(5, @twitter.get_indexed_slices(:Statuses, expressions).length)
+      # Test key count
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="}
+      ], :key_count => 2)
+      assert_equal 2, rows.length
+      # <- can't test which keys are present since it's going to be random
     end
 
-    def test_old_get_indexed_slices
-      @twitter.create_index('Twitter', 'Statuses', 'x', 'LongType')
+    def test_get_indexed_slices_with_IndexClause_objects
+      @twitter.insert(:Statuses, 'row_a', {
+        'tags' => 'a',
+        'y' => 'foo'
+      })
+      @twitter.insert(:Statuses, 'row_b', {
+        'tags' => 'b',
+        'y' => 'foo'
+      })
+      [1,2].each do |i|
+        @twitter.insert(:Statuses, "row_c_#{i}", {
+          'tags' => 'c',
+          'y' => 'a'
+        })
+      end
+      [3,4].each do |i|
+        @twitter.insert(:Statuses, "row_c_#{i}", {
+          'tags' => 'c',
+          'y' => 'b'
+        })
+      end
+      @twitter.insert(:Statuses, 'row_d', {
+        'tags' => 'd',
+        'y' => 'foo'
+      })
+      @twitter.insert(:Statuses, 'row_e', {
+        'tags' => 'e',
+        'y' => 'bar'
+      })
 
-      @twitter.insert(:Statuses, 'row1', { 'x' => [0,10].pack("NN")  })
+      # Test == operator (single clause)
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '==')
+      ])
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_has_keys %w[row_c_1 row_c_2 row_c_3 row_c_4], rows
 
-      (2..10).to_a.each do |i|
-        @twitter.insert(:Statuses, 'row' + i.to_s, { 'x' => [0,20].pack("NN"), 'non_indexed' => [i].pack('N*') })
+      # Test other operators
+      # Currently (as of Cassandra 1.1) you can't use anything but == as the
+      # primary query -- you must match on == first, and subsequent clauses are
+      # then applied as filters -- so that's what we are doing here.
+
+      # Test > operator
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '=='),
+        @twitter.create_index_expression('y', 'a', '>'),
+      ])
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_has_keys %w[row_c_3 row_c_4], rows
+
+      # Test >= operator
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '=='),
+        @twitter.create_index_expression('y', 'a', '>=')
+      ])
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_has_keys %w[row_c_1 row_c_2 row_c_3 row_c_4], rows
+
+      # Test < operator
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '=='),
+        @twitter.create_index_expression('y', 'b', '<')
+      ])
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_has_keys %w[row_c_1 row_c_2], rows
+
+      # Test <= operator
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '=='),
+        @twitter.create_index_expression('y', 'b', '<=')
+      ])
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_has_keys %w[row_c_1 row_c_2 row_c_3 row_c_4], rows
+
+      # Test query on a non-indexed column
+      unless self.is_a?(CassandraMockTest)
+        assert_raises(CassandraThrift::InvalidRequestException) do
+          index_clause = @twitter.create_index_clause([
+            @twitter.create_index_expression('y', 'foo', '==')
+          ])
+          @twitter.get_indexed_slices(:Statuses, index_clause)
+        end
       end
 
-      @twitter.insert(:Statuses, 'row11', { 'x' => [0,30].pack("NN")  })
+      # Test start key
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '==')
+      ], 'row_c_2')
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_equal 'row_c_2', rows.keys.first
+      # <- can't test any keys after that since it's going to be random
 
-      idx_expr   = @twitter.create_idx_expr('x', [0,20].pack("NN"), "==")
+      # Test key count
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '==')
+      ], "", 2)
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_equal 2, rows.length
+      # <- can't test which keys are present since it's going to be random
+    end
 
-      # verify count is observed
-      idx_clause = @twitter.create_idx_clause([idx_expr], "", 1)
-      assert_equal 1, @twitter.get_indexed_slices(:Statuses, idx_clause).length
+    def test_create_index_clause
+      return if self.is_a?(CassandraMockTest)
 
-      # verify multiples will be returned
-      idx_clause = @twitter.create_idx_clause([idx_expr])
-      assert_equal 9, @twitter.get_indexed_slices(:Statuses, idx_clause).length
+      ie = CassandraThrift::IndexExpression.new(
+        :column_name => 'foo',
+        :value => 'x',
+        :op => '=='
+      )
 
-      # verify that GT and LT queries perform properly
-      idx_expr   =  [
-                      @twitter.create_idx_expr('x', [0,20].pack("NN"), "=="),
-                      @twitter.create_idx_expr('non_indexed', [5].pack("N*"), ">")
-                    ]
-      idx_clause = @twitter.create_idx_clause(idx_expr)
-      assert_equal(5, @twitter.get_indexed_slices(:Statuses, idx_clause).length)
+      ic = @twitter.create_index_clause([ie], 'aaa', 250)
+      assert_instance_of CassandraThrift::IndexClause, ic
+      assert_equal 'aaa', ic.start_key
+      assert_equal ie, ic.expressions[0]
+      assert_equal 250, ic.count
+
+      # test alias
+      ic = @twitter.create_idx_clause([ie], 'aaa', 250)
+      assert_instance_of CassandraThrift::IndexClause, ic
+      assert_equal 'aaa', ic.start_key
+      assert_equal ie, ic.expressions[0]
+      assert_equal 250, ic.count
+    end
+
+    def test_create_index_expression
+      return if self.is_a?(CassandraMockTest)
+
+      # EQ operator
+      [nil, "EQ", "eq", "=="].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::EQ, ie.op
+      end
+      # alias
+      [nil, "EQ", "eq", "=="].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::EQ, ie.op
+      end
+
+      # GTE operator
+      ["GTE", "gte", ">="].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::GTE, ie.op
+      end
+      # alias
+      ["GTE", "gte", ">="].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::GTE, ie.op
+      end
+
+      # GT operator
+      ["GT", "gt", ">"].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::GT, ie.op
+      end
+      # alias
+      ["GT", "gt", ">"].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::GT, ie.op
+      end
+
+      # LTE operator
+      ["LTE", "lte", "<="].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::LTE, ie.op
+      end
+      # alias
+      ["LTE", "lte", "<="].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::LTE, ie.op
+      end
+
+      # LT operator
+      ["LT", "lt", "<"].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::LT, ie.op
+      end
+      # alias
+      ["LT", "lt", "<"].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::LT, ie.op
+      end
+
+      # unknown operator
+      ie = @twitter.create_index_expression('foo', 'x', '~$')
+      assert_equal nil, ie.op
+      # alias
+      ie = @twitter.create_idx_expr('foo', 'x', '~$')
+      assert_equal nil, ie.op
     end
 
     def test_column_family_mutation

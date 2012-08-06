@@ -15,7 +15,11 @@ create column family UserRelationships with
   column_type = 'Super' and
   subcomparator = 'TimeUUIDType';
 create column family Usernames with comparator = 'UTF8Type';
-create column family Statuses with comparator = 'UTF8Type';
+create column family Statuses
+  with comparator = 'UTF8Type'
+  and column_metadata = [
+    {column_name: 'tags', validation_class: 'BytesType', index_type: 'KEYS'}
+  ];
 create column family StatusAudits with comparator = 'UTF8Type';
 create column family StatusRelationships with
   comparator = 'UTF8Type' and
