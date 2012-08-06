@@ -963,6 +963,8 @@ class CassandraTest < Test::Unit::TestCase
     end
 
     def test_create_index_clause
+      return if self.is_a?(CassandraMockTest)
+
       ie = CassandraThrift::IndexExpression.new(
         :column_name => 'foo',
         :value => 'x',
@@ -984,6 +986,8 @@ class CassandraTest < Test::Unit::TestCase
     end
 
     def test_create_index_expression
+      return if self.is_a?(CassandraMockTest)
+
       # EQ operator
       [nil, "EQ", "eq", "=="].each do |op|
         ie = @twitter.create_index_expression('foo', 'x', op)
