@@ -996,10 +996,26 @@ class CassandraTest < Test::Unit::TestCase
         assert_equal 'x', ie.value
         assert_equal CassandraThrift::IndexOperator::EQ, ie.op
       end
+      # alias
+      [nil, "EQ", "eq", "=="].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::EQ, ie.op
+      end
 
       # GTE operator
       ["GTE", "gte", ">="].each do |op|
         ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::GTE, ie.op
+      end
+      # alias
+      ["GTE", "gte", ">="].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
         assert_instance_of CassandraThrift::IndexExpression, ie
         assert_equal 'foo', ie.column_name
         assert_equal 'x', ie.value
@@ -1014,10 +1030,26 @@ class CassandraTest < Test::Unit::TestCase
         assert_equal 'x', ie.value
         assert_equal CassandraThrift::IndexOperator::GT, ie.op
       end
+      # alias
+      ["GT", "gt", ">"].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::GT, ie.op
+      end
 
       # LTE operator
       ["LTE", "lte", "<="].each do |op|
         ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::LTE, ie.op
+      end
+      # alias
+      ["LTE", "lte", "<="].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
         assert_instance_of CassandraThrift::IndexExpression, ie
         assert_equal 'foo', ie.column_name
         assert_equal 'x', ie.value
@@ -1032,9 +1064,20 @@ class CassandraTest < Test::Unit::TestCase
         assert_equal 'x', ie.value
         assert_equal CassandraThrift::IndexOperator::LT, ie.op
       end
+      # alias
+      ["LT", "lt", "<"].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::LT, ie.op
+      end
 
       # unknown operator
       ie = @twitter.create_index_expression('foo', 'x', '~$')
+      assert_equal nil, ie.op
+      # alias
+      ie = @twitter.create_idx_expr('foo', 'x', '~$')
       assert_equal nil, ie.op
     end
 
