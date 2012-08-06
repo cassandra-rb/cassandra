@@ -962,6 +962,27 @@ class CassandraTest < Test::Unit::TestCase
       # <- can't test which keys are present since it's going to be random
     end
 
+    def test_create_index_clause
+      ie = CassandraThrift::IndexExpression.new(
+        :column_name => 'foo',
+        :value => 'x',
+        :op => '=='
+      )
+
+      ic = @twitter.create_index_clause([ie], 'aaa', 250)
+      assert_instance_of CassandraThrift::IndexClause, ic
+      assert_equal 'aaa', ic.start_key
+      assert_equal ie, ic.expressions[0]
+      assert_equal 250, ic.count
+
+      # test alias
+      ic = @twitter.create_idx_clause([ie], 'aaa', 250)
+      assert_instance_of CassandraThrift::IndexClause, ic
+      assert_equal 'aaa', ic.start_key
+      assert_equal ie, ic.expressions[0]
+      assert_equal 250, ic.count
+    end
+
     def test_column_family_mutation
       k = key
 
