@@ -35,7 +35,7 @@ class Cassandra
 
       packed_types = @types.map do |type|
         if type.length == 1
-          [0x8000 | type.ord].pack('n')
+          [0x8000 | type[0].ord].pack('n')
         else
           [type.length].pack('n') + type
         end
