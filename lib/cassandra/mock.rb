@@ -304,7 +304,7 @@ class Cassandra
         idx_clause = create_index_clause(idx_clause, start_key, options[:key_count])
       end
 
-      ret = {}
+      ret = OrderedHash.new
       cf(column_family).each do |key, row|
         next if idx_clause[:start] != '' && key < idx_clause[:start]
         next if ret.length == idx_clause[:count]

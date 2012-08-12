@@ -1,3 +1,7 @@
+v0.15.0
+- Fixes for ruby 1.8 (issue #158, courtesy @jarib)
+- get_indexed_slices returns an OrderedHash (issue #110)
+
 v0.14.0
 - Numerous performance improvements (courtesy @nearbuy)
 - Fixed many 0.6 bugs
