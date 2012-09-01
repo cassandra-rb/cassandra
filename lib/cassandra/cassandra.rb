@@ -678,61 +678,59 @@ class Cassandra
     count = options.delete(:count)
     options[:no_hash_return] = false
 
-    #options[:start] ||= ''
+		last_col = nil
+		my_keys = keys.clone
 
-    last_col = nil
-    my_keys = keys.clone
+		begin
+			keys_part = (my_keys.nil? ? nil : my_keys.slice!(0, (keys_at_once.nil? ? my_keys.length : keys_at_once)))
+			last_col = nil
 
-    begin
-      keys_part = (my_keys.nil? ? nil : my_keys.slice!(0, (keys_at_once.nil? ? my_keys.length : keys_at_once)))
-      last_col = nil
+			while count.nil? || count > num_results
+				res = multi_get_single(column_family, keys_part, column, sub_columns, batch_size, last_col || options[:start], options[:finish], options[:reversed], options[:consistency], options)
 
-      while count.nil? || count > num_results
-	timeReq = Time.now
-	res = multi_get_single(column_family, keys_part, column, sub_columns, batch_size, last_col || options[:start], options[:finish], options[:reversed], options[:consistency], options)
-	puts "multi_get took #{Time.now - timeReq} seconds"
+				last_last_col_u = last_col ? (options[:coder] ? options[:coder].decode(last_col) : last_col) : nil
+				last_col = nil
 
-	timeProc = Time.now
-	last_last_col_u = last_col ? (options[:coder] ? options[:coder].decode(last_col) : last_col) : nil
-	last_col = nil
+				new_results = 0
+				res.each do |key, columns|
+					unless columns.blank?
+						if result[key] and is_super(column_family)
+							columns.each do |k,v|
+								unless result[key][k] or v.nil?
+									new_results += 1
+									result[key][k] = v
+								end
+							end
+						else
+							new_results += is_super(column_family) ? columns.keys.length : 1
+							result[key] = columns
+						end
 
-	new_results = 0
-	res.each do |key, columns|
-	  unless columns.blank?
-	    if result[key]
-	      columns.each do |k,v|
-		unless result[key][k] or v.nil?
-		  new_results += 1
-		  result[key][k] = v
-		end
-	      end
-	    else
-	      new_results += columns.keys.length
-	      result[key] = columns
-	    end
+						if is_super(column_family)
+							last = columns.keys.last
 
-	    last = columns.keys.last
+							if options[:coder]
+								last_u = last ? options[:coder].decode(last) : nil
+								last_col_u = last_col ? options[:coder].decode(last_col) : nil
+							else
+								last_u = last
+								last_col_u = last_col
+							end
+							if (last_last_col_u.nil? or last_u > last_last_col_u) and (last_col.nil? or last_u < last_col_u)
+								last_col = last
+							end
+						else
+							keys_part.slice!(0, batch_size)
+						end
+					end
+				end
 
-	    if options[:coder]
-	      last_u = last ? options[:coder].decode(last) : nil
-	      last_col_u = last_col ? options[:coder].decode(last_col) : nil
-	    else
-	      last_u = last
-	      last_col_u = last_col
-	    end
-	    if (last_last_col_u.nil? or last_u > last_last_col_u) and (last_col.nil? or last_u < last_col_u)
-	      last_col = last
-	    end
-	  end
-	end
+				num_results += new_results
 
-	num_results += new_results
-	puts "Processing took #{Time.now - timeProc} seconds"
-
-	break unless last_col
-      end
-    end until my_keys.blank?
-    result
+				break unless (is_super(column_family) ? last_col : !keys_part.blank?)
+			end
+		end until my_keys.blank?
+		result
   end
 
   ##
