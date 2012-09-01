@@ -61,6 +61,9 @@
     "SuperUUID":{
       "subcomparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
       "comparator_type":"org.apache.cassandra.db.marshal.TimeUUIDType",
-      "column_type":"Super"}
+      "column_type":"Super"},
+    "CompositeColumnConversion":{
+      "comparator_type":"org.apache.cassandra.db.marshal.CompositeType(org.apache.cassandra.db.marshal.IntegerType,org.apache.cassandra.db.marshal.UTF8Type)",
+      "column_type":"Standard"}
   }
 }

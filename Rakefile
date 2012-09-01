@@ -9,7 +9,7 @@ unless ENV['FROM_BIN_CASSANDRA_HELPER']
     p.project = "fauna"
     p.summary = "A Ruby client for the Cassandra distributed database."
     p.rubygems_version = ">= 0.8"
-    p.dependencies = ['thrift_client ~>0.7.0', 'json', 'rake', 'simple_uuid ~>0.2.0']
+    p.dependencies = ['thrift_client >=0.7.0 <0.9', 'json', 'rake', 'simple_uuid ~>0.2.0']
     p.ignore_pattern = /^(data|vendor\/cassandra|cassandra|vendor\/thrift|.*\.rbc)/
     p.rdoc_pattern = /^(lib|bin|tasks|ext)|^README|^CHANGELOG|^TODO|^LICENSE|^COPYING$/
     p.retain_gemspec = true
@@ -20,7 +20,7 @@ CassandraBinaries = {
   '0.6' => 'http://archive.apache.org/dist/cassandra/0.6.13/apache-cassandra-0.6.13-bin.tar.gz',
   '0.7' => 'http://archive.apache.org/dist/cassandra/0.7.9/apache-cassandra-0.7.9-bin.tar.gz',
   '0.8' => 'http://archive.apache.org/dist/cassandra/0.8.7/apache-cassandra-0.8.7-bin.tar.gz',
-  '1.0' => 'http://archive.apache.org/dist/cassandra/1.0.2/apache-cassandra-1.0.2-bin.tar.gz'
+  '1.0' => 'http://archive.apache.org/dist/cassandra/1.0.6/apache-cassandra-1.0.6-bin.tar.gz'
 }
 
 CASSANDRA_HOME = ENV['CASSANDRA_HOME'] || "#{ENV['HOME']}/cassandra"

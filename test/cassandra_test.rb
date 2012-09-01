@@ -21,6 +21,12 @@ class CassandraTest < Test::Unit::TestCase
 
     @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
     @longs = (0..6).map {|i| Long.new(Time.at(2**(24+i))) }
+    @composites = [
+      Cassandra::Composite.new([5].pack('N'), "zebra"),
+      Cassandra::Composite.new([5].pack('N'), "aardvark"),
+      Cassandra::Composite.new([1].pack('N'), "elephant"),
+      Cassandra::Composite.new([10].pack('N'), "kangaroo"),
+    ]
   end
 
   def test_inspect
@@ -43,7 +49,7 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_get_key
-    
+
     @twitter.insert(:Users, key, {'body' => 'v', 'user' => 'v'})
     assert_equal({'body' => 'v', 'user' => 'v'}, @twitter.get(:Users, key))
     assert_equal(['body', 'user'].sort, @twitter.get(:Users, key).timestamps.keys.sort)
@@ -501,12 +507,12 @@ class CassandraTest < Test::Unit::TestCase
 
   def test_count_columns
     columns = (1..200).inject(Hash.new){|h,v| h['column' + v.to_s] = v.to_s; h;}
-    
+
     @twitter.insert(:Statuses, key, columns)
     assert_equal 200, @twitter.count_columns(:Statuses, key, :count => 200)
-    assert_equal 100, @twitter.count_columns(:Statuses, key)    
+    assert_equal 100, @twitter.count_columns(:Statuses, key)
     assert_equal 55, @twitter.count_columns(:Statuses, key, :count => 55)
-    
+
   end
 
   def test_count_super_columns
@@ -556,24 +562,24 @@ class CassandraTest < Test::Unit::TestCase
       assert_equal({}, @twitter.get(:Users, k + '2')) # Not yet written
       assert_equal({}, @twitter.get(:Statuses, k + '3')) # Not yet written
 
-      @twitter.remove(:Users, k + '1') # Full row 
+      @twitter.remove(:Users, k + '1') # Full row
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Not yet removed
 
       @twitter.remove(:Users, k + '0', 'delete_me') # A single column of the row
       assert_equal({'delete_me' => 'v0', 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # Not yet removed
-      
+
       @twitter.remove(:Users, k + '4')
       @twitter.insert(:Users, k + '4', {'body' => 'v4', 'user' => 'v4'})
       assert_equal({}, @twitter.get(:Users, k + '4')) # Not yet written
 
       # SuperColumns
       # Add and delete new sub columns to the user timeline supercolumn
-      @twitter.insert(:StatusRelationships, k, {'user_timelines' => new_subcolumns }) 
+      @twitter.insert(:StatusRelationships, k, {'user_timelines' => new_subcolumns })
       @twitter.remove(:StatusRelationships, k, 'user_timelines' , subcolumn_to_delete ) # Delete the first of the initial_subcolumns from the user_timeline supercolumn
       assert_equal(initial_subcolumns, @twitter.get(:StatusRelationships, k, 'user_timelines')) # No additions or deletes reflected yet
-      # Delete a complete supercolumn 
+      # Delete a complete supercolumn
       @twitter.remove(:StatusRelationships, k, 'dummy_supercolumn' ) # Delete the full dummy supercolumn
-      assert_equal({@uuids[5] => 'value'}, @twitter.get(:StatusRelationships, k, 'dummy_supercolumn')) # dummy supercolumn not yet deleted 
+      assert_equal({@uuids[5] => 'value'}, @twitter.get(:StatusRelationships, k, 'dummy_supercolumn')) # dummy supercolumn not yet deleted
     end
 
     assert_equal({'body' => 'v2', 'user' => 'v2'}, @twitter.get(:Users, k + '2')) # Written
@@ -581,9 +587,9 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({'body' => 'v4', 'user' => 'v4'}, @twitter.get(:Users, k + '4')) # Written
     assert_equal({'body' => 'v'}, @twitter.get(:Statuses, k + '3')) # Written
     assert_equal({}, @twitter.get(:Users, k + '1')) # Removed
-    
+
     assert_equal({ 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # 'delete_me' column removed
-    
+
 
     assert_equal({'body' => 'v2', 'user' => 'v2'}.keys.sort, @twitter.get(:Users, k + '2').timestamps.keys.sort) # Written
     assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}.keys.sort, @twitter.get(:Users, k + '3').timestamps.keys.sort) # Written and compacted
@@ -593,7 +599,7 @@ class CassandraTest < Test::Unit::TestCase
     # Final result: initial_subcolumns - initial_subcolumns.first + new_subcolumns
     resulting_subcolumns = initial_subcolumns.merge(new_subcolumns).reject{|k2,v| k2 == subcolumn_to_delete }
     assert_equal(resulting_subcolumns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
-    assert_equal({}, @twitter.get(:StatusRelationships, key, 'dummy_supercolumn')) # dummy supercolumn deleted 
+    assert_equal({}, @twitter.get(:StatusRelationships, key, 'dummy_supercolumn')) # dummy supercolumn deleted
 
   end
 
@@ -834,6 +840,64 @@ class CassandraTest < Test::Unit::TestCase
       assert_equal(1, @twitter.get(:UserCounterAggregates, 'bob', 'DAU', 'today'))
       assert_equal(2, @twitter.get(:UserCounterAggregates, 'bob', 'DAU', 'tomorrow'))
     end
+
+    def test_composite_column_type_conversion
+      columns = {}
+      @composites.each_with_index do |c, index|
+        columns[c] = "value-#{index}"
+      end
+      @type_conversions.insert(:CompositeColumnConversion, key, columns)
+      columns_in_order = [
+        Cassandra::Composite.new([1].pack('N'), "elephant"),
+        Cassandra::Composite.new([5].pack('N'), "aardvark"),
+        Cassandra::Composite.new([5].pack('N'), "zebra"),
+        Cassandra::Composite.new([10].pack('N'), "kangaroo"),
+      ]
+      assert_equal(columns_in_order, @type_conversions.get(:CompositeColumnConversion, key).keys)
+
+      column_slice = @type_conversions.get(:CompositeColumnConversion, key,
+        :start => Cassandra::Composite.new([1].pack('N')),
+        :finish => Cassandra::Composite.new([10].pack('N')),
+      ).keys
+      assert_equal(columns_in_order[0..-2], column_slice)
+
+      column_slice = @type_conversions.get(:CompositeColumnConversion, key,
+        :start => Cassandra::Composite.new([5].pack('N')),
+        :finish => Cassandra::Composite.new([5].pack('N'), :slice => :after),
+      ).keys
+      assert_equal(columns_in_order[1..2], column_slice)
+
+      column_slice = @type_conversions.get(:CompositeColumnConversion, key,
+        :start => Cassandra::Composite.new([5].pack('N'), :slice => :after).to_s,
+      ).keys
+      assert_equal([columns_in_order[-1]], column_slice)
+
+      column_slice = @type_conversions.get(:CompositeColumnConversion, key,
+        :finish => Cassandra::Composite.new([10].pack('N'), :slice => :before).to_s,
+      ).keys
+      assert_equal(columns_in_order[0..-2], column_slice)
+
+      assert_equal('value-2', @type_conversions.get(:CompositeColumnConversion, key, columns_in_order.first))
+    end
+  end
+
+  def test_column_timestamps
+    base_time = Time.now
+    @twitter.insert(:Statuses, "time-key", { "body" => "value" })
+
+    results = @twitter.get(:Statuses, "time-key")
+    assert(results.timestamps["body"] / 1000000 >= base_time.to_i)
+  end
+  
+  def test_supercolumn_timestamps
+    base_time = Time.now
+    @twitter.insert(:StatusRelationships, "time-key", { "super" => { @uuids[1] => "value" }})
+
+    results = @twitter.get(:StatusRelationships, "time-key")
+    assert_nil(results.timestamps["super"])
+    
+    columns = results["super"]
+    assert(columns.timestamps[@uuids[1]] / 1000000 >= base_time.to_i)
   end
 
   private
