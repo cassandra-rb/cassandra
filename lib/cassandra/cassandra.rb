@@ -680,6 +680,7 @@ class Cassandra
 
 		last_col = nil
 		my_keys = keys.clone
+		sup ? is_super(column_family)
 
 		begin
 			keys_part = (my_keys.nil? ? nil : my_keys.slice!(0, (keys_at_once.nil? ? my_keys.length : keys_at_once)))
@@ -694,7 +695,7 @@ class Cassandra
 				new_results = 0
 				res.each do |key, columns|
 					unless columns.blank?
-						if result[key] and is_super(column_family)
+						if result[key] and sup
 							columns.each do |k,v|
 								unless result[key][k] or v.nil?
 									new_results += 1
@@ -719,15 +720,14 @@ class Cassandra
 							if (last_last_col_u.nil? or last_u > last_last_col_u) and (last_col.nil? or last_u < last_col_u)
 								last_col = last
 							end
-						else
-							keys_part.slice!(0, batch_size)
 						end
 					end
 				end
+				keys_part.slice!(0, batch_size) unless sup
 
 				num_results += new_results
 
-				break unless (is_super(column_family) ? last_col : !keys_part.blank?)
+				break unless (sup ? last_col : !keys_part.blank?)
 			end
 		end until my_keys.blank?
 		result
