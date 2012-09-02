@@ -680,7 +680,7 @@ class Cassandra
 
 		last_col = nil
 		my_keys = keys.clone
-		sup ? is_super(column_family)
+		sup = is_super(column_family)
 
 		begin
 			keys_part = (my_keys.nil? ? nil : my_keys.slice!(0, (keys_at_once.nil? ? my_keys.length : keys_at_once)))
