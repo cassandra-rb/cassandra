@@ -3,7 +3,7 @@
 Create a new Cassandra client instance. Accepts a keyspace name, and optional host and port.
 
   client = Cassandra.new('twitter', '127.0.0.1:9160')
-  
+
 If the server requires authentication, you must authenticate before make calls
 
   client.login!('username','password')
@@ -64,6 +64,8 @@ class Cassandra
     :thrift_client_class  => ThriftClient
   }
 
+  THRIFT_DEFAULTS[:protocol] = Thrift::BinaryProtocolAccelerated if Thrift.const_defined?(:BinaryProtocolAccelerated)
+
   attr_reader :keyspace, :servers, :schema, :thrift_client_options, :thrift_client_class, :auth_request
 
   def self.DEFAULT_TRANSPORT_WRAPPER
@@ -75,6 +77,8 @@ class Cassandra
     @is_super = {}
     @column_name_class = {}
     @sub_column_name_class = {}
+    @column_name_maker = {}
+    @sub_column_name_maker = {}
     @auto_discover_nodes = true
     thrift_client_options[:transport_wrapper] ||= Cassandra.DEFAULT_TRANSPORT_WRAPPER
     @thrift_client_options = THRIFT_DEFAULTS.merge(thrift_client_options)
@@ -462,7 +466,7 @@ class Cassandra
 
   ##
   # This method is used to delete (actually marking them as deleted with a
-  # tombstone)  rows, columns, or super columns depending on the parameters 
+  # tombstone)  rows, columns, or super columns depending on the parameters
   # passed.  If only a key is passed the entire row will be marked as deleted.
   # If a column name is passed in that column will be deleted.
   #
@@ -483,14 +487,14 @@ class Cassandra
     column_family, column, sub_column, options = extract_and_validate_params(column_family, key, columns_and_options, WRITE_DEFAULTS)
 
     if @batch
-      mutation_map = 
+      mutation_map =
         {
           key => {
             column_family => [ _delete_mutation(column_family, column, sub_column, options[:timestamp]|| Time.stamp) ]
           }
         }
       @batch << [mutation_map, options[:consistency]]
-    else 
+    else
       # Let's continue using the 'remove' thrift method...not sure about the implications/performance of using the mutate instead
       # Otherwise we coul get use the mutation_map above, and do _mutate(mutation_map, options[:consistency])
       args = {:column_family => column_family}
@@ -514,8 +518,8 @@ class Cassandra
   #   * :consistency - Uses the default read consistency if none specified.
   #
   def count_columns(column_family, key, *columns_and_options)
-    column_family, super_column, _, options = 
-      extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)      
+    column_family, super_column, _, options =
+      extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
     _count_columns(column_family, key, super_column, options[:start], options[:stop], options[:count], options[:consistency])
   end
 
@@ -538,7 +542,7 @@ class Cassandra
   end
 
   ##
-  # Return a hash of column value pairs for the path you request. 
+  # Return a hash of column value pairs for the path you request.
   #
   # * column_family - The column_family that you are inserting into.
   # * key - The row key to insert.
@@ -548,8 +552,8 @@ class Cassandra
   #   * :consistency - Uses the default read consistency if none specified.
   #
   def get_columns(column_family, key, *columns_and_options)
-    column_family, columns, sub_columns, options = 
-      extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)      
+    column_family, columns, sub_columns, options =
+      extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
     _get_columns(column_family, key, columns, sub_columns, options[:consistency])
   end
 
@@ -574,7 +578,7 @@ class Cassandra
   ##
   # Return a hash (actually, a Cassandra::OrderedHash) or a single value
   # representing the element at the column_family:key:[column]:[sub_column]
-  # path you request. 
+  # path you request.
   #
   # * column_family - The column_family that you are inserting into.
   # * key - The row key to insert.
@@ -751,7 +755,7 @@ class Cassandra
   #   * :consistency - Uses the default read consistency if none specified.
   #
   def exists?(column_family, key, *columns_and_options)
-    column_family, column, sub_column, options = 
+    column_family, column, sub_column, options =
       extract_and_validate_params(column_family, key, columns_and_options, READ_DEFAULTS)
     result = if column
                _multiget(column_family, [key], column, sub_column, 1, '', '', false, options[:consistency])[key]
@@ -772,7 +776,7 @@ class Cassandra
   # Cassandra#get_range_single will be used.
   #
   # The start_key and finish_key parameters are only useful for iterating of all records
-  # as is done in the Cassandra#each and Cassandra#each_key methods if you are using the 
+  # as is done in the Cassandra#each and Cassandra#each_key methods if you are using the
   # RandomPartitioner.
   #
   # If the table is partitioned with OrderPreservingPartitioner you may
@@ -783,11 +787,11 @@ class Cassandra
   # each record returned.
   #
   # Please note that Cassandra returns a row for each row that has existed in the
-  # system since gc_grace_seconds. This is because deleted row keys are marked as 
+  # system since gc_grace_seconds. This is because deleted row keys are marked as
   # deleted, but left in the system until the cluster has had resonable time to replicate the deletion.
   # This function attempts to suppress deleted rows (actually any row returned without
   # columns is suppressed).
-  # 
+  #
   # Please note that when enabling the :reversed option, :start and :finish should be swapped (e.g.
   # reversal happens before selecting the range).
   #
@@ -821,8 +825,8 @@ class Cassandra
   def get_range_single(column_family, options = {})
     return_empty_rows = options.delete(:return_empty_rows) || false
 
-    column_family, _, _, options = 
-      extract_and_validate_params(column_family, "", [options], 
+    column_family, _, _, options =
+      extract_and_validate_params(column_family, "", [options],
                                   READ_DEFAULTS.merge(:start_key  => '',
                                                       :finish_key => '',
                                                       :key_count  => 100,
@@ -956,10 +960,10 @@ class Cassandra
       @batch = []
       yield(self)
       compacted_map,seen_clevels = compact_mutations!
-      clevel = if options[:consistency] != nil # Override any clevel from individual mutations if 
+      clevel = if options[:consistency] != nil # Override any clevel from individual mutations if
                  options[:consistency]
                elsif seen_clevels.length > 1 # Cannot choose which CLevel to use if there are several ones
-                 raise "Multiple consistency levels used in the batch, and no override...cannot pick one" 
+                 raise "Multiple consistency levels used in the batch, and no override...cannot pick one"
                else # if no consistency override has been provided but all the clevels in the batch are the same: use that one
                  seen_clevels.first
                end
@@ -1059,7 +1063,7 @@ class Cassandra
 
   ##
   # This method is used to query a secondary index with a set of
-  # provided search parameters
+  # provided search parameters.
   #
   # Please note that you can either specify a
   # CassandraThrift::IndexClause or an array of hashes with the
@@ -1072,7 +1076,7 @@ class Cassandra
   #   * :comparison  - Type of comparison to do.
   # * options
   #   * :key_count    - Set maximum number of rows to return. (Only works if CassandraThrift::IndexClause is not passed in.)
-  #   * :key_start    - Set starting row key for search. (Only works if CassandraThrift::IndexClause is not passed in.)
+  #   * :start_key    - Set starting row key for search. (Only works if CassandraThrift::IndexClause is not passed in.)
   #   * :consistency
   #
   # TODO: Supercolumn support.
@@ -1080,20 +1084,23 @@ class Cassandra
     return false if Cassandra.VERSION.to_f < 0.7
 
     column_family, columns, _, options =
-      extract_and_validate_params(column_family, [], columns_and_options, READ_DEFAULTS.merge(:key_count => 100, :key_start => ""))
+      extract_and_validate_params(column_family, [], columns_and_options,
+      READ_DEFAULTS.merge(:key_count => 100, :start_key => nil, :key_start => nil))
+
+    start_key = options[:start_key] || options[:key_start] || ""
 
     if index_clause.class != CassandraThrift::IndexClause
       index_expressions = index_clause.collect do |expression|
         create_index_expression(expression[:column_name], expression[:value], expression[:comparison])
       end
 
-      index_clause = create_index_clause(index_expressions, options[:key_start], options[:key_count])
+      index_clause = create_index_clause(index_expressions, start_key, options[:key_count])
     end
 
     key_slices = _get_indexed_slices(column_family, index_clause, columns, options[:count], options[:start],
       options[:finish], options[:reversed], options[:consistency])
 
-    key_slices.inject({}){|h, key_slice| h[key_slice.key] = key_slice.columns; h}
+    key_slices.inject(OrderedHash.new) {|h, key_slice| h[key_slice.key] = key_slice.columns; h }
   end
 
   protected
@@ -1114,13 +1121,13 @@ class Cassandra
     @batch.each do |mutation_op|
       # A single mutation op looks like:
       # For an insert/update
-      #[ { key1 => 
+      #[ { key1 =>
       #            { CF1 => [several of CassThrift:Mutation(colname,value,TS,ttl)]
       #              CF2 => [several mutations]
       #            },
       #    key2 => {...} # Not sure if they can come batched like this...so there might only be a single key (and CF)
       #      }, # [0]
-      #  consistency # [1] 
+      #  consistency # [1]
       #]
       mmap = mutation_op[0] # :remove OR a hash like {"key"=> {"CF"=>[mutationclass1,...] } }
       used_clevels[mutation_op[1]] = true #save the clevel required for this operation

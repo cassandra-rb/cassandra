@@ -12,7 +12,7 @@ class Cassandra
       client.remove(@keyspace, key, column_path, timestamp, consistency_level)
     end
 
-    def _count_columns(column_family, key, super_column, consistency)
+    def _count_columns(column_family, key, super_column, start, stop, count, consistency)
       client.get_count(@keyspace, key,
         CassandraThrift::ColumnParent.new(:column_family => column_family, :super_column => super_column),
         consistency
@@ -55,11 +55,11 @@ class Cassandra
 
       # Slices
       else
-        predicate = CassandraThrift::SlicePredicate.new(:slice_range => 
+        predicate = CassandraThrift::SlicePredicate.new(:slice_range =>
           CassandraThrift::SliceRange.new(
-            :reversed => reversed, 
-            :count => count, 
-            :start => start, 
+            :reversed => reversed,
+            :count => count,
+            :start => start,
             :finish => finish))
 
         if is_super(column_family) and column
@@ -72,16 +72,17 @@ class Cassandra
       end
     end
 
-    def _get_range(column_family, start_key, finish_key, key_count, columns, start, finish, count, consistency)
+    def _get_range(column_family, start_key, finish_key, key_count, columns, start, finish, count, consistency, reversed=false)
       column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family)
       predicate = if columns
                     CassandraThrift::SlicePredicate.new(:column_names => columns)
                   else
-                    CassandraThrift::SlicePredicate.new(:slice_range => 
+                    CassandraThrift::SlicePredicate.new(:slice_range =>
                       CassandraThrift::SliceRange.new(
-                        :start  => start, 
+                        :start  => start,
                         :finish => finish,
-                        :count  => count))
+                        :count  => count,
+                        :reversed => reversed))
                   end
       range = CassandraThrift::KeyRange.new(:start_key => start_key, :end_key => finish_key, :count => key_count)
       client.get_range_slices(@keyspace, column_parent, predicate, range, consistency)

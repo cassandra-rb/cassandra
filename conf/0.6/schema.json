@@ -5,7 +5,7 @@
     "UserAudits":{
       "CompareWith":"org.apache.cassandra.db.marshal.UTF8Type",
       "Type":"Standard"},
-    "UserRelationships":{ 
+    "UserRelationships":{
       "CompareSubcolumnsWith":"org.apache.cassandra.db.marshal.TimeUUIDType",
       "CompareWith":"org.apache.cassandra.db.marshal.UTF8Type",
       "Type":"Super"},
@@ -22,7 +22,7 @@
       "CompareSubcolumnsWith":"org.apache.cassandra.db.marshal.TimeUUIDType",
       "CompareWith":"org.apache.cassandra.db.marshal.UTF8Type",
       "Type":"Super"},
-    "Index":{
+    "Indexes":{
       "CompareWith":"org.apache.cassandra.db.marshal.UTF8Type",
       "Type":"Super"},
     "TimelinishThings":{

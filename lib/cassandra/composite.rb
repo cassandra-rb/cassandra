@@ -1,4 +1,3 @@
-
 class Cassandra
   class Composite
     include ::Comparable
@@ -6,6 +5,8 @@ class Cassandra
     attr_reader :column_slice
 
     def initialize(*parts)
+      return if parts.empty?
+
       options = {}
       if parts.last.is_a?(Hash)
         options = parts.pop
@@ -16,11 +17,17 @@ class Cassandra
       if parts.length == 1 && parts[0].instance_of?(self.class)
         @column_slice = parts[0].column_slice
         @parts = parts[0].parts
-      elsif parts.length == 1 && parts[0].instance_of?(String) && @column_slice.nil? && valid_packed_composite?(parts[0])
-        unpack(parts[0])
+      elsif parts.length == 1 && parts[0].instance_of?(String) && @column_slice.nil? && try_packed_composite(parts[0])
+        @hash = parts[0].hash
       else
         @parts = parts
       end
+    end
+
+    def self.new_from_packed(packed)
+      obj = new
+      obj.fast_unpack(packed)
+      return obj
     end
 
     def [](*args)
@@ -67,7 +74,7 @@ class Cassandra
     end
 
     def inspect
-      return "#<Composite:#{@column_slice} #{@parts.inspect}>"
+      return "#<#{self.class}:#{@column_slice} #{@parts.inspect}>"
     end
 
     def slice_end_of_component
@@ -76,27 +83,31 @@ class Cassandra
       return "\x00"
     end
 
+    def fast_unpack(packed_string)
+      @hash = packed_string.hash
+
+      @parts = []
+      end_of_component = packed_string.slice(packed_string.length-1, 1)
+      while packed_string.length > 0
+        length = packed_string.unpack('n')[0]
+        @parts << packed_string.slice(2, length)
+
+        packed_string.slice!(0, length+3)
+      end
+
+      @column_slice = :after if end_of_component == "\x01"
+      @column_slice = :before if end_of_component == "\xFF"
+    end
+
     private
-    def unpack(packed_string)
+    def try_packed_composite(packed_string)
       parts = []
       end_of_component = nil
       while packed_string.length > 0
         length = packed_string.slice(0, 2).unpack('n')[0]
-        parts << packed_string.slice(2, length)
-        end_of_component = packed_string.slice(2 + length, 1)
-
-        packed_string = packed_string.slice(3 + length, packed_string.length)
-      end
-      @column_slice = :after if end_of_component == "\x01"
-      @column_slice = :before if end_of_component == "\xFF"
-      @parts = parts
-    end
-
-    def valid_packed_composite?(packed_string)
-      while packed_string.length > 0
-        length = packed_string.slice(0, 2).unpack('n')[0]
         return false if length.nil? || length + 3 > packed_string.length
 
+        parts << packed_string.slice(2, length)
         end_of_component = packed_string.slice(2 + length, 1)
         if length + 3 != packed_string.length
           return false if end_of_component != "\x00"
@@ -104,15 +115,26 @@ class Cassandra
 
         packed_string = packed_string.slice(3 + length, packed_string.length)
       end
+
+      @column_slice = :after if end_of_component == "\x01"
+      @column_slice = :before if end_of_component == "\xFF"
+      @parts = parts
+
       return true
     end
 
     def hash
-      return to_s.hash
+      return @hash ||= pack.hash
     end
 
     def eql?(other)
       return to_s == other.to_s
     end
   end
+end
+
+begin
+  require "cassandra_native"
+rescue LoadError
+  puts "Unable to load cassandra_native extension. Defaulting to pure Ruby libraries."
 end
