@@ -615,6 +615,78 @@ class CassandraTest < Test::Unit::TestCase
 
   end
 
+  def test_batch_queue_size
+    k = key
+
+    @twitter.insert(:Users, k + '0', {'delete_me' => 'v0', 'keep_me' => 'v0'})
+    @twitter.insert(:Users, k + '1', {'body' => 'v1', 'user' => 'v1'})
+    initial_subcolumns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
+    @twitter.insert(:StatusRelationships, k, {'user_timelines' => initial_subcolumns, 'dummy_supercolumn' => {@uuids[5] => 'value'}})
+    assert_equal(initial_subcolumns, @twitter.get(:StatusRelationships, k, 'user_timelines'))
+    assert_equal({@uuids[5] => 'value'}, @twitter.get(:StatusRelationships, k, 'dummy_supercolumn'))
+    new_subcolumns = {@uuids[3] => 'v3', @uuids[4] => 'v4'}
+    subcolumn_to_delete = initial_subcolumns.keys.first # the first column of the initial set
+
+    @twitter.batch(:queue_size => 5) do
+      # Normal Columns
+      @twitter.insert(:Users, k + '2', {'body' => 'v2', 'user' => 'v2'})
+      @twitter.insert(:Users, k + '3', {'body' => 'bogus', 'user' => 'v3'})
+      @twitter.insert(:Users, k + '3', {'body' => 'v3', 'location' => 'v3'})
+      @twitter.insert(:Statuses, k + '3', {'body' => 'v'})
+
+      assert_equal({'delete_me' => 'v0', 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # Written
+      assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Written
+      assert_equal({}, @twitter.get(:Users, k + '2')) # Not yet written
+      assert_equal({}, @twitter.get(:Statuses, k + '3')) # Not yet written
+      assert_equal({}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION.to_f >= 0.8 # Written
+
+      if CASSANDRA_VERSION.to_f >= 0.8
+        @twitter.add(:UserCounters, 'bob', 5, 'tweet_count') 
+      else
+        @twitter.insert(:Users, k + '2', {'body' => 'v2', 'user' => 'v2'})
+      end
+      # Flush!
+    
+      assert_equal({'body' => 'v2', 'user' => 'v2'}, @twitter.get(:Users, k + '2')) # Written
+      assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}, @twitter.get(:Users, k + '3')) # Written and compacted
+      assert_equal({'body' => 'v'}, @twitter.get(:Statuses, k + '3')) # Written
+      assert_equal({'tweet_count' => 5}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION.to_f >= 0.8 # Written
+
+      @twitter.remove(:Users, k + '1') # Full row
+      @twitter.remove(:Users, k + '0', 'delete_me') # A single column of the row
+      @twitter.remove(:Users, k + '4')
+      @twitter.insert(:Users, k + '4', {'body' => 'v4', 'user' => 'v4'})
+
+      assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Not yet removed
+      assert_equal({'delete_me' => 'v0', 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # Not yet removed
+      assert_equal({}, @twitter.get(:Users, k + '4')) # Not yet written
+      
+      @twitter.insert(:Users, k + '5', {'body' => 'v5', 'user' => 'v5'})
+      # Flush!
+  
+      assert_equal({'body' => 'v4', 'user' => 'v4'}, @twitter.get(:Users, k + '4')) # Written
+      assert_equal({}, @twitter.get(:Users, k + '1')) # Removed
+      assert_equal({ 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # 'delete_me' column removed
+ 
+      assert_equal({'body' => 'v2', 'user' => 'v2'}.keys.sort, @twitter.get(:Users, k + '2').timestamps.keys.sort) # Written
+      assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}.keys.sort, @twitter.get(:Users, k + '3').timestamps.keys.sort) # Written and compacted
+      assert_equal({'body' => 'v4', 'user' => 'v4'}.keys.sort, @twitter.get(:Users, k + '4').timestamps.keys.sort) # Written
+      assert_equal({'body' => 'v'}.keys.sort, @twitter.get(:Statuses, k + '3').timestamps.keys.sort) # Written
+     
+      # SuperColumns
+      # Add and delete new sub columns to the user timeline supercolumn
+      @twitter.insert(:StatusRelationships, k, {'user_timelines' => new_subcolumns })
+      @twitter.remove(:StatusRelationships, k, 'user_timelines' , subcolumn_to_delete ) # Delete the first of the initial_subcolumns from the user_timeline supercolumn
+      # Delete a complete supercolumn
+      @twitter.remove(:StatusRelationships, k, 'dummy_supercolumn' ) # Delete the full dummy supercolumn
+    end
+    
+    # Final result: initial_subcolumns - initial_subcolumns.first + new_subcolumns
+    resulting_subcolumns = initial_subcolumns.merge(new_subcolumns).reject{|k2,v| k2 == subcolumn_to_delete }
+    assert_equal(resulting_subcolumns, @twitter.get(:StatusRelationships, key, 'user_timelines'))
+    assert_equal({}, @twitter.get(:StatusRelationships, key, 'dummy_supercolumn')) # dummy supercolumn deleted
+  end
+
   def test_complain_about_nil_key
     assert_raises(ArgumentError) do
       @twitter.insert(:Statuses, nil, {'text' => 'crap'})
