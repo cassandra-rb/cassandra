@@ -28,6 +28,7 @@ require 'cassandra/dynamic_composite'
 require 'cassandra/ordered_hash'
 require 'cassandra/columns'
 require 'cassandra/protocol'
+require 'cassandra/batch'
 require "cassandra/#{Cassandra.VERSION}/columns"
 require "cassandra/#{Cassandra.VERSION}/protocol"
 require "cassandra/cassandra"

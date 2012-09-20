@@ -839,19 +839,31 @@ class Cassandra
 
   ##
   # Open a batch operation and yield self. Inserts and deletes will be queued
-  # until the block closes, and then sent atomically to the server.
+  # until the block closes or the queue is full(if option :queue_size is set),
+  # and then sent atomically to the server.
   #
   # Supports the :consistency option, which overrides the consistency set in
   # the individual commands.
   #
   def batch(options = {})
+    @batch = Cassandra::Batch.new(self, options)
+
     _, _, _, options =
       extract_and_validate_params(schema.cf_defs.first.name, "", [options], WRITE_DEFAULTS)
 
-      @batch = []
-      yield(self)
-      compacted_map,seen_clevels = compact_mutations!
-      clevel = if options[:consistency] != nil # Override any clevel from individual mutations if
+    yield(self)
+    flush_batch(options)
+  ensure
+    @batch = nil
+  end
+
+  ##
+  # Send the batch queue to the server
+  #
+  def flush_batch(options)
+    compacted_map,seen_clevels = compact_mutations!
+
+    clevel = if options[:consistency] != nil # Override any clevel from individual mutations if
                  options[:consistency]
                elsif seen_clevels.length > 1 # Cannot choose which CLevel to use if there are several ones
                  raise "Multiple consistency levels used in the batch, and no override...cannot pick one"
@@ -859,11 +871,9 @@ class Cassandra
                  seen_clevels.first
                end
 
-      _mutate(compacted_map,clevel)
-  ensure
-    @batch = nil
+    _mutate(compacted_map,clevel)
   end
-
+  
   ##
   # Create secondary index.
   #
