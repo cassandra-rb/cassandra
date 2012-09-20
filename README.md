@@ -361,11 +361,11 @@ queue is not empty at the end of the block, the remaining mutations are sent.
 
 Example: 
 
-  @client.batch do 
-    @client.insert(:Statuses, 'k1', {'body' => 'v1'})
-    @client.insert(:Statuses, 'k2', {'body' => 'v2'})
-    @client.remove(:Statuses, 'k3')
-  end
+    @client.batch do 
+      @client.insert(:Statuses, 'k1', {'body' => 'v1'})
+      @client.insert(:Statuses, 'k2', {'body' => 'v2'})
+      @client.remove(:Statuses, 'k3')
+    end
 
 
 ## Reporting Problems
