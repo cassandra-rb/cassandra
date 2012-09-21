@@ -64,6 +64,9 @@
       "column_type":"Super"},
     "CompositeColumnConversion":{
       "comparator_type":"org.apache.cassandra.db.marshal.CompositeType(org.apache.cassandra.db.marshal.IntegerType,org.apache.cassandra.db.marshal.UTF8Type)",
+      "column_type":"Standard"},
+    "DynamicComposite":{
+      "comparator_type":"org.apache.cassandra.db.marshal.DynamicCompositeType(u=>org.apache.cassandra.db.marshal.UUIDType,t=>org.apache.cassandra.db.marshal.TimeUUIDType,s=>org.apache.cassandra.db.marshal.UTF8Type,b=>org.apache.cassandra.db.marshal.BytesType,a=>org.apache.cassandra.db.marshal.AsciiType,l=>org.apache.cassandra.db.marshal.LongType,x=>org.apache.cassandra.db.marshal.LexicalUUIDType,i=>org.apache.cassandra.db.marshal.IntegerType)",
       "column_type":"Standard"}
   }
 }

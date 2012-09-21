@@ -20,6 +20,8 @@ class Cassandra
       @keyspace = keyspace
       @column_name_class = {}
       @sub_column_name_class = {}
+      @column_name_maker = {}
+      @sub_column_name_maker = {}
       @indexes = {}
       @schema = schema[keyspace]
       clear_keyspace!
@@ -293,13 +295,16 @@ class Cassandra
 
     def get_indexed_slices(column_family, idx_clause, *columns_and_options)
       column_family, columns, _, options =
-        extract_and_validate_params_for_real(column_family, [], columns_and_options, READ_DEFAULTS.merge(:key_count => 100, :key_start => ""))
+        extract_and_validate_params_for_real(column_family, [], columns_and_options,
+        READ_DEFAULTS.merge(:key_count => 100, :start_key => nil, :key_start => nil))
+
+      start_key = options[:start_key] || options[:key_start] || ""
 
       unless [Hash, OrderedHash].include?(idx_clause.class) && idx_clause[:type] == :index_clause
-        idx_clause = create_index_clause(idx_clause, options[:key_start], options[:key_count])
+        idx_clause = create_index_clause(idx_clause, start_key, options[:key_count])
       end
 
-      ret = {}
+      ret = OrderedHash.new
       cf(column_family).each do |key, row|
         next if idx_clause[:start] != '' && key < idx_clause[:start]
         next if ret.length == idx_clause[:count]
@@ -319,20 +324,24 @@ class Cassandra
     end
 
     def add(column_family, key, value, *columns_and_options)
-      column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, WRITE_DEFAULTS)
-
-      if is_super(column_family)
-        cf(column_family)[key]                      ||= OrderedHash.new
-        cf(column_family)[key][column]              ||= OrderedHash.new
-        cf(column_family)[key][column][sub_column]  ||= 0
-        cf(column_family)[key][column][sub_column]  += value
+      if @batch
+        @batch << [:add, column_family, key, value, *columns_and_options]
       else
-        cf(column_family)[key]                      ||= OrderedHash.new
-        cf(column_family)[key][column]              ||= 0
-        cf(column_family)[key][column]              += value
-      end
+        column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, WRITE_DEFAULTS)
 
-      nil
+        if is_super(column_family)
+          cf(column_family)[key]                      ||= OrderedHash.new
+          cf(column_family)[key][column]              ||= OrderedHash.new
+          cf(column_family)[key][column][sub_column]  ||= 0
+          cf(column_family)[key][column][sub_column]  += value
+        else
+          cf(column_family)[key]                      ||= OrderedHash.new
+          cf(column_family)[key][column]              ||= 0
+          cf(column_family)[key][column]              += value
+        end
+
+        nil
+      end
     end
 
     def column_families

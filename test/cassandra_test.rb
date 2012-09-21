@@ -3,17 +3,21 @@ require File.expand_path(File.dirname(__FILE__) + '/test_helper')
 class CassandraTest < Test::Unit::TestCase
   include Cassandra::Constants
 
+  def assert_has_keys(keys, hash)
+    assert_equal Set.new(keys), Set.new(hash.keys)
+  end
+
   def setup
-    @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :connect_timeout => 0.1, :exception_classes => [])
+    @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :connect_timeout => 0.1, :timeout => 5, :exception_classes => [])
     @twitter.clear_keyspace!
 
-    @blogs = Cassandra.new('Multiblog', "127.0.0.1:9160", :retries => 2, :connect_timeout => 0.1, :exception_classes => [])
+    @blogs = Cassandra.new('Multiblog', "127.0.0.1:9160", :retries => 2, :connect_timeout => 0.1, :timeout => 5, :exception_classes => [])
     @blogs.clear_keyspace!
 
-    @blogs_long = Cassandra.new('MultiblogLong', "127.0.0.1:9160", :retries => 2, :connect_timeout => 0.1, :exception_classes => [])
+    @blogs_long = Cassandra.new('MultiblogLong', "127.0.0.1:9160", :retries => 2, :connect_timeout => 0.1, :timeout => 5, :exception_classes => [])
     @blogs_long.clear_keyspace!
 
-    @type_conversions = Cassandra.new('TypeConversions', "127.0.0.1:9160", :retries => 2, :connect_timeout => 0.1, :exception_classes => [])
+    @type_conversions = Cassandra.new('TypeConversions', "127.0.0.1:9160", :retries => 2, :connect_timeout => 0.1, :timeout => 5, :exception_classes => [])
     @type_conversions.clear_keyspace!
 
     Cassandra::WRITE_DEFAULTS[:consistency] = Cassandra::Consistency::ONE
@@ -26,6 +30,12 @@ class CassandraTest < Test::Unit::TestCase
       Cassandra::Composite.new([5].pack('N'), "aardvark"),
       Cassandra::Composite.new([1].pack('N'), "elephant"),
       Cassandra::Composite.new([10].pack('N'), "kangaroo"),
+    ]
+    @dynamic_composites = [
+      Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "zebra"]),
+      Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "aardvark"]),
+      Cassandra::DynamicComposite.new(['IntegerType', [1].pack('N')], ['s', "elephant"]),
+      Cassandra::DynamicComposite.new(['IntegerType', [10].pack('N')], ['s', "kangaroo"]),
     ]
   end
 
@@ -510,9 +520,8 @@ class CassandraTest < Test::Unit::TestCase
 
     @twitter.insert(:Statuses, key, columns)
     assert_equal 200, @twitter.count_columns(:Statuses, key, :count => 200)
-    assert_equal 100, @twitter.count_columns(:Statuses, key)
-    assert_equal 55, @twitter.count_columns(:Statuses, key, :count => 55)
-
+    assert_equal 100, @twitter.count_columns(:Statuses, key) if CASSANDRA_VERSION.to_f >= 0.8
+    assert_equal 55, @twitter.count_columns(:Statuses, key, :count => 55) if CASSANDRA_VERSION.to_f >= 0.8
   end
 
   def test_count_super_columns
@@ -556,11 +565,13 @@ class CassandraTest < Test::Unit::TestCase
       @twitter.insert(:Users, k + '3', {'body' => 'bogus', 'user' => 'v3'})
       @twitter.insert(:Users, k + '3', {'body' => 'v3', 'location' => 'v3'})
       @twitter.insert(:Statuses, k + '3', {'body' => 'v'})
+      @twitter.add(:UserCounters, 'bob', 5, 'tweet_count') if CASSANDRA_VERSION.to_f >= 0.8
 
       assert_equal({'delete_me' => 'v0', 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # Written
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Written
       assert_equal({}, @twitter.get(:Users, k + '2')) # Not yet written
       assert_equal({}, @twitter.get(:Statuses, k + '3')) # Not yet written
+      assert_equal({}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION.to_f >= 0.8 # Written
 
       @twitter.remove(:Users, k + '1') # Full row
       assert_equal({'body' => 'v1', 'user' => 'v1'}, @twitter.get(:Users, k + '1')) # Not yet removed
@@ -586,6 +597,7 @@ class CassandraTest < Test::Unit::TestCase
     assert_equal({'body' => 'v3', 'user' => 'v3', 'location' => 'v3'}, @twitter.get(:Users, k + '3')) # Written and compacted
     assert_equal({'body' => 'v4', 'user' => 'v4'}, @twitter.get(:Users, k + '4')) # Written
     assert_equal({'body' => 'v'}, @twitter.get(:Statuses, k + '3')) # Written
+    assert_equal({'tweet_count' => 5}, @twitter.get(:UserCounters, 'bob')) if CASSANDRA_VERSION.to_f >= 0.8 # Written
     assert_equal({}, @twitter.get(:Users, k + '1')) # Removed
 
     assert_equal({ 'keep_me' => 'v0'}, @twitter.get(:Users, k + '0')) # 'delete_me' column removed
@@ -712,69 +724,361 @@ class CassandraTest < Test::Unit::TestCase
 
   if CASSANDRA_VERSION.to_f >= 0.7
     def test_creating_and_dropping_new_index
-      @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
-      assert_nil @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
+      @twitter.create_index('Twitter', 'Statuses', 'column_name', 'BytesType')
+      assert_nil @twitter.create_index('Twitter', 'Statuses', 'column_name', 'BytesType')
 
       @twitter.drop_index('Twitter', 'Statuses', 'column_name')
       assert_nil @twitter.drop_index('Twitter', 'Statuses', 'column_name')
 
       # Recreating and redropping the same index should not error either.
-      @twitter.create_index('Twitter', 'Statuses', 'column_name', 'LongType')
+      @twitter.create_index('Twitter', 'Statuses', 'column_name', 'BytesType')
       @twitter.drop_index('Twitter', 'Statuses', 'column_name')
     end
 
     def test_get_indexed_slices
-      @twitter.create_index('Twitter', 'Statuses', 'x', 'LongType')
+      @twitter.insert(:Statuses, 'row_a', {
+        'tags' => 'a',
+        'y' => 'foo'
+      })
+      @twitter.insert(:Statuses, 'row_b', {
+        'tags' => 'b',
+        'y' => 'foo'
+      })
+      [1,2].each do |i|
+        @twitter.insert(:Statuses, "row_c_#{i}", {
+          'tags' => 'c',
+          'y' => 'a'
+        })
+      end
+      [3,4].each do |i|
+        @twitter.insert(:Statuses, "row_c_#{i}", {
+          'tags' => 'c',
+          'y' => 'b'
+        })
+      end
+      @twitter.insert(:Statuses, 'row_d', {
+        'tags' => 'd',
+        'y' => 'foo'
+      })
+      @twitter.insert(:Statuses, 'row_e', {
+        'tags' => 'e',
+        'y' => 'bar'
+      })
 
-      @twitter.insert(:Statuses, 'row1', { 'x' => [0,10].pack("NN")  })
+      # Test == operator (single clause)
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="}
+      ])
+      assert_has_keys %w[row_c_1 row_c_2 row_c_3 row_c_4], rows
 
-      (2..10).to_a.each do |i|
-        @twitter.insert(:Statuses, 'row' + i.to_s, { 'x' => [0,20].pack("NN"), 'non_indexed' => [i].pack('N*') })
+      # Test other operators
+      # Currently (as of Cassandra 1.1) you can't use anything but == as the
+      # primary query -- you must match on == first, and subsequent clauses are
+      # then applied as filters -- so that's what we are doing here.
+
+      # Test > operator
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="},
+        {:column_name => 'y',
+         :value => 'a',
+         :comparison => ">"}
+      ])
+      assert_has_keys %w[row_c_3 row_c_4], rows
+
+      # Test >= operator
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="},
+        {:column_name => 'y',
+         :value => 'a',
+         :comparison => ">="}
+      ])
+      assert_has_keys %w[row_c_1 row_c_2 row_c_3 row_c_4], rows
+
+      # Test < operator
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="},
+        {:column_name => 'y',
+         :value => 'b',
+         :comparison => "<"}
+      ])
+      assert_has_keys %w[row_c_1 row_c_2], rows
+
+      # Test <= operator
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="},
+        {:column_name => 'y',
+         :value => 'b',
+         :comparison => "<="}
+      ])
+      assert_has_keys %w[row_c_1 row_c_2 row_c_3 row_c_4], rows
+
+      # Test query on a non-indexed column
+      unless self.is_a?(CassandraMockTest)
+        assert_raises(CassandraThrift::InvalidRequestException) do
+          @twitter.get_indexed_slices(:Statuses, [
+            {:column_name => 'y',
+             :value => 'foo',
+             :comparison => "=="}
+          ])
+        end
       end
 
-      @twitter.insert(:Statuses, 'row11', { 'x' => [0,30].pack("NN")  })
+      # Test start key
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="},
+      ], :start_key => 'row_c_2')
+      assert_equal 'row_c_2', rows.keys.first
+      # <- can't test any keys after that since it's going to be random
 
-      expressions = [{:column_name => 'x', :value => [0,20].pack("NN"), :comparison => "=="}]
+      # Test key_start option
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="},
+      ], :key_start => 'row_c_2')
+      assert_equal 'row_c_2', rows.keys.first
+      # <- can't test any keys after that since it's going to be random
 
-      # verify multiples will be returned
-      assert_equal 9, @twitter.get_indexed_slices(:Statuses, expressions).length
-
-      # verify that GT and LT queries perform properly
-      expressions   =  [
-                          {:column_name => 'x',           :value => [0,20].pack("NN"),  :comparison => "=="},
-                          {:column_name => 'non_indexed', :value => [5].pack("N*"),     :comparison => ">"}
-                       ]
-      assert_equal(5, @twitter.get_indexed_slices(:Statuses, expressions).length)
+      # Test key count
+      rows = @twitter.get_indexed_slices(:Statuses, [
+        {:column_name => 'tags',
+         :value => 'c',
+         :comparison => "=="}
+      ], :key_count => 2)
+      assert_equal 2, rows.length
+      # <- can't test which keys are present since it's going to be random
     end
 
-    def test_old_get_indexed_slices
-      @twitter.create_index('Twitter', 'Statuses', 'x', 'LongType')
+    def test_get_indexed_slices_with_IndexClause_objects
+      @twitter.insert(:Statuses, 'row_a', {
+        'tags' => 'a',
+        'y' => 'foo'
+      })
+      @twitter.insert(:Statuses, 'row_b', {
+        'tags' => 'b',
+        'y' => 'foo'
+      })
+      [1,2].each do |i|
+        @twitter.insert(:Statuses, "row_c_#{i}", {
+          'tags' => 'c',
+          'y' => 'a'
+        })
+      end
+      [3,4].each do |i|
+        @twitter.insert(:Statuses, "row_c_#{i}", {
+          'tags' => 'c',
+          'y' => 'b'
+        })
+      end
+      @twitter.insert(:Statuses, 'row_d', {
+        'tags' => 'd',
+        'y' => 'foo'
+      })
+      @twitter.insert(:Statuses, 'row_e', {
+        'tags' => 'e',
+        'y' => 'bar'
+      })
 
-      @twitter.insert(:Statuses, 'row1', { 'x' => [0,10].pack("NN")  })
+      # Test == operator (single clause)
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '==')
+      ])
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_has_keys %w[row_c_1 row_c_2 row_c_3 row_c_4], rows
 
-      (2..10).to_a.each do |i|
-        @twitter.insert(:Statuses, 'row' + i.to_s, { 'x' => [0,20].pack("NN"), 'non_indexed' => [i].pack('N*') })
+      # Test other operators
+      # Currently (as of Cassandra 1.1) you can't use anything but == as the
+      # primary query -- you must match on == first, and subsequent clauses are
+      # then applied as filters -- so that's what we are doing here.
+
+      # Test > operator
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '=='),
+        @twitter.create_index_expression('y', 'a', '>'),
+      ])
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_has_keys %w[row_c_3 row_c_4], rows
+
+      # Test >= operator
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '=='),
+        @twitter.create_index_expression('y', 'a', '>=')
+      ])
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_has_keys %w[row_c_1 row_c_2 row_c_3 row_c_4], rows
+
+      # Test < operator
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '=='),
+        @twitter.create_index_expression('y', 'b', '<')
+      ])
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_has_keys %w[row_c_1 row_c_2], rows
+
+      # Test <= operator
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '=='),
+        @twitter.create_index_expression('y', 'b', '<=')
+      ])
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_has_keys %w[row_c_1 row_c_2 row_c_3 row_c_4], rows
+
+      # Test query on a non-indexed column
+      unless self.is_a?(CassandraMockTest)
+        assert_raises(CassandraThrift::InvalidRequestException) do
+          index_clause = @twitter.create_index_clause([
+            @twitter.create_index_expression('y', 'foo', '==')
+          ])
+          @twitter.get_indexed_slices(:Statuses, index_clause)
+        end
       end
 
-      @twitter.insert(:Statuses, 'row11', { 'x' => [0,30].pack("NN")  })
+      # Test start key
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '==')
+      ], 'row_c_2')
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_equal 'row_c_2', rows.keys.first
+      # <- can't test any keys after that since it's going to be random
 
-      idx_expr   = @twitter.create_idx_expr('x', [0,20].pack("NN"), "==")
+      # Test key count
+      index_clause = @twitter.create_index_clause([
+        @twitter.create_index_expression('tags', 'c', '==')
+      ], "", 2)
+      rows = @twitter.get_indexed_slices(:Statuses, index_clause)
+      assert_equal 2, rows.length
+      # <- can't test which keys are present since it's going to be random
+    end
 
-      # verify count is observed
-      idx_clause = @twitter.create_idx_clause([idx_expr], "", 1)
-      assert_equal 1, @twitter.get_indexed_slices(:Statuses, idx_clause).length
+    def test_create_index_clause
+      return if self.is_a?(CassandraMockTest)
 
-      # verify multiples will be returned
-      idx_clause = @twitter.create_idx_clause([idx_expr])
-      assert_equal 9, @twitter.get_indexed_slices(:Statuses, idx_clause).length
+      ie = CassandraThrift::IndexExpression.new(
+        :column_name => 'foo',
+        :value => 'x',
+        :op => '=='
+      )
 
-      # verify that GT and LT queries perform properly
-      idx_expr   =  [
-                      @twitter.create_idx_expr('x', [0,20].pack("NN"), "=="),
-                      @twitter.create_idx_expr('non_indexed', [5].pack("N*"), ">")
-                    ]
-      idx_clause = @twitter.create_idx_clause(idx_expr)
-      assert_equal(5, @twitter.get_indexed_slices(:Statuses, idx_clause).length)
+      ic = @twitter.create_index_clause([ie], 'aaa', 250)
+      assert_instance_of CassandraThrift::IndexClause, ic
+      assert_equal 'aaa', ic.start_key
+      assert_equal ie, ic.expressions[0]
+      assert_equal 250, ic.count
+
+      # test alias
+      ic = @twitter.create_idx_clause([ie], 'aaa', 250)
+      assert_instance_of CassandraThrift::IndexClause, ic
+      assert_equal 'aaa', ic.start_key
+      assert_equal ie, ic.expressions[0]
+      assert_equal 250, ic.count
+    end
+
+    def test_create_index_expression
+      return if self.is_a?(CassandraMockTest)
+
+      # EQ operator
+      [nil, "EQ", "eq", "=="].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::EQ, ie.op
+      end
+      # alias
+      [nil, "EQ", "eq", "=="].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::EQ, ie.op
+      end
+
+      # GTE operator
+      ["GTE", "gte", ">="].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::GTE, ie.op
+      end
+      # alias
+      ["GTE", "gte", ">="].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::GTE, ie.op
+      end
+
+      # GT operator
+      ["GT", "gt", ">"].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::GT, ie.op
+      end
+      # alias
+      ["GT", "gt", ">"].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::GT, ie.op
+      end
+
+      # LTE operator
+      ["LTE", "lte", "<="].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::LTE, ie.op
+      end
+      # alias
+      ["LTE", "lte", "<="].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::LTE, ie.op
+      end
+
+      # LT operator
+      ["LT", "lt", "<"].each do |op|
+        ie = @twitter.create_index_expression('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::LT, ie.op
+      end
+      # alias
+      ["LT", "lt", "<"].each do |op|
+        ie = @twitter.create_idx_expr('foo', 'x', op)
+        assert_instance_of CassandraThrift::IndexExpression, ie
+        assert_equal 'foo', ie.column_name
+        assert_equal 'x', ie.value
+        assert_equal CassandraThrift::IndexOperator::LT, ie.op
+      end
+
+      # unknown operator
+      ie = @twitter.create_index_expression('foo', 'x', '~$')
+      assert_equal nil, ie.op
+      # alias
+      ie = @twitter.create_idx_expr('foo', 'x', '~$')
+      assert_equal nil, ie.op
     end
 
     def test_column_family_mutation
@@ -841,6 +1145,17 @@ class CassandraTest < Test::Unit::TestCase
       assert_equal(2, @twitter.get(:UserCounterAggregates, 'bob', 'DAU', 'tomorrow'))
     end
 
+    def test_reading_rows_with_super_column_counter
+      assert_nil @twitter.add(:UserCounterAggregates, 'bob', 1, 'DAU', 'today')
+      assert_nil @twitter.add(:UserCounterAggregates, 'bob', 2, 'DAU', 'tomorrow')
+      result = @twitter.get(:UserCounterAggregates, 'bob')
+      assert_equal(1, result.size)
+      assert_equal(2, result.first.size)
+      assert_equal("DAU", result.first[0])
+      assert_equal(1, result.first[1]["today"])
+      assert_equal(2, result.first[1]["tomorrow"])
+    end
+
     def test_composite_column_type_conversion
       columns = {}
       @composites.each_with_index do |c, index|
@@ -857,27 +1172,67 @@ class CassandraTest < Test::Unit::TestCase
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
         :start => Cassandra::Composite.new([1].pack('N')),
-        :finish => Cassandra::Composite.new([10].pack('N')),
+        :finish => Cassandra::Composite.new([10].pack('N'))
       ).keys
       assert_equal(columns_in_order[0..-2], column_slice)
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
         :start => Cassandra::Composite.new([5].pack('N')),
-        :finish => Cassandra::Composite.new([5].pack('N'), :slice => :after),
+        :finish => Cassandra::Composite.new([5].pack('N'), :slice => :after)
       ).keys
       assert_equal(columns_in_order[1..2], column_slice)
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
-        :start => Cassandra::Composite.new([5].pack('N'), :slice => :after).to_s,
+        :start => Cassandra::Composite.new([5].pack('N'), :slice => :after).to_s
       ).keys
       assert_equal([columns_in_order[-1]], column_slice)
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
-        :finish => Cassandra::Composite.new([10].pack('N'), :slice => :before).to_s,
+        :finish => Cassandra::Composite.new([10].pack('N'), :slice => :before).to_s
       ).keys
       assert_equal(columns_in_order[0..-2], column_slice)
 
       assert_equal('value-2', @type_conversions.get(:CompositeColumnConversion, key, columns_in_order.first))
+    end
+
+    def test_dynamic_composite_column_type_conversion
+      columns = {}
+      @dynamic_composites.each_with_index do |c, index|
+        columns[c] = "value-#{index}"
+      end
+      @type_conversions.insert(:DynamicComposite, key, columns)
+
+      columns_in_order = [
+        Cassandra::DynamicComposite.new(['IntegerType', [1].pack('N')], ['s', "elephant"]),
+        Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "aardvark"]),
+        Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "zebra"]),
+        Cassandra::DynamicComposite.new(['IntegerType', [10].pack('N')], ['s', "kangaroo"]),
+      ]
+      assert_equal(columns_in_order, @type_conversions.get(:DynamicComposite, key).keys)
+
+      column_slice = @type_conversions.get(:DynamicComposite, key,
+        :start => Cassandra::DynamicComposite.new(['i', [1].pack('N')]),
+        :finish => Cassandra::DynamicComposite.new(['i', [10].pack('N')])
+      ).keys
+      assert_equal(columns_in_order[0..-2], column_slice)
+
+      column_slice = @type_conversions.get(:DynamicComposite, key,
+        :start => Cassandra::DynamicComposite.new(['IntegerType', [5].pack('N')]),
+        :finish => Cassandra::DynamicComposite.new(['IntegerType', [5].pack('N')], :slice => :after)
+      ).keys
+      assert_equal(columns_in_order[1..2], column_slice)
+
+      column_slice = @type_conversions.get(:DynamicComposite, key,
+        :start => Cassandra::DynamicComposite.new(['i', [5].pack('N')], :slice => :after).to_s
+      ).keys
+      assert_equal([columns_in_order[-1]], column_slice)
+
+      column_slice = @type_conversions.get(:DynamicComposite, key,
+        :finish => Cassandra::DynamicComposite.new(['i', [10].pack('N')], :slice => :before).to_s
+      ).keys
+      assert_equal(columns_in_order[0..-2], column_slice)
+
+      assert_equal('value-2', @type_conversions.get(:DynamicComposite, key, columns_in_order.first))
     end
   end
 
@@ -888,14 +1243,14 @@ class CassandraTest < Test::Unit::TestCase
     results = @twitter.get(:Statuses, "time-key")
     assert(results.timestamps["body"] / 1000000 >= base_time.to_i)
   end
-  
+
   def test_supercolumn_timestamps
     base_time = Time.now
     @twitter.insert(:StatusRelationships, "time-key", { "super" => { @uuids[1] => "value" }})
 
     results = @twitter.get(:StatusRelationships, "time-key")
     assert_nil(results.timestamps["super"])
-    
+
     columns = results["super"]
     assert(columns.timestamps[@uuids[1]] / 1000000 >= base_time.to_i)
   end
