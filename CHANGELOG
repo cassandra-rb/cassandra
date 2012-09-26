@@ -1,5 +1,6 @@
 v0.16.0
 - New :queue_size option for batch mode (courtesy @vicentllongo)
+- Cassandra 1.1 support (courtesy @hawknewton)
 
 v0.15.0
 - Fixes for ruby 1.8 (issue #158, courtesy @jarib)
