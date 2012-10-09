@@ -131,7 +131,8 @@ class Cassandra
           row = apply_count(row, options[:count], options[:reversed])
         end
       else
-        row
+        row = apply_range(row, column_family, options[:start], options[:finish])
+        row = apply_count(row, options[:count], options[:reversed])
       end
     end
 
