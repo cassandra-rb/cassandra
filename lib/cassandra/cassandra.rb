@@ -570,9 +570,10 @@ class Cassandra
   # * options - Valid options are:
   #   * :consistency - Uses the default read consistency if none specified.
   #
-  # FIXME Not real multi; needs to use a Column predicate
-  def multi_get_columns(column_family, keys, *options)
-    OrderedHash[*keys.map { |key| [key, get_columns(column_family, key, *options)] }._flatten_once]
+  def multi_get_columns(column_family, keys, *columns_and_options)
+    column_family, columns, sub_columns, options = 
+      extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS)
+    _multi_get_columns(column_family, keys, columns, sub_columns, options[:consistency])
   end
 
   ##
@@ -582,8 +583,8 @@ class Cassandra
   #
   # * column_family - The column_family that you are inserting into.
   # * key - The row key to insert.
-  # * columns - Either a single super_column or a list of columns.
-  # * sub_columns - The list of sub_columns to select.
+  # * column - Either a single super_column or single column.
+  # * sub_column - A single sub_column to select.
   # * options - Valid options are:
   #   * :count    - The number of columns requested to be returned.
   #   * :start    - The starting value for selecting a range of columns.
@@ -607,8 +608,8 @@ class Cassandra
   #
   # * column_family   - The column_family that you are inserting into.
   # * keys            - An array of keys to select.
-  # * columns         - Either a single super_column or a list of columns.
-  # * sub_columns     - The list of sub_columns to select.
+  # * column         - Either a single super_column or a single column.
+  # * sub_column     - A single ub_columns to select.
   # * options         - Valid options are:
   #   * :count        - The number of columns requested to be returned.
   #   * :start        - The starting value for selecting a range of columns.
