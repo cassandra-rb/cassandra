@@ -48,6 +48,23 @@ class Cassandra
       klass = column_name_class(column_family)
       (sub_columns || columns).map { |name| result[klass.new(name)] }
     end
+    
+    def _multi_get_columns(column_family, keys, columns, sub_columns, consistency)
+      result = if is_super(column_family) and sub_columns
+        predicate = CassandraThrift::SlicePredicate.new(:column_names => sub_columns)
+        column_parent = CassandraThrift::ColumnParent.new(
+          :column_family => column_family, 
+          :super_column => columns.kind_of?(Array) ? columns[0] : columns )
+        multi_sub_columns_to_hash!(column_family, client.multiget_slice(keys, column_parent, predicate, consistency))
+      else
+        predicate = CassandraThrift::SlicePredicate.new(:column_names => columns)
+        column_parent = CassandraThrift::ColumnParent.new(:column_family => column_family)
+        multi_columns_to_hash!(column_family, client.multiget_slice(keys, column_parent, predicate, consistency))
+      end 
+      
+      klass = column_name_class(column_family)
+      OrderedHash[result.keys.map { |key| [key, (sub_columns || columns).map { |column| result[key][klass.new(column)] }] }]
+    end
 
     def _multiget(column_family, keys, column, sub_column, count, start, finish, reversed, consistency)
       # Single values; count and range parameters have no effect
