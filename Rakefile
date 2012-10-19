@@ -78,17 +78,38 @@ def running?(pid_file = nil)
   false
 end
 
+def listening?(host, port)
+  TCPSocket.new(host, port).close
+  true
+rescue Errno::ECONNREFUSED => e
+  false
+end
+
 namespace :cassandra do
   desc "Start Cassandra"
   task :start, [:daemonize] => :java do |t, args|
     args.with_defaults(:daemonize => true)
 
     setup_cassandra_version
-
     env = setup_environment
 
     Dir.chdir(File.join(CASSANDRA_HOME, "cassandra-#{CASSANDRA_VERSION}")) do
       sh("env #{env} bin/cassandra #{'-f' unless args.daemonize} -p #{CASSANDRA_PIDFILE}")
+    end
+
+    if args.daemonize
+      end_time = Time.now + 30
+      host     = '127.0.0.1'
+      port     = 9160
+
+      until Time.now >= end_time || listening?(host, port)
+        puts "waiting for 127.0.0.1:9160"
+        sleep 0.1
+      end
+
+      unless listening?(host, port)
+        raise "timed out waiting for cassandra to start"
+      end
     end
   end
 
@@ -118,7 +139,9 @@ end
 
 desc "Check Java version"
 task :java do
-  unless `java -version 2>&1`.split("\n").first =~ /java version "1.6/ #"
+  is_java16 = `java -version 2>&1`.split("\n").first =~ /java version "1.6/
+
+  if ['0.6', '0.7'].include?(CASSANDRA_VERSION) && !java16
     puts "You need to configure your environment for Java 1.6."
     puts "If you're on OS X, just export the following environment variables:"
     puts '  JAVA_HOME="/System/Library/Frameworks/JavaVM.framework/Versions/1.6/Home"'
