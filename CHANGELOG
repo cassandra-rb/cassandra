@@ -1,3 +1,7 @@
+v0.17.0
+- multi_get_columns with only one query (courtesy @christian-blades-cb)
+- documentation fixes for get and multi_get (issue #136, courtesy @christian-blades-cb)
+
 v0.16.0
 - New :queue_size option for batch mode (courtesy @vicentllongo)
 - Cassandra 1.1 support (courtesy @hawknewton)
