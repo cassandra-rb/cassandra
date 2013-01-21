@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0.8") if s.respond_to? :required_rubygems_version=
   s.authors = ["Evan Weaver, Ryan King"]
-  s.date = "2012-09-26"
+  s.date = "2013-01-21"
   s.description = "A Ruby client for the Cassandra distributed database."
   s.email = ""
   s.executables = ["cassandra_helper"]
@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.rdoc_options = ["--line-numbers", "--inline-source", "--title", "Cassandra", "--main", "README.md"]
   s.require_paths = ["lib", "ext"]
   s.rubyforge_project = "cassandra"
-  s.rubygems_version = "1.8.17"
+  s.rubygems_version = "1.8.24"
   s.summary = "A Ruby client for the Cassandra distributed database."
   s.test_files = ["test/cassandra_client_test.rb", "test/cassandra_mock_test.rb", "test/cassandra_test.rb", "test/comparable_types_test.rb", "test/composite_type_test.rb", "test/eventmachine_test.rb", "test/ordered_hash_test.rb", "test/test_helper.rb"]
 
@@ -25,20 +25,20 @@ Gem::Specification.new do |s|
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
-      s.add_runtime_dependency(%q<thrift_client>, ["< 0.9", ">= 0.7.0"])
+      s.add_runtime_dependency(%q<thrift_client>, ["< 0.10", ">= 0.7.0"])
       s.add_runtime_dependency(%q<json>, [">= 0"])
       s.add_runtime_dependency(%q<rake>, [">= 0"])
       s.add_runtime_dependency(%q<simple_uuid>, ["~> 0.2.0"])
       s.add_development_dependency(%q<echoe>, [">= 0"])
     else
-      s.add_dependency(%q<thrift_client>, ["< 0.9", ">= 0.7.0"])
+      s.add_dependency(%q<thrift_client>, ["< 0.10", ">= 0.7.0"])
       s.add_dependency(%q<json>, [">= 0"])
       s.add_dependency(%q<rake>, [">= 0"])
       s.add_dependency(%q<simple_uuid>, ["~> 0.2.0"])
       s.add_dependency(%q<echoe>, [">= 0"])
     end
   else
-    s.add_dependency(%q<thrift_client>, ["< 0.9", ">= 0.7.0"])
+    s.add_dependency(%q<thrift_client>, ["< 0.10", ">= 0.7.0"])
     s.add_dependency(%q<json>, [">= 0"])
     s.add_dependency(%q<rake>, [">= 0"])
     s.add_dependency(%q<simple_uuid>, ["~> 0.2.0"])
