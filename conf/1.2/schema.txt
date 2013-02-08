@@ -1,0 +1,57 @@
+create keyspace Twitter with
+  placement_strategy = 'org.apache.cassandra.locator.SimpleStrategy' AND
+  strategy_options = {replication_factor:1};
+use Twitter;
+create column family Users with comparator = 'UTF8Type';
+create column family UserAudits with comparator = 'UTF8Type';
+create column family UserCounters with comparator = 'UTF8Type' and
+  default_validation_class = CounterColumnType;
+create column family UserCounterAggregates with column_type = 'Super'
+  and comparator = 'UTF8Type' and
+  subcomparator = 'UTF8Type' and
+  default_validation_class = CounterColumnType;
+create column family UserRelationships with
+  comparator = 'UTF8Type' and
+  column_type = 'Super' and
+  subcomparator = 'TimeUUIDType';
+create column family Usernames with comparator = 'UTF8Type';
+create column family Statuses
+  with comparator = 'UTF8Type'
+  and column_metadata = [
+    {column_name: 'tags', validation_class: 'BytesType', index_type: 'KEYS'}
+  ];
+create column family StatusAudits with comparator = 'UTF8Type';
+create column family StatusRelationships with
+  comparator = 'UTF8Type' and
+  column_type = 'Super' and
+  subcomparator = 'TimeUUIDType';
+create column family Indexes with
+  comparator = 'UTF8Type' and
+  column_type = 'Super';
+create column family TimelinishThings with
+  comparator = 'BytesType';
+
+create keyspace Multiblog with
+  placement_strategy = 'org.apache.cassandra.locator.SimpleStrategy' AND
+  strategy_options = {replication_factor:1};
+use Multiblog;
+create column family Blogs with comparator = 'TimeUUIDType';
+create column family Comments with comparator = 'TimeUUIDType';
+
+
+create keyspace MultiblogLong with
+  placement_strategy = 'org.apache.cassandra.locator.SimpleStrategy' AND
+  strategy_options = {replication_factor:1};
+use MultiblogLong;
+create column family Blogs with comparator = 'LongType';
+create column family Comments with comparator = 'LongType';
+
+create keyspace TypeConversions with
+  placement_strategy = 'org.apache.cassandra.locator.SimpleStrategy' AND
+  strategy_options = {replication_factor:1};
+use TypeConversions;
+create column family UUIDColumnConversion with comparator = TimeUUIDType;
+create column family SuperUUID with comparator = TimeUUIDType and column_type = Super;
+create column family CompositeColumnConversion with comparator = 'CompositeType(IntegerType, UTF8Type)';
+create column family DynamicComposite with comparator ='DynamicCompositeType
+   (a=>AsciiType,b=>BytesType,i=>IntegerType,x=>LexicalUUIDType,l=>LongType,t=>TimeUUIDType,s=>UTF8Type,u=>UUIDType)';
