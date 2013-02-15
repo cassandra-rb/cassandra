@@ -1327,6 +1327,24 @@ class CassandraTest < Test::Unit::TestCase
     assert(columns.timestamps[@uuids[1]] / 1000000 >= base_time.to_i)
   end
 
+  def test_keyspace_operations
+    system = Cassandra.new 'system'
+    keyspace_name = 'robots'
+    keyspace_definition = Cassandra::Keyspace.new :name => keyspace_name,
+      :strategy_class => 'SimpleStrategy',
+      :strategy_options => { 'replication_factor' => '2' },
+      :cf_defs => []
+    system.add_keyspace keyspace_definition
+    assert system.keyspaces.any? {|it| it == keyspace_name }
+
+    system.drop_keyspace keyspace_name
+    assert system.keyspaces.none? {|it| it == keyspace_name }
+
+    system.add_keyspace keyspace_definition
+    Cassandra.new(keyspace_name).drop_keyspace
+    assert system.keyspaces.none? {|it| it == keyspace_name }
+  end
+
   private
 
   def key
