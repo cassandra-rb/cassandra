@@ -353,7 +353,7 @@ class Cassandra
   #
   # Returns the new schema id.
   #
-  def drop_keyspace(keyspace)
+  def drop_keyspace(keyspace=@keyspace)
     return false if Cassandra.VERSION.to_f < 0.7
 
     begin
