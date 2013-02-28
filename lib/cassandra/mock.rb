@@ -74,16 +74,21 @@ class Cassandra
       end
     end
 
-    def batch
-      @batch = []
+    def batch(options={})
+      @batch = Cassandra::Batch.new(self, options)
       yield
+      flush_batch(options)
+    ensure
+      @batch = nil
+    end
+
+    def flush_batch(options)
       b = @batch
       @batch = nil
       b.each do |mutation|
         send(*mutation)
       end
-    ensure
-      @batch = nil
+      @batch = b
     end
 
     def get(column_family, key, *columns_and_options)

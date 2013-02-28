@@ -24,6 +24,11 @@ conf/1.0/cassandra.yaml
 conf/1.0/log4j-server.properties
 conf/1.0/schema.json
 conf/1.0/schema.txt
+conf/1.1/cassandra.in.sh
+conf/1.1/cassandra.yaml
+conf/1.1/log4j-server.properties
+conf/1.1/schema.json
+conf/1.1/schema.txt
 ext/cassandra_native.c
 ext/extconf.rb
 lib/cassandra.rb
@@ -43,7 +48,12 @@ lib/cassandra/1.0.rb
 lib/cassandra/1.0/cassandra.rb
 lib/cassandra/1.0/columns.rb
 lib/cassandra/1.0/protocol.rb
+lib/cassandra/1.1.rb
+lib/cassandra/1.1/cassandra.rb
+lib/cassandra/1.1/columns.rb
+lib/cassandra/1.1/protocol.rb
 lib/cassandra/array.rb
+lib/cassandra/batch.rb
 lib/cassandra/cassandra.rb
 lib/cassandra/column_family.rb
 lib/cassandra/columns.rb
@@ -79,3 +89,6 @@ vendor/0.8/gen-rb/cassandra_types.rb
 vendor/1.0/gen-rb/cassandra.rb
 vendor/1.0/gen-rb/cassandra_constants.rb
 vendor/1.0/gen-rb/cassandra_types.rb
+vendor/1.1/gen-rb/cassandra.rb
+vendor/1.1/gen-rb/cassandra_constants.rb
+vendor/1.1/gen-rb/cassandra_types.rb

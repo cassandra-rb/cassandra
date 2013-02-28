@@ -1,7 +1,7 @@
 # cassandra
 A Ruby client for the Cassandra distributed database.
 
-Supports 1.8.7, 1.9.2, and rubinius on Cassandra 0.6.13, 0.7.9, 0.8.6, 1.0.0-rc2.
+Supports 1.8.7, 1.9.2, and rubinius on Cassandra 0.6.13, 0.7.9, 0.8.6, 1.0.0-rc2, 1.1.5.
 
 ## Getting Started
 
@@ -346,6 +346,27 @@ Example:
                     ]
 
     @client.get_indexed_slices(:Statuses, expressions).length       # returns 5
+
+### batch
+Takes a block where all the mutations (inserts and deletions) inside it are 
+queued, and at the end of the block are passed to cassandra in a single batch.
+
+If you don't want to send all the mutations inside the block in a big single 
+batch, you can use the :queue\_size option to send smaller batches. If the 
+queue is not empty at the end of the block, the remaining mutations are sent.
+
+* options
+  * :consistency  - Override the consistency level from individual mutations.
+  * :queue\_size  - Maximum number of mutations to send at once.
+
+Example: 
+
+    @client.batch do 
+      @client.insert(:Statuses, 'k1', {'body' => 'v1'})
+      @client.insert(:Statuses, 'k2', {'body' => 'v2'})
+      @client.remove(:Statuses, 'k3')
+    end
+
 
 ## Reporting Problems
 
