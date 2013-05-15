@@ -1,4 +1,3 @@
-
 =begin rdoc
 Create a new Cassandra client instance. Accepts a keyspace name, and optional host and port.
 
@@ -861,7 +860,7 @@ class Cassandra
   ##
   # Send the batch queue to the server
   #
-  def flush_batch(options)
+  def flush_batch(options={})
     compacted_map,seen_clevels = compact_mutations!
 
     clevel = if options[:consistency] != nil # Override any clevel from individual mutations if
