@@ -480,27 +480,31 @@ class Cassandra
   #   * :timestamp - Uses the current time if none specified.
   #   * :consistency - Uses the default write consistency if none specified.
   #
-  # TODO: we could change this function or add another that support multi-column removal (by list or predicate)
-  #
   def remove(column_family, key, *columns_and_options)
-    column_family, column, sub_column, options = extract_and_validate_params(column_family, key, columns_and_options, WRITE_DEFAULTS)
+    column_family, columns, sub_column, options = extract_and_validate_params(column_family, key, columns_and_options, WRITE_DEFAULTS)
 
-    if @batch
-      mutation_map =
-        {
-          key => {
-            column_family => [ _delete_mutation(column_family, column, sub_column, options[:timestamp]|| Time.stamp) ]
+    if columns.is_a? Array
+      if sub_column
+        raise ArgumentError, 'remove does not support sub_columns with array of columns'
+      end
+    else
+      columns = [columns]
+    end
+
+    timestamp = options[:timestamp]|| Time.stamp
+
+    mutation_map =
+      {
+        key => {
+          column_family => columns.map {|column|
+            _delete_mutation(column_family, column, sub_column, timestamp)
           }
         }
-      @batch << [mutation_map, options[:consistency]]
-    else
-      # Let's continue using the 'remove' thrift method...not sure about the implications/performance of using the mutate instead
-      # Otherwise we coul get use the mutation_map above, and do _mutate(mutation_map, options[:consistency])
-      args = {:column_family => column_family}
-      columns = is_super(column_family) ? {:super_column => column, :column => sub_column} : {:column => column}
-      column_path = CassandraThrift::ColumnPath.new(args.merge(columns))
-      _remove(key, column_path, options[:timestamp] || Time.stamp, options[:consistency])
-    end
+      }
+
+    mutation = [mutation_map, options[:consistency]]
+
+    @batch ? @batch << mutation : _mutate(*mutation)
   end
 
   ##
@@ -570,7 +574,7 @@ class Cassandra
   #   * :consistency - Uses the default read consistency if none specified.
   #
   def multi_get_columns(column_family, keys, *columns_and_options)
-    column_family, columns, sub_columns, options = 
+    column_family, columns, sub_columns, options =
       extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS)
     _multi_get_columns(column_family, keys, columns, sub_columns, options[:consistency])
   end
@@ -873,7 +877,7 @@ class Cassandra
 
     _mutate(compacted_map,clevel)
   end
-  
+
   ##
   # Create secondary index.
   #

@@ -428,6 +428,13 @@ class CassandraTest < Test::Unit::TestCase
     assert_nil @twitter.get(:Statuses, key).timestamps['body']
   end
 
+  def test_remove_values
+    @twitter.insert(:Statuses, key, {'body' => 'v', 'location' => 'v'})
+    @twitter.remove(:Statuses, key, ['body', 'location'])
+    assert_nil @twitter.get(:Statuses, key, 'body')
+    assert_nil @twitter.get(:Statuses, key, 'location')
+  end
+
   def test_remove_super_key
     @twitter.insert(:StatusRelationships, key, {'user_timelines' => {@uuids[1] => 'v1'}})
     @twitter.remove(:StatusRelationships, key)
