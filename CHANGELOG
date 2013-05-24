@@ -1,3 +1,9 @@
+v0.18.0
+- Cassandra 1.2 support (issue #175, courtesy @brainopia)
+- drop_keyspace defaults to current keyspace (issue #176, courtesy @brianopia)
+- Easier flush_batch interface (issue #182, courtesy @brianopia)
+- Support for removing multiple columns (issue #183, courtesy @brianopia)
+
 v0.17.0
 - multi_get_columns with only one query (courtesy @christian-blades-cb)
 - documentation fixes for get and multi_get (issue #136, courtesy @christian-blades-cb)
