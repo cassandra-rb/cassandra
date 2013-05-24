@@ -151,15 +151,26 @@ class Cassandra
     end
 
     def remove(column_family, key, *columns_and_options)
-      column_family, column, sub_column, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, WRITE_DEFAULTS)
+      column_family, columns, sub_column, options = extract_and_validate_params_for_real(column_family, key, columns_and_options, WRITE_DEFAULTS)
+
       if @batch
-        @batch << [:remove, column_family, key, column, sub_column]
+        @batch << [:remove, column_family, key, columns, sub_column]
       else
-        if column
+        if columns
           if sub_column
-            cf(column_family)[key][column].delete(sub_column.to_s) if cf(column_family)[key][column]
+            if columns.is_a? Array
+              raise ArgumentError, 'remove does not support sub_columns with array of columns'
+            end
+
+            if cf(column_family)[key][columns]
+              cf(column_family)[key][columns].delete(sub_column.to_s)
+            end
           else
-            cf(column_family)[key].delete(column.to_s)  if cf(column_family)[key]
+            if cf(column_family)[key]
+              Array(columns).each do |column|
+                cf(column_family)[key].delete(column.to_s)
+              end
+            end
           end
         else
           cf(column_family).delete(key)
