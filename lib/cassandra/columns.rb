@@ -20,7 +20,7 @@ class Cassandra
       @column_name_maker[column_family] ||=
         begin
           klass = column_name_class(column_family)
-          if klass == Composite
+          if klass == Composite || klass == DynamicComposite
             lambda {|name| klass.new_from_packed(name) }
           else
             lambda {|name| klass.new(name) }
@@ -32,7 +32,7 @@ class Cassandra
       @sub_column_name_maker[column_family] ||=
         begin
           klass = sub_column_name_class(column_family)
-          if klass == Composite
+          if klass == Composite || klass == DynamicComposite
             lambda {|name| klass.new_from_packed(name) }
           else
             lambda {|name| klass.new(name) }

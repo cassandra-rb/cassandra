@@ -45,9 +45,31 @@ class Cassandra
     end
 
     def fast_unpack(packed_string)
-      result = try_packed_composite(packed_string)
-      raise ArgumentError.new("Invalid DynamicComposite column") if !result
       @hash = packed_string.hash
+
+      @types = []
+      @parts = []
+
+      offset = 0
+      length = nil
+      while offset < packed_string.length
+        if packed_string[offset].ord & 0x80 != 0
+          @types << packed_string[offset+1]
+          offset += 2
+        else
+          length = packed_string.slice(offset, 2).unpack('n')[0]
+          offset += 2
+          @types << packed_string.slice(offset, length)
+          offset += length
+        end
+        length = packed_string.slice(offset, 2).unpack('n')[0]
+        offset += 2
+        @parts << packed_string.slice(offset, length)
+        offset += length + 1
+      end
+
+      @column_slice = :after if packed_string[-1] == "\x01"
+      @column_slice = :before if packed_string[-1] == "\xFF"
     end
 
     private

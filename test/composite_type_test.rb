@@ -29,6 +29,12 @@ class CompositeTypesTest < Test::Unit::TestCase
   def test_packing_and_unpacking
     assert_equal(@part0_length + @part1_length + @part2_length, @col.pack.length)
 
+    col2 = Cassandra::Composite.new_from_packed(@col.pack)
+    assert_equal(@col_parts[0], col2[0])
+    assert_equal(@col_parts[1], col2[1])
+    assert_equal(@col_parts[2], col2[2])
+    assert_equal(@col, col2)
+
     col2 = Cassandra::Composite.new(@col.pack)
     assert_equal(@col_parts[0], col2[0])
     assert_equal(@col_parts[1], col2[1])
@@ -42,6 +48,12 @@ class CompositeTypesTest < Test::Unit::TestCase
     part2_length = @part2_length + 2 + @types[2].length
     assert_equal(part0_length + part1_length + part2_length, @dycol.pack.length)
 
+    col2 = Cassandra::DynamicComposite.new_from_packed(@dycol.pack)
+    assert_equal(@col_parts[0], col2[0])
+    assert_equal(@col_parts[1], col2[1])
+    assert_equal(@col_parts[2], col2[2])
+    assert_equal(@dycol, col2)
+
     col2 = Cassandra::DynamicComposite.new(@dycol.pack)
     assert_equal(@col_parts[0], col2[0])
     assert_equal(@col_parts[1], col2[1])
@@ -54,6 +66,12 @@ class CompositeTypesTest < Test::Unit::TestCase
     part1_length = @part1_length + 2
     part2_length = @part2_length + 2
     assert_equal(part0_length + part1_length + part2_length, @dycol_alias.pack.length)
+
+    col2 = Cassandra::DynamicComposite.new_from_packed(@dycol_alias.pack)
+    assert_equal(@col_parts[0], col2[0])
+    assert_equal(@col_parts[1], col2[1])
+    assert_equal(@col_parts[2], col2[2])
+    assert_equal(@dycol_alias, col2)
 
     col2 = Cassandra::DynamicComposite.new(@dycol_alias.pack)
     assert_equal(@col_parts[0], col2[0])

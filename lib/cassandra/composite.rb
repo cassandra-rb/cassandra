@@ -132,9 +132,3 @@ class Cassandra
     end
   end
 end
-
-begin
-  require "cassandra_native"
-rescue LoadError
-  puts "Unable to load cassandra_native extension. Defaulting to pure Ruby libraries."
-end
