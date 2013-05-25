@@ -39,3 +39,9 @@ unless Cassandra.VERSION.eql?("0.6")
 end
 require 'cassandra/constants'
 require 'cassandra/debug' if ENV['DEBUG']
+
+begin
+  require "cassandra_native"
+rescue LoadError
+  puts "Unable to load cassandra_native extension. Defaulting to pure Ruby libraries."
+end
