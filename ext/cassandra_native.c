@@ -17,7 +17,7 @@ VALUE rb_cassandra_composite_fast_unpack(VALUE self, VALUE packed_string_value) 
   }
 
   rb_ivar_set(self, parts_ivar_id, parts);
-  rb_ivar_set(self, hash_ivar_id, rb_funcall(self, rb_intern("hash"), 0));
+  rb_ivar_set(self, hash_ivar_id, rb_funcall(packed_string_value, rb_intern("hash"), 0));
 
   return Qnil;
 }
@@ -50,7 +50,7 @@ VALUE rb_cassandra_dynamic_composite_fast_unpack(VALUE self, VALUE packed_string
 
   rb_ivar_set(self, parts_ivar_id, parts);
   rb_ivar_set(self, types_ivar_id, types);
-  rb_ivar_set(self, hash_ivar_id, rb_funcall(self, rb_intern("hash"), 0));
+  rb_ivar_set(self, hash_ivar_id, rb_funcall(packed_string_value, rb_intern("hash"), 0));
 
   return Qnil;
 }
