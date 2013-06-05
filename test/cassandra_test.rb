@@ -93,6 +93,13 @@ class CassandraTest < Test::Unit::TestCase
     assert_not_equal(hash.keys, @twitter.get(:Users, key).keys)
   end
 
+  def test_ordered_hash_iteration_functions_return_values
+    hash = OrderedHash['a', '', 'b', '', 'c', '', 'd', '',]
+    assert_instance_of OrderedHash, hash.each{|_| true}
+    assert_instance_of OrderedHash, hash.each_value{|_| true}
+    assert_instance_of OrderedHash, hash.each_key{|_| true}
+  end
+
   def test_get_first_time_uuid_column
     @blogs.insert(:Blogs, key,
       {@uuids[0] => 'I like this cat', @uuids[1] => 'Buttons is cuter', @uuids[2] => 'I disagree'})
