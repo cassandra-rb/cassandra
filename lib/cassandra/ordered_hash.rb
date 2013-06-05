@@ -83,14 +83,17 @@ class Cassandra
 
       def each_key
         @keys.each { |key| yield key }
+        self
       end
 
       def each_value
         @keys.each { |key| yield self[key]}
+        self
       end
 
       def each
         @keys.each {|key| yield [key, self[key]]}
+        self
       end
 
       alias_method :each_pair, :each
