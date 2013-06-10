@@ -34,6 +34,8 @@ class CompositeTypesTest < Test::Unit::TestCase
     assert_equal(@col_parts[1], col2[1])
     assert_equal(@col_parts[2], col2[2])
     assert_equal(@col, col2)
+    # make sure we set this while we have the packed string handy
+    assert_equal(@col.pack.hash, col2.instance_variable_get(:@hash))
 
     col2 = Cassandra::Composite.new(@col.pack)
     assert_equal(@col_parts[0], col2[0])
@@ -53,6 +55,8 @@ class CompositeTypesTest < Test::Unit::TestCase
     assert_equal(@col_parts[1], col2[1])
     assert_equal(@col_parts[2], col2[2])
     assert_equal(@dycol, col2)
+    # make sure we set this while we have the packed string handy
+    assert_equal(@dycol.pack.hash, col2.instance_variable_get(:@hash))
 
     col2 = Cassandra::DynamicComposite.new(@dycol.pack)
     assert_equal(@col_parts[0], col2[0])

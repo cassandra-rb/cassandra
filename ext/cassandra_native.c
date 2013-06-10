@@ -1,7 +1,7 @@
 #include <ruby.h>
 #include <arpa/inet.h>
 
-VALUE parts_ivar_id, types_ivar_id;
+VALUE parts_ivar_id, types_ivar_id, hash_ivar_id;
 
 VALUE rb_cassandra_composite_fast_unpack(VALUE self, VALUE packed_string_value) {
   int index = 0;
@@ -17,6 +17,8 @@ VALUE rb_cassandra_composite_fast_unpack(VALUE self, VALUE packed_string_value) 
   }
 
   rb_ivar_set(self, parts_ivar_id, parts);
+  rb_ivar_set(self, hash_ivar_id, rb_funcall(packed_string_value, rb_intern("hash"), 0));
+
   return Qnil;
 }
 
@@ -48,6 +50,7 @@ VALUE rb_cassandra_dynamic_composite_fast_unpack(VALUE self, VALUE packed_string
 
   rb_ivar_set(self, parts_ivar_id, parts);
   rb_ivar_set(self, types_ivar_id, types);
+  rb_ivar_set(self, hash_ivar_id, rb_funcall(packed_string_value, rb_intern("hash"), 0));
 
   return Qnil;
 }
@@ -62,4 +65,5 @@ void Init_cassandra_native(void) {
 
   parts_ivar_id = rb_intern("@parts");
   types_ivar_id = rb_intern("@types");
+  hash_ivar_id = rb_intern("@hash");
 }
