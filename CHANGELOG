@@ -1,3 +1,9 @@
+v0.19.0
+- Fixed windows build by disabling native extensions (issue #188, courtesy @jacek99)
+- Speed improvement to native composite column extension (issue #186, courtesy @muirmanders)
+- Fix OrderedHash iterator return values (issue #185, courtesy @fester)
+- Native support for dynamic composite decoding (issue #184, courtesy @muirmanders)
+
 v0.18.0
 - Cassandra 1.2 support (issue #175, courtesy @brainopia)
 - drop_keyspace defaults to current keyspace (issue #176, courtesy @brianopia)
