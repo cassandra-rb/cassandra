@@ -1,4 +1,6 @@
 require 'fileutils'
+require 'rake/testtask'
+require 'rake/extensiontask'
 
 CassandraBinaries = {
   '0.6' => 'http://archive.apache.org/dist/cassandra/0.6.13/apache-cassandra-0.6.13-bin.tar.gz',
@@ -176,3 +178,14 @@ task :fix_perms do
 end
 
 task :pkg => [:fix_perms]
+
+Rake::ExtensionTask.new('cassandra_native') do |ext|
+  ext.ext_dir = 'ext'
+end
+
+Rake::TestTask.new do |t|
+  t.test_files = FileList['test/*.rb']
+end
+
+task :default => :test
+task :test => :compile

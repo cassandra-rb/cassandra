@@ -5,3 +5,4 @@ doc/
 .yardoc/
 Gemfile.lock
 cassandra-*.gem
+tmp
