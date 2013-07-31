@@ -1,3 +1,6 @@
+v0.20.0
+- Allow new versions of thrift_client (issue #173)
+
 v0.19.0
 - Fixed windows build by disabling native extensions (issue #188, courtesy @jacek99)
 - Speed improvement to native composite column extension (issue #186, courtesy @muirmanders)

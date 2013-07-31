@@ -1,22 +1,5 @@
 require 'fileutils'
 
-unless ENV['FROM_BIN_CASSANDRA_HELPER']
-  require 'rubygems'
-  require 'echoe'
-
-  Echoe.new("cassandra") do |p|
-    p.author = "Evan Weaver, Ryan King"
-    p.url = 'http://github.com/twitter/cassandra'
-    p.summary = "A Ruby client for the Cassandra distributed database."
-    p.rubygems_version = ">= 0.8"
-    p.dependencies = ['thrift_client >=0.7.0 <0.9', 'json', 'rake', 'simple_uuid ~>0.2.0']
-    p.development_dependencies = ['echoe']
-    p.ignore_pattern = /^(data|vendor\/cassandra|cassandra|vendor\/thrift|.*\.rbc)/
-    p.rdoc_pattern = /^(lib|bin|tasks|ext)|^README|^CHANGELOG|^TODO|^LICENSE|^COPYING$/
-    p.retain_gemspec = true
-  end
-end
-
 CassandraBinaries = {
   '0.6' => 'http://archive.apache.org/dist/cassandra/0.6.13/apache-cassandra-0.6.13-bin.tar.gz',
   '0.7' => 'http://archive.apache.org/dist/cassandra/0.7.9/apache-cassandra-0.7.9-bin.tar.gz',
