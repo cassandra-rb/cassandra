@@ -1,6 +1,8 @@
 language: ruby
 rvm:
+  - 2.0.0
   - 1.9.3
+  - 1.9.2
   - 1.8.7
 env:
   - CASSANDRA_VERSION=1.2
