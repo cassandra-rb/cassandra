@@ -78,9 +78,12 @@ class Cassandra
     end
 
     def slice_end_of_component
-      return "\x01".force_encoding('BINARY') if @column_slice == :after
-      return "\xFF".force_encoding('BINARY') if @column_slice == :before
-      return "\x00".force_encoding('BINARY')
+      ret = "\x00"
+      ret = "\x01" if @column_slice == :after
+      ret = "\xFF" if @column_slice == :before
+
+      ret.force_encoding('BINARY') if ret.respond_to?(:force_encoding)
+      return ret
     end
 
     def fast_unpack(packed_string)
