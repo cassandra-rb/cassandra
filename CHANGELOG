@@ -1,5 +1,5 @@
-v0.20.0
-- Allow new versions of thrift_client (issue #173)
+v0.21.0
+- Add 1.2 libs to gem
 
 v0.19.0
 - Fixed windows build by disabling native extensions (issue #188, courtesy @jacek99)
