@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.summary = "A Ruby client for the Cassandra distributed database."
   s.test_files = ["test/cassandra_client_test.rb", "test/cassandra_mock_test.rb", "test/cassandra_test.rb", "test/comparable_types_test.rb", "test/composite_type_test.rb", "test/eventmachine_test.rb", "test/ordered_hash_test.rb", "test/test_helper.rb"]
 
-  s.add_runtime_dependency('thrift_client', '~> 0.7')
+  s.add_runtime_dependency('thrift_client', ['< 0.9', '~> 0.7'])
   s.add_runtime_dependency('json', '>= 0')
   s.add_runtime_dependency('rake', '>= 0')
   s.add_runtime_dependency('simple_uuid', '~> 0.2.0')
