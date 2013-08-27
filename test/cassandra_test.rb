@@ -30,7 +30,7 @@ class CassandraTest < Test::Unit::TestCase
       Cassandra::Composite.new([5].pack('N'), "aardvark"),
       Cassandra::Composite.new([1].pack('N'), "elephant"),
       Cassandra::Composite.new([10].pack('N'), "kangaroo"),
-      Cassandra::Composite.new([20].pack('N'), "meerkat"),
+      Cassandra::Composite.new_from_parts([[20].pack('N'), "meerkat"]),
     ]
     @dynamic_composites = [
       Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "zebra"]),
@@ -1273,7 +1273,7 @@ class CassandraTest < Test::Unit::TestCase
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
         :start => Cassandra::Composite.new([5].pack('N'), :slice => :after).to_s
       ).keys
-      assert_equal([columns_in_order[-2..-1]], column_slice)
+      assert_equal(columns_in_order[-2..-1], column_slice)
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
         :finish => Cassandra::Composite.new([10].pack('N'), :slice => :before).to_s

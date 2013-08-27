@@ -11,16 +11,13 @@ class Cassandra
       if parts.last.is_a?(Hash)
         options = parts.pop
       end
-      @column_slice = options[:slice]
-      raise ArgumentError if @column_slice != nil && ![:before, :after].include?(@column_slice)
 
       if parts.length == 1 && parts[0].instance_of?(self.class)
-        @column_slice = parts[0].column_slice
-        @parts = parts[0].parts
+        make_from_parts(parts[0].parts, :slice => parts[0].column_slice)
       elsif parts.length == 1 && parts[0].instance_of?(String) && @column_slice.nil? && try_packed_composite(parts[0])
         @hash = parts[0].hash
       else
-        @parts = parts
+        make_from_parts(parts, options)
       end
     end
 
