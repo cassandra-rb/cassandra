@@ -30,6 +30,13 @@ class Cassandra
       return obj
     end
 
+    def self.new_from_parts(parts, args={})
+      obj = new
+      obj.make_from_parts(parts, args)
+
+      return obj
+    end
+
     def [](*args)
       return @parts[*args]
     end
@@ -100,6 +107,12 @@ class Cassandra
 
       @column_slice = :after if end_of_component == "\x01"
       @column_slice = :before if end_of_component == "\xFF"
+    end
+
+    def make_from_parts(parts, args)
+      @parts = parts
+      @column_slice = args[:slice]
+      raise ArgumentError if @column_slice != nil && ![:before, :after].include?(@column_slice)
     end
 
     private
