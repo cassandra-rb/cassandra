@@ -24,6 +24,11 @@ class CompositeTypesTest < Test::Unit::TestCase
       assert_equal(@col_parts[i], @dycol[i])
       assert_equal(@col_parts[i], @dycol_alias[i])
     end
+
+    col2 = Cassandra::Composite.new_from_parts(@col_parts)
+    (0..2).each do |i|
+      assert_equal(@col_parts[i], col2[i].to_s)
+    end
   end
 
   def test_packing_and_unpacking

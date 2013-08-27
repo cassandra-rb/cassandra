@@ -1244,6 +1244,9 @@ class CassandraTest < Test::Unit::TestCase
 
     def test_composite_column_type_conversion
       columns = {}
+      @composites.push(
+        Cassandra::Composite.new_from_parts([[20].pack('N'), "meerkat"])
+      )
       @composites.each_with_index do |c, index|
         columns[c] = "value-#{index}"
       end
@@ -1253,12 +1256,13 @@ class CassandraTest < Test::Unit::TestCase
         Cassandra::Composite.new([5].pack('N'), "aardvark"),
         Cassandra::Composite.new([5].pack('N'), "zebra"),
         Cassandra::Composite.new([10].pack('N'), "kangaroo"),
+        Cassandra::Composite.new([20].pack('N'), "meerkat"),
       ]
       assert_equal(columns_in_order, @type_conversions.get(:CompositeColumnConversion, key).keys)
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
         :start => Cassandra::Composite.new([1].pack('N')),
-        :finish => Cassandra::Composite.new([10].pack('N'))
+        :finish => Cassandra::Composite.new([20].pack('N'))
       ).keys
       assert_equal(columns_in_order[0..-2], column_slice)
 
@@ -1271,12 +1275,12 @@ class CassandraTest < Test::Unit::TestCase
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
         :start => Cassandra::Composite.new([5].pack('N'), :slice => :after).to_s
       ).keys
-      assert_equal([columns_in_order[-1]], column_slice)
+      assert_equal(columns_in_order[-2..-1], column_slice)
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
         :finish => Cassandra::Composite.new([10].pack('N'), :slice => :before).to_s
       ).keys
-      assert_equal(columns_in_order[0..-2], column_slice)
+      assert_equal(columns_in_order[0..-3], column_slice)
 
       assert_equal('value-2', @type_conversions.get(:CompositeColumnConversion, key, columns_in_order.first))
     end
