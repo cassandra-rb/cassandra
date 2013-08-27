@@ -1245,7 +1245,7 @@ class CassandraTest < Test::Unit::TestCase
     def test_composite_column_type_conversion
       columns = {}
       @composites.push(
-        Cassandra::Composite.new_from_parts([[20].pack('N'), "meerkat"]),
+        Cassandra::Composite.new_from_parts([[20].pack('N'), "meerkat"])
       )
       @composites.each_with_index do |c, index|
         columns[c] = "value-#{index}"
