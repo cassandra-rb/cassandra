@@ -30,7 +30,6 @@ class CassandraTest < Test::Unit::TestCase
       Cassandra::Composite.new([5].pack('N'), "aardvark"),
       Cassandra::Composite.new([1].pack('N'), "elephant"),
       Cassandra::Composite.new([10].pack('N'), "kangaroo"),
-      Cassandra::Composite.new_from_parts([[20].pack('N'), "meerkat"]),
     ]
     @dynamic_composites = [
       Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "zebra"]),
@@ -1245,6 +1244,9 @@ class CassandraTest < Test::Unit::TestCase
 
     def test_composite_column_type_conversion
       columns = {}
+      @composites.push(
+        Cassandra::Composite.new_from_parts([[20].pack('N'), "meerkat"]),
+      )
       @composites.each_with_index do |c, index|
         columns[c] = "value-#{index}"
       end
