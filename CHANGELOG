@@ -1,3 +1,6 @@
+v0.22.0
+- Add new composite API to resolve ambiguity between unpacking a composite and packing a composite with one element (issue #196, courtesy @kevinkehl)
+ 
 v0.21.0
 - Add 1.2 libs to gem
 
