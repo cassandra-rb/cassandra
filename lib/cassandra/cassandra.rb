@@ -269,13 +269,8 @@ class Cassandra
   def add_column_family(cf_def)
     return false if Cassandra.VERSION.to_f < 0.7
 
-    begin
-      res = client.system_add_column_family(cf_def)
-    rescue CassandraThrift::TimedOutException => te
-      puts "Timed out: #{te.inspect}"
-    end
     @schema = nil
-    res
+    return client.system_add_column_family(cf_def)
   end
 
   ##
@@ -286,13 +281,8 @@ class Cassandra
   def drop_column_family(column_family)
     return false if Cassandra.VERSION.to_f < 0.7
 
-    begin
-      res = client.system_drop_column_family(column_family)
-    rescue CassandraThrift::TimedOutException => te
-      puts "Timed out: #{te.inspect}"
-    end
     @schema = nil
-    res
+    return client.system_drop_column_family(column_family)
   end
 
   ##
@@ -304,13 +294,8 @@ class Cassandra
   def rename_column_family(old_name, new_name)
     return false if Cassandra.VERSION.to_f != 0.7
 
-    begin
-      res = client.system_rename_column_family(old_name, new_name)
-    rescue CassandraThrift::TimedOutException => te
-      puts "Timed out: #{te.inspect}"
-    end
     @schema = nil
-    res
+    return client.system_rename_column_family(old_name, new_name)
   end
 
   ##
@@ -319,13 +304,8 @@ class Cassandra
   def update_column_family(cf_def)
     return false if Cassandra.VERSION.to_f < 0.7
 
-    begin
-      res = client.system_update_column_family(cf_def)
-    rescue CassandraThrift::TimedOutException => te
-      puts "Timed out: #{te.inspect}"
-    end
     @schema = nil
-    res
+    return client.system_update_column_family(cf_def)
   end
 
   ##
@@ -336,15 +316,8 @@ class Cassandra
   def add_keyspace(ks_def)
     return false if Cassandra.VERSION.to_f < 0.7
 
-    begin
-      res = client.system_add_keyspace(ks_def)
-    rescue CassandraThrift::TimedOutException => toe
-      puts "Timed out: #{toe.inspect}"
-    rescue Thrift::TransportException => te
-      puts "Timed out: #{te.inspect}"
-    end
     @keyspaces = nil
-    res
+    return client.system_add_keyspace(ks_def)
   end
 
   ##
@@ -355,16 +328,10 @@ class Cassandra
   def drop_keyspace(keyspace=@keyspace)
     return false if Cassandra.VERSION.to_f < 0.7
 
-    begin
-      res = client.system_drop_keyspace(keyspace)
-    rescue CassandraThrift::TimedOutException => toe
-      puts "Timed out: #{toe.inspect}"
-    rescue Thrift::TransportException => te
-      puts "Timed out: #{te.inspect}"
-    end
-    keyspace = "system" if keyspace.eql?(@keyspace)
     @keyspaces = nil
-    res
+    ret = client.system_drop_keyspace(keyspace)
+    keyspace = "system" if keyspace.eql?(@keyspace)
+    return ret
   end
 
   ##
@@ -377,16 +344,10 @@ class Cassandra
   def rename_keyspace(old_name, new_name)
     return false if Cassandra.VERSION.to_f < 0.7
 
-    begin
-      res = client.system_rename_keyspace(old_name, new_name)
-    rescue CassandraThrift::TimedOutException => toe
-      puts "Timed out: #{toe.inspect}"
-    rescue Thrift::TransportException => te
-      puts "Timed out: #{te.inspect}"
-    end
-    keyspace = new_name if old_name.eql?(@keyspace)
     @keyspaces = nil
-    res
+    ret = client.system_rename_keyspace(old_name, new_name)
+    keyspace = new_name if old_name.eql?(@keyspace)
+    return ret
   end
 
   ##
@@ -395,15 +356,8 @@ class Cassandra
   def update_keyspace(ks_def)
     return false if Cassandra.VERSION.to_f < 0.7
 
-    begin
-      res = client.system_update_keyspace(ks_def)
-    rescue CassandraThrift::TimedOutException => toe
-      puts "Timed out: #{toe.inspect}"
-    rescue Thrift::TransportException => te
-      puts "Timed out: #{te.inspect}"
-    end
     @keyspaces = nil
-    res
+    return client.system_update_keyspace(ks_def)
   end
   ##
   # The initial default consistency is set to ONE, but you can use this method
