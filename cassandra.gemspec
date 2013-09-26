@@ -2,8 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name = "cassandra"
-  s.version = "0.22.0"
-
+  s.version = "0.22.1"
   s.required_rubygems_version = Gem::Requirement.new(">= 0.8") if s.respond_to? :required_rubygems_version=
   s.authors = ["Evan Weaver, Ryan King"]
   s.description = "A Ruby client for the Cassandra distributed database."
@@ -24,6 +23,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency('thrift_client', ['< 0.9', '~> 0.7'])
   s.add_runtime_dependency('json', '>= 0')
   s.add_runtime_dependency('rake', '>= 0')
-  s.add_runtime_dependency('simple_uuid', '~> 0.2.0')
+  s.add_runtime_dependency('simple_uuid', '~> 0.3.0')
   s.add_development_dependency('rake-compiler', '~> 0.8.0')
 end

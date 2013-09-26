@@ -1,3 +1,6 @@
+v0.22.1
+- upgrade simple_uuid dependency version to 0.3.0
+
 v0.22.0
 - Add new composite API to resolve ambiguity between unpacking a composite and packing a composite with one element (issue #196, courtesy @kevinkehl)
 - Breaking change: schema change methods no longer catch exceptions internally.  They work the same as everything else.
