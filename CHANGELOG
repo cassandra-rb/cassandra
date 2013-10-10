@@ -1,5 +1,6 @@
 v0.23.0
 - Update simple_uuid dependency (issue #197, courtesy @tsenart)
+- Changed to new github url: github.com/cassandra-rb/cassandra
 
 v0.22.0
 - Add new composite API to resolve ambiguity between unpacking a composite and packing a composite with one element (issue #196, courtesy @kevinkehl)
