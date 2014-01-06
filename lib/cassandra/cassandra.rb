@@ -487,7 +487,7 @@ class Cassandra
   # Supports same parameters as Cassandra#count_columns.
   #
   # * column_family - The column_family that you are inserting into.
-  # * key - The row key to insert.
+  # * keys - An array of keys to select.
   # * columns - Either a single super_column or a list of columns.
   # * sub_columns - The list of sub_columns to select.
   # * options - Valid options are:
@@ -521,7 +521,7 @@ class Cassandra
   # Supports same parameters as Cassandra#get_columns
   #
   # * column_family - The column_family that you are inserting into.
-  # * key - The row key to insert.
+  # * keys - An array of keys to select.
   # * columns - Either a single super_column or a list of columns.
   # * sub_columns - The list of sub_columns to select.
   # * options - Valid options are:
