@@ -20,7 +20,15 @@ class Cassandra
     def ==(other)
       other.respond_to?(:to_i) && self.to_i == other.to_i
     end
-    
+
+    def >=(other_val)
+      (self <=> other_val) >= 0
+    end
+
+    def <=(other_val)
+      (self <=> other_val) <= 0
+    end
+
     def to_s
       @bytes
     end
