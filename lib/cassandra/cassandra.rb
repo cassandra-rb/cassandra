@@ -573,17 +573,126 @@ class Cassandra
   #   * :finish       - The final value for selecting a range of columns.
   #   * :reversed     - If set to true the results will be returned in reverse order.
   #   * :consistency  - Uses the default read consistency if none specified.
+  #   * :batch_size   - The maximum number of columns return per query and key. If specified will loop until at least :count columns are obtained or all records have been returned.
+  #   * :keys_at_once - The maximum number of keys to fetch from at once. Useful when fetching from a lot of keys. Default is no limit.
+  #   * :no_hash_return - Return nils instead of empty hashes for non-existent keys
   #
   def multi_get(column_family, keys, *columns_and_options)
-    column_family, column, sub_column, options =
-      extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS)
+    column_family, column, sub_column, options = 
+      extract_and_validate_params(column_family, keys, columns_and_options, READ_DEFAULTS.merge(:batch_size => nil, :keys_at_once => nil, :coder => nil, :no_hash_return => false))
 
-    hash = _multiget(column_family, keys, column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency])
+    if options[:batch_size] or options[:keys_at_once]
+      multi_get_batch(column_family, keys, column, sub_column, options)
+    else
+      multi_get_single(column_family, keys, column, sub_column, options[:count], options[:start], options[:finish], options[:reversed], options[:consistency], options)
+    end
+  end
+
+  def multi_get_single(column_family, keys, column, sub_column, count, start, finish, reversed, consistency, options)
+    hash = _multiget(column_family, keys, column, sub_column, count, start, finish, reversed, consistency)
 
     # Restore order
+    time = Time.now
     ordered_hash = OrderedHash.new
-    keys.each { |key| ordered_hash[key] = hash[key] || (OrderedHash.new if is_super(column_family) and !sub_column) }
+    if options[:no_hash_return]
+      keys.each { |key| h = hash[key]; ordered_hash[key] = h if h }
+    else
+      if is_super(column_family) and !sub_column
+	keys.each { |key| ordered_hash[key] = hash[key] || OrderedHash.new }
+      else
+	keys.each { |key| ordered_hash[key] = hash[key] }
+      end
+    end
     ordered_hash
+  end
+
+  
+  ##
+  # Multi-key batched get
+  #
+  # This method is a wrapper around Cassandra#multi_get.
+  # It fetches up to :batch_size columns per key at once and continues
+  # until no more data is available or the given :count limit is
+  # breached.
+  #
+  # Supports similar parameters as Cassandra#multi_get.
+  #
+  # * column_family   - The column_family that you are inserting into.
+  # * keys            - An array of keys to select.
+  # * columns         - Either a single super_column or a list of columns.
+  # * sub_columns     - The list of sub_columns to select.
+  # * options         - Valid options are:
+  #   * :count        - The number of columns requested to be returned.
+  #   * :start        - The starting value for selecting a range of columns.
+  #   * :finish       - The final value for selecting a range of columns.
+  #   * :reversed     - If set to true the results will be returned in reverse order.
+  #   * :consistency  - Uses the default read consistency if none specified.
+  #   * :batch_size   - The maximum number of columns to return per query and key. If specified will loop until at least :count columns are obtained or all records have been returned. Default is 100.
+  #   * :keys_at_once - The maximum number of keys to fetch from at once. Useful if you're fetching from a lot of keys. Default is no limit.
+  #
+  def multi_get_batch(column_family, keys, column, sub_columns, options = {})
+    batch_size = options.delete(:batch_size) || 100
+    keys_at_once = options.delete(:keys_at_once)
+    raise "batch_size must be at least 2" if batch_size < 2
+    raise "keys_at_once must be at least 1" if not keys_at_once.nil? and keys_at_once < 1
+    result = {}
+    num_results = 0
+    count = options.delete(:count)
+    options[:no_hash_return] = false
+
+		last_col = nil
+		my_keys = keys.clone
+		sup = is_super(column_family)
+
+		begin
+			keys_part = (my_keys.nil? ? nil : my_keys.slice!(0, (keys_at_once.nil? ? my_keys.length : keys_at_once)))
+			last_col = nil
+
+			while count.nil? || count > num_results
+				res = multi_get_single(column_family, keys_part, column, sub_columns, batch_size, last_col || options[:start], options[:finish], options[:reversed], options[:consistency], options)
+
+				last_last_col_u = last_col ? (options[:coder] ? options[:coder].decode(last_col) : last_col) : nil
+				last_col = nil
+
+				new_results = 0
+				res.each do |key, columns|
+					unless columns.blank?
+						if result[key] and sup
+							columns.each do |k,v|
+								unless result[key][k] or v.nil?
+									new_results += 1
+									result[key][k] = v
+								end
+							end
+						else
+							new_results += is_super(column_family) ? columns.keys.length : 1
+							result[key] = columns
+						end
+
+						if is_super(column_family)
+							last = columns.keys.last
+
+							if options[:coder]
+								last_u = last ? options[:coder].decode(last) : nil
+								last_col_u = last_col ? options[:coder].decode(last_col) : nil
+							else
+								last_u = last
+								last_col_u = last_col
+							end
+							if (last_last_col_u.nil? or last_u > last_last_col_u) and (last_col.nil? or last_u < last_col_u)
+								last_col = last
+							end
+						end
+					end
+				end
+				keys_part.slice!(0, batch_size) unless sup
+
+				num_results += new_results
+
+				break unless (sup ? last_col : !keys_part.blank?)
+			end
+		end until my_keys.blank?
+		result
   end
 
   ##
