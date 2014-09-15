@@ -1,7 +1,15 @@
 # cassandra
 A Ruby client for the Cassandra distributed database.
 
-Supports 1.8.7, 1.9.2, 1.9.3, 2.0.0 and rubinius on Cassandra 0.6.13, 0.7.9, 0.8.6, 1.0.0-rc2, 1.1.5 and 1.2.
+Supports 1.8.7, 1.9.2, 1.9.3, 2.0.0, 2.1 and rubinius on Cassandra 0.7.x through 2.0.x.
+
+## Status of this gem
+
+There is no longer much development effort being put into this gem. If you
+are just getting started with Cassandra then you probably want to use the Datastax
+[ruby-driver](https://github.com/datastax/ruby-driver).
+
+We are still happy to take patches if you want to improve this gem.
 
 ## Getting Started
 
