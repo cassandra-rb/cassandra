@@ -16,9 +16,11 @@ We are still happy to take patches if you want to improve this gem.
 Here is a quick sample of the general use (more details in Read/Write
 API below):
 
-    require 'cassandra'
-    client = Cassandra.new('Twitter', '127.0.0.1:9160')
-    client.insert(:Users, "5", {'screen_name' => "buttonscat"})
+```ruby
+require 'cassandra'
+client = Cassandra.new('Twitter', '127.0.0.1:9160')
+client.insert(:Users, "5", {'screen_name' => "buttonscat"})
+```
 
 ## License
 
@@ -37,12 +39,16 @@ at this time.)
 
 To use the default version simply use a normal require:
 
-    require 'cassandra'
+```ruby
+require 'cassandra'
+```
 
 To use a specific version (1.0 in this example) you would use a
 slightly differently formatted require:
 
-    require 'cassandra/1.0'
+```ruby
+require 'cassandra/1.0'
+```
 
 #### Environment Variable Method
 These mechanisms work well when you are using the cassandra gem in your
@@ -54,7 +60,9 @@ version you are using:
 
 Then you would use the default require as listed above:
 
-    require 'cassandra'
+```ruby
+require 'cassandra'
+```
 
 ## Read/Write API Method Reference
 
@@ -79,11 +87,12 @@ cassandra in a single batch at the end of the block.
 
 Example:
 
-    @client.insert(:Statuses, key, {'body' => 'v', 'user' => 'v'})
+```ruby
+@client.insert(:Statuses, key, {'body' => 'v', 'user' => 'v'})
 
-    columns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
-    @client.insert(:StatusRelationships, key, {'user_timelines' => columns})
-
+columns = {@uuids[1] => 'v1', @uuids[2] => 'v2'}
+@client.insert(:StatusRelationships, key, {'user_timelines' => columns})
+```
 
 ### remove
 
@@ -102,10 +111,12 @@ If a column name is passed in that column will be deleted.
 
 Example:
 
-    @client.insert(:Statuses, key, {'body' => 'v', 'subject' => 'v'})
+```ruby
+@client.insert(:Statuses, key, {'body' => 'v', 'subject' => 'v'})
 
-    @client.remove(:Statuses, key, 'body')    # removes the 'body' column
-    @client.remove(:Statuses, key)            # removes the row
+@client.remove(:Statuses, key, 'body')    # removes the 'body' column
+@client.remove(:Statuses, key)            # removes the row
+```
 
 ### count\_columns
 
@@ -123,8 +134,10 @@ Count the columns for the provided parameters.
 
 Example:
 
-    @client.insert(:Statuses, key, {'body' => 'v1', 'user' => 'v2'})
-    @client.count_columns(:Statuses, key)     # returns 2
+```ruby
+@client.insert(:Statuses, key, {'body' => 'v1', 'user' => 'v2'})
+@client.count_columns(:Statuses, key)     # returns 2
+```
 
 ### get
 
@@ -146,8 +159,10 @@ path you request.
 
 Example:
 
-    @client.insert(:Users, key, {'body' => 'v', 'user' => 'v'})
-    @client.get(:Users, key))           # returns {'body' => 'v', 'user' => 'v'}
+```ruby
+@client.insert(:Users, key, {'body' => 'v', 'user' => 'v'})
+@client.get(:Users, key))           # returns {'body' => 'v', 'user' => 'v'}
+```
 
 ### multi\_get
 
@@ -172,15 +187,17 @@ Supports the same parameters as Cassandra#get.
 
 Example:
 
-    @client.insert(:Users, '1', {'body' => 'v1', 'user' => 'v1'})
-    @client.insert(:Users, '2', {'body' => 'v2', 'user' => 'v2'})
+```ruby
+@client.insert(:Users, '1', {'body' => 'v1', 'user' => 'v1'})
+@client.insert(:Users, '2', {'body' => 'v2', 'user' => 'v2'})
 
-    expected = OrderedHash[
-                  '1', {'body' => 'v1', 'user' => 'v1'},
-                  '2', {'body' => 'v2', 'user' => 'v2'},
-                  'bogus', {}
-              ]
-    result = @client.multi_get(:Users, ['1', '2', 'bogus'])
+expected = OrderedHash[
+              '1', {'body' => 'v1', 'user' => 'v1'},
+              '2', {'body' => 'v2', 'user' => 'v2'},
+              'bogus', {}
+          ]
+result = @client.multi_get(:Users, ['1', '2', 'bogus'])
+```
 
 ### exists?
 
@@ -202,11 +219,13 @@ This method will return true or false.
 
 Example:
 
-    @client.insert(:Statuses, 'key', {'body' => 'v'})
-    @client.exists?(:Statuses, 'key')                   # returns true
-    @client.exists?(:Statuses, 'bogus')                 # returns false
-    @client.exists?(:Statuses, 'key', 'body')           # returns true
-    @client.exists?(:Statuses, 'key', 'bogus')          # returns false
+```ruby
+@client.insert(:Statuses, 'key', {'body' => 'v'})
+@client.exists?(:Statuses, 'key')                   # returns true
+@client.exists?(:Statuses, 'bogus')                 # returns false
+@client.exists?(:Statuses, 'key', 'body')           # returns true
+@client.exists?(:Statuses, 'key', 'bogus')          # returns false
+```
 
 ### get\_range
 Return an Cassandra::OrderedHash containing the columns specified for the given
@@ -249,19 +268,21 @@ columns is suppressed).
 
 Example:
 
-    10.times do |i|
-      @client.insert(:Statuses, i.to_s, {'body' => '1'})
-    end
+```ruby
+10.times do |i|
+  @client.insert(:Statuses, i.to_s, {'body' => '1'})
+end
 
-    @client.get_range_keys(:Statuses, :key_count => 4)
+@client.get_range_keys(:Statuses, :key_count => 4)
 
-    # returns:
-    #{
-    #  '0' => {'body' => '1'},
-    #  '1' => {'body' => '1'},
-    #  '2' => {'body' => '1'},
-    #  '3' => {'body' => '1'}
-    #}
+# returns:
+#{
+#  '0' => {'body' => '1'},
+#  '1' => {'body' => '1'},
+#  '2' => {'body' => '1'},
+#  '3' => {'body' => '1'}
+#}
+```
 
 ### count\_range
 
@@ -290,15 +311,17 @@ This method just calls Cassandra#get\_range and yields each row key.
 See Cassandra#get\_range for options.
 
 Example:
-    10.times do |i|
-      @client.insert(:Statuses, k + i.to_s, {"body-#{i.to_s}" => 'v'})
-    end
+```ruby
+10.times do |i|
+  @client.insert(:Statuses, k + i.to_s, {"body-#{i.to_s}" => 'v'})
+end
 
-    @client.each_key(:Statuses) do |key|
-      print key
-    end
+@client.each_key(:Statuses) do |key|
+  print key
+end
 
-    # returns 0123456789
+# returns 0123456789
+```
 
 ### each
 Iterate through each row within the given column\_family.
@@ -328,32 +351,34 @@ format as below.
 
 Example:
 
-    @client.create_index('Twitter', 'Statuses', 'x', 'LongType')
+```ruby
+@client.create_index('Twitter', 'Statuses', 'x', 'LongType')
 
-    @client.insert(:Statuses, 'row1', { 'x' => [0,10].pack("NN")  })
+@client.insert(:Statuses, 'row1', { 'x' => [0,10].pack("NN")  })
 
-    (2..10).to_a.each do |i|
-      @twitter.insert(:Statuses, 'row' + i.to_s, { 'x' => [0,20].pack("NN"), 'non_indexed' => [i].pack('N*') })
-    end
+(2..10).to_a.each do |i|
+  @twitter.insert(:Statuses, 'row' + i.to_s, { 'x' => [0,20].pack("NN"), 'non_indexed' => [i].pack('N*') })
+end
 
-    @client.insert(:Statuses, 'row11', { 'x' => [0,30].pack("NN")  })
+@client.insert(:Statuses, 'row11', { 'x' => [0,30].pack("NN")  })
 
-    expressions = [{:column_name => 'x', :value => [0,20].pack("NN"), :comparison => "=="}]
+expressions = [{:column_name => 'x', :value => [0,20].pack("NN"), :comparison => "=="}]
 
-    # verify multiples will be returned
-    @client.get_indexed_slices(:Statuses, expressions).length       # returns 9
+# verify multiples will be returned
+@client.get_indexed_slices(:Statuses, expressions).length       # returns 9
 
-    # verify that GT and LT queries perform properly
-    expressions   =  [
-                      { :column_name => 'x',
-                        :value => [0,20].pack("NN"),
-                        :comparison => "=="},
-                      { :column_name => 'non_indexed',
-                        :value => [5].pack("N*"),
-                        :comparison => ">"}
-                    ]
+# verify that GT and LT queries perform properly
+expressions   =  [
+                  { :column_name => 'x',
+                    :value => [0,20].pack("NN"),
+                    :comparison => "=="},
+                  { :column_name => 'non_indexed',
+                    :value => [5].pack("N*"),
+                    :comparison => ">"}
+                ]
 
-    @client.get_indexed_slices(:Statuses, expressions).length       # returns 5
+@client.get_indexed_slices(:Statuses, expressions).length       # returns 5
+```
 
 ### batch
 Takes a block where all the mutations (inserts and deletions) inside it are
@@ -369,12 +394,13 @@ queue is not empty at the end of the block, the remaining mutations are sent.
 
 Example:
 
-    @client.batch do
-      @client.insert(:Statuses, 'k1', {'body' => 'v1'})
-      @client.insert(:Statuses, 'k2', {'body' => 'v2'})
-      @client.remove(:Statuses, 'k3')
-    end
-
+```ruby
+@client.batch do
+  @client.insert(:Statuses, 'k1', {'body' => 'v1'})
+  @client.insert(:Statuses, 'k2', {'body' => 'v2'})
+  @client.remove(:Statuses, 'k3')
+end
+```
 
 ## Reporting Problems
 
