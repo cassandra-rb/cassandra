@@ -1,5 +1,5 @@
 # OrderedHash is namespaced to prevent conflicts with other implementations
-class Cassandra
+class TwitterCassandra
     class OrderedHashInt < Hash #:nodoc:
       def initialize(*args, &block)
         super
@@ -125,7 +125,7 @@ class Cassandra
         @keys = other.keys
         self
       end
-      
+
       def reverse
         OrderedHashInt[self.to_a.reverse]
       end

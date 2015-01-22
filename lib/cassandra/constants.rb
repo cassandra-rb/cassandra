@@ -1,11 +1,11 @@
 
-class Cassandra
-  # A helper module you can include in your own class. Makes it easier 
-  # to work with Cassandra subclasses.
+class TwitterCassandra
+  # A helper module you can include in your own class. Makes it easier
+  # to work with TwitterCassandra subclasses.
   module Constants
-    include Cassandra::Consistency
-        
-    Long = Cassandra::Long
-    OrderedHash = Cassandra::OrderedHash
+    include TwitterCassandra::Consistency
+
+    Long = TwitterCassandra::Long
+    OrderedHash = TwitterCassandra::OrderedHash
   end
 end

@@ -1,4 +1,4 @@
-class Cassandra
+class TwitterCassandra
   def self.VERSION
     "0.7"
   end

@@ -1,2 +1,2 @@
-class Cassandra
+class TwitterCassandra
 end

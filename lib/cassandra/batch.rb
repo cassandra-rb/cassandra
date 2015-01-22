@@ -1,8 +1,8 @@
-class Cassandra
+class TwitterCassandra
   class Batch
     include Enumerable
 
-    def initialize(cassandra, options) 
+    def initialize(cassandra, options)
       @queue_size = options.delete(:queue_size) || 0
       @cassandra = cassandra
       @options = options

@@ -1,4 +1,4 @@
-class Cassandra
+class TwitterCassandra
   class DynamicComposite < Composite
     attr_accessor :types
 

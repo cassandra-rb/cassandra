@@ -1,4 +1,4 @@
-class Cassandra
+class TwitterCassandra
 
   ## Counters
 

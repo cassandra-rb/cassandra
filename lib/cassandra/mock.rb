@@ -8,10 +8,10 @@ class SimpleUUID::UUID
   end
 end
 
-class Cassandra
+class TwitterCassandra
   class Mock
-    include ::Cassandra::Helpers
-    include ::Cassandra::Columns
+    include ::TwitterCassandra::Helpers
+    include ::TwitterCassandra::Columns
 
     attr_reader :keyspace
 
@@ -75,7 +75,7 @@ class Cassandra
     end
 
     def batch(options={})
-      @batch = Cassandra::Batch.new(self, options)
+      @batch = TwitterCassandra::Batch.new(self, options)
       yield
       flush_batch(options)
     ensure
@@ -363,7 +363,7 @@ class Cassandra
     def column_families
       cf_defs = {}
       schema.each do |key, value|
-        cf_def = Cassandra::ColumnFamily.new
+        cf_def = TwitterCassandra::ColumnFamily.new
 
         value.each do |property, property_value|
           cf_def.send(:"#{property}=", property_value)

@@ -1,4 +1,4 @@
-class Cassandra
+class TwitterCassandra
   module Helpers
     def extract_and_validate_params(column_family, keys, args, options)
       options = options.dup
@@ -12,12 +12,12 @@ class Cassandra
       if args.last.is_a?(Hash)
         extras = args.last.keys - options.keys
         raise ArgumentError, "Invalid options #{extras.inspect[1..-2]} for #{caller[1]}" if extras.any?
-        options.merge!(args.pop)      
+        options.merge!(args.pop)
       end
 
       # Ranges
       column, sub_column = args[0], args[1]
-      raise ArgumentError, "Invalid arguments: subcolumns specified for a non-supercolumn family" if sub_column && !is_super(column_family)      
+      raise ArgumentError, "Invalid arguments: subcolumns specified for a non-supercolumn family" if sub_column && !is_super(column_family)
       klass, sub_klass = column_name_class(column_family), sub_column_name_class(column_family)
       range_class = column ? sub_klass : klass
 
