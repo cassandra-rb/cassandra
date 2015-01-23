@@ -5,7 +5,7 @@ require "#{File.expand_path(File.dirname(__FILE__))}/../lib/cassandra/#{CASSANDR
 begin; require 'ruby-debug'; rescue LoadError; end
 
 begin
-  @test_client = Cassandra.new('Twitter', 'localhost:9160', :thrift_client_options => {
+  @test_client = TwitterCassandra.new('Twitter', 'localhost:9160', :thrift_client_options => {
     :retries         => 3,
     :timeout         => 5,
     :connect_timeout => 1
@@ -13,7 +13,7 @@ begin
 rescue Thrift::TransportException => e
   #FIXME Make server automatically start if not running
   if e.message =~ /Could not connect/
-    puts "*** Please start the Cassandra server by running 'rake cassandra'. ***"
+    puts "*** Please start the TwitterCassandra server by running 'rake cassandra'. ***"
     exit 1
   end
 end

@@ -1,0 +1,2 @@
+class TwitterCassandra
+end

@@ -5,7 +5,7 @@ class OrderedHashTestInt < Test::Unit::TestCase
     @keys =   %w( blue   green  red    pink   orange )
     @values = %w( 000099 009900 aa0000 cc0066 cc6633 )
     @hash = Hash.new
-    @ordered_hash = Cassandra::OrderedHash.new
+    @ordered_hash = TwitterCassandra::OrderedHash.new
 
     @keys.each_with_index do |key, index|
       @hash[key] = @values[index]
@@ -135,7 +135,7 @@ class OrderedHashTestInt < Test::Unit::TestCase
   end
 
   def test_merge
-    other_hash =  Cassandra::OrderedHash.new
+    other_hash =  TwitterCassandra::OrderedHash.new
     other_hash['purple'] = '800080'
     other_hash['violet'] = 'ee82ee'
     merged = @ordered_hash.merge other_hash
@@ -164,27 +164,27 @@ class OrderedHashTestInt < Test::Unit::TestCase
   end
 
   def test_alternate_initialization_with_splat
-    alternate = Cassandra::OrderedHash[1,2,3,4]
-    assert_kind_of Cassandra::OrderedHash, alternate
+    alternate = TwitterCassandra::OrderedHash[1,2,3,4]
+    assert_kind_of TwitterCassandra::OrderedHash, alternate
     assert_equal [1, 3], alternate.keys
   end
 
   def test_alternate_initialization_with_array
-    alternate = Cassandra::OrderedHash[ [
+    alternate = TwitterCassandra::OrderedHash[ [
       [1, 2],
       [3, 4],
       "bad key value pair",
       [ 'missing value' ]
     ]]
 
-    assert_kind_of Cassandra::OrderedHash, alternate
+    assert_kind_of TwitterCassandra::OrderedHash, alternate
     assert_equal [1, 3, 'missing value'], alternate.keys
     assert_equal [2, 4, nil ], alternate.values
   end
 
   def test_alternate_initialization_raises_exception_on_odd_length_args
     begin
-      alternate = Cassandra::OrderedHash[1,2,3,4,5]
+      alternate = TwitterCassandra::OrderedHash[1,2,3,4,5]
       flunk "Hash::[] should have raised an exception on initialization " +
           "with an odd number of parameters"
     rescue
@@ -193,12 +193,12 @@ class OrderedHashTestInt < Test::Unit::TestCase
   end
 
   def test_replace_updates_keys
-    @other_ordered_hash = Cassandra::OrderedHash[:black, '000000', :white, '000000']
+    @other_ordered_hash = TwitterCassandra::OrderedHash[:black, '000000', :white, '000000']
     original = @ordered_hash.replace(@other_ordered_hash)
     assert_same original, @ordered_hash
     assert_equal @other_ordered_hash.keys, @ordered_hash.keys
   end
-  
+
   def test_reverse
     assert_equal @keys.reverse, @ordered_hash.reverse.keys
     assert_equal @values.reverse, @ordered_hash.reverse.values
@@ -212,7 +212,7 @@ class OrderedHashTest < Test::Unit::TestCase
     @timestamps = %w( 12 34 56 78 90 )
     @hash = Hash.new
     @timestamps_hash = Hash.new
-    @ordered_hash = Cassandra::OrderedHash.new
+    @ordered_hash = TwitterCassandra::OrderedHash.new
 
     @keys.each_with_index do |key, index|
       @hash[key] = @values[index]
@@ -343,7 +343,7 @@ class OrderedHashTest < Test::Unit::TestCase
   end
 
   def test_merge
-    other_hash =  Cassandra::OrderedHash.new
+    other_hash =  TwitterCassandra::OrderedHash.new
     other_hash['purple'] = '800080'
     other_hash['violet'] = 'ee82ee'
     merged = @ordered_hash.merge other_hash
@@ -372,13 +372,13 @@ class OrderedHashTest < Test::Unit::TestCase
   end
 
   def test_alternate_initialization_with_splat
-    alternate = Cassandra::OrderedHash[1,2,3,4]
-    assert_kind_of Cassandra::OrderedHash, alternate
+    alternate = TwitterCassandra::OrderedHash[1,2,3,4]
+    assert_kind_of TwitterCassandra::OrderedHash, alternate
     assert_equal [1, 3], alternate.timestamps.keys
   end
 
   def test_replace_updates_keys
-    @other_ordered_hash = Cassandra::OrderedHash[:black, '000000', :white, '000000']
+    @other_ordered_hash = TwitterCassandra::OrderedHash[:black, '000000', :white, '000000']
     original = @ordered_hash.replace(@other_ordered_hash)
     assert_equal original.timestamps, @ordered_hash.timestamps
     assert_equal @other_ordered_hash.timestamps.keys, @ordered_hash.timestamps.keys

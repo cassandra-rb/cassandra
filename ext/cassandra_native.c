@@ -56,7 +56,7 @@ VALUE rb_cassandra_dynamic_composite_fast_unpack(VALUE self, VALUE packed_string
 }
 
 void Init_cassandra_native(void) {
-  VALUE cassandra_module = rb_const_get(rb_cObject, rb_intern("Cassandra"));
+  VALUE cassandra_module = rb_const_get(rb_cObject, rb_intern("TwitterCassandra"));
   VALUE cassandra_composite_class = rb_define_class_under(cassandra_module, "Composite", rb_cObject);
   rb_define_method(cassandra_composite_class, "fast_unpack", rb_cassandra_composite_fast_unpack, 1);
 

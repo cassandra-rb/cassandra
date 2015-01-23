@@ -9,7 +9,7 @@ else
   class EventmachineTest < Test::Unit::TestCase
 
     def test_twitter
-      @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :exception_classes => [], :transport => Thrift::EventMachineTransport, :transport_wrapper => nil)
+      @twitter = TwitterCassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :exception_classes => [], :transport => Thrift::EventMachineTransport, :transport_wrapper => nil)
       @twitter.clear_keyspace!
     end
 

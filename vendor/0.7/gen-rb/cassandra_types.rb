@@ -89,12 +89,12 @@ module CassandraThrift
       ::Thrift::Struct.generate_accessors self
     end
 
-    # Methods for fetching rows/records from Cassandra will return either a single instance of ColumnOrSuperColumn or a list
+    # Methods for fetching rows/records from TwitterCassandra will return either a single instance of ColumnOrSuperColumn or a list
     # of ColumnOrSuperColumns (get_slice()). If you're looking up a SuperColumn (or list of SuperColumns) then the resulting
     # instances of ColumnOrSuperColumn will have the requested SuperColumn in the attribute super_column. For queries resulting
     # in Columns, those values will be in the attribute column. This change was made between 0.3 and 0.4 to standardize on
     # single query methods that may return either a SuperColumn or Column.
-    # 
+    #
     # @param column. The Column returned by get() or get_slice().
     # @param super_column. The SuperColumn returned by get() or get_slice().
     class ColumnOrSuperColumn
@@ -241,7 +241,7 @@ module CassandraThrift
 
     # ColumnParent is used when selecting groups of columns from the same ColumnFamily. In directory structure terms, imagine
     # ColumnParent as ColumnPath + '/../'.
-    # 
+    #
     # See also <a href="cassandra.html#Struct_ColumnPath">ColumnPath</a>
     class ColumnParent
       include ::Thrift::Struct, ::Thrift::Struct_Union
@@ -262,11 +262,11 @@ module CassandraThrift
       ::Thrift::Struct.generate_accessors self
     end
 
-    # The ColumnPath is the path to a single column in Cassandra. It might make sense to think of ColumnPath and
+    # The ColumnPath is the path to a single column in TwitterCassandra. It might make sense to think of ColumnPath and
     # ColumnParent in terms of a directory structure.
-    # 
+    #
     # ColumnPath is used to looking up a single column.
-    # 
+    #
     # @param column_family. The name of the CF of the column being looked up.
     # @param super_column. The super column name.
     # @param column. The column name.
@@ -292,8 +292,8 @@ module CassandraThrift
     end
 
     # A slice range is a structure that stores basic range, ordering and limit information for a query that will return
-    # multiple columns. It could be thought of as Cassandra's version of LIMIT and ORDER BY
-    # 
+    # multiple columns. It could be thought of as TwitterCassandra's version of LIMIT and ORDER BY
+    #
     # @param start. The column name to start the slice with. This attribute is not required, though there is no default value,
     #               and can be safely set to '', i.e., an empty byte array, to start with the first column name. Otherwise, it
     #               must a valid value under the rules of the Comparator defined for the given ColumnFamily.
@@ -333,10 +333,10 @@ module CassandraThrift
 
     # A SlicePredicate is similar to a mathematic predicate (see http://en.wikipedia.org/wiki/Predicate_(mathematical_logic)),
     # which is described as "a property that the elements of a set have in common."
-    # 
-    # SlicePredicate's in Cassandra are described with either a list of column_names or a SliceRange.  If column_names is
+    #
+    # SlicePredicate's in TwitterCassandra are described with either a list of column_names or a SliceRange.  If column_names is
     # specified, slice_range is ignored.
-    # 
+    #
     # @param column_name. A list of column names to retrieve. This can be used similar to Memcached's "multi-get" feature
     #                     to fetch N known column names. For instance, if you know you wish to fetch columns 'Joe', 'Jack',
     #                     and 'Jim' you can pass those column names as a list to fetch all three at once.
@@ -440,7 +440,7 @@ module CassandraThrift
     end
 
     # A KeySlice is key followed by the data it maps to. A collection of KeySlice is returned by the get_range_slice operation.
-    # 
+    #
     # @param key. a row key
     # @param columns. List of data represented by the key. Typically, the list is pared down to only the columns specified by
     #                 a SlicePredicate.
