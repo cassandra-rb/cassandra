@@ -10,11 +10,11 @@ here = File.expand_path(File.dirname(__FILE__))
 
 class TwitterCassandra ; end
 unless TwitterCassandra.respond_to?(:VERSION)
-  require "#{here}/cassandra/0.8"
+  require "#{here}/twitter_cassandra/0.8"
 end
 
 $LOAD_PATH << "#{here}/../vendor/#{TwitterCassandra.VERSION}/gen-rb"
-require "#{here}/../vendor/#{TwitterCassandra.VERSION}/gen-rb/cassandra"
+require "#{here}/../vendor/#{TwitterCassandra.VERSION}/gen-rb/twitter_cassandra"
 
 $LOAD_PATH << "#{here}"
 
