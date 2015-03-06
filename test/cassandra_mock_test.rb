@@ -1,6 +1,6 @@
 require File.expand_path(File.dirname(__FILE__) + '/test_helper')
 require File.expand_path(File.dirname(__FILE__) + '/cassandra_test')
-require 'cassandra/mock'
+require 'cassandra_old/mock'
 require 'json'
 
 class CassandraMockTest < CassandraTest
