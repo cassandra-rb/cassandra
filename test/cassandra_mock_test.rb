@@ -4,35 +4,35 @@ require 'cassandra/mock'
 require 'json'
 
 class CassandraMockTest < CassandraTest
-  include Cassandra::Constants
+  include CassandraOld::Constants
 
   def setup
     @test_schema = JSON.parse(File.read(File.join(File.expand_path(File.dirname(__FILE__)), '..','conf', CASSANDRA_VERSION, 'schema.json')))
-    @twitter = Cassandra::Mock.new('Twitter', @test_schema)
+    @twitter = CassandraOld::Mock.new('Twitter', @test_schema)
     @twitter.clear_keyspace!
 
-    @blogs = Cassandra::Mock.new('Multiblog', @test_schema)
+    @blogs = CassandraOld::Mock.new('Multiblog', @test_schema)
     @blogs.clear_keyspace!
 
-    @blogs_long = Cassandra::Mock.new('MultiblogLong', @test_schema)
+    @blogs_long = CassandraOld::Mock.new('MultiblogLong', @test_schema)
     @blogs_long.clear_keyspace!
 
-    @type_conversions = Cassandra::Mock.new('TypeConversions', @test_schema)
+    @type_conversions = CassandraOld::Mock.new('TypeConversions', @test_schema)
     @type_conversions.clear_keyspace!
 
     @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
     @longs = (0..6).map {|i| Long.new(Time.at(2**(24+i))) }
     @composites = [
-      Cassandra::Composite.new([5].pack('N'), "zebra"),
-      Cassandra::Composite.new([5].pack('N'), "aardvark"),
-      Cassandra::Composite.new([1].pack('N'), "elephant"),
-      Cassandra::Composite.new([10].pack('N'), "kangaroo"),
+      CassandraOld::Composite.new([5].pack('N'), "zebra"),
+      CassandraOld::Composite.new([5].pack('N'), "aardvark"),
+      CassandraOld::Composite.new([1].pack('N'), "elephant"),
+      CassandraOld::Composite.new([10].pack('N'), "kangaroo"),
     ]
     @dynamic_composites = [
-      Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "zebra"]),
-      Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "aardvark"]),
-      Cassandra::DynamicComposite.new(['IntegerType', [1].pack('N')], ['s', "elephant"]),
-      Cassandra::DynamicComposite.new(['IntegerType', [10].pack('N')], ['s', "kangaroo"]),
+      CassandraOld::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "zebra"]),
+      CassandraOld::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "aardvark"]),
+      CassandraOld::DynamicComposite.new(['IntegerType', [1].pack('N')], ['s', "elephant"]),
+      CassandraOld::DynamicComposite.new(['IntegerType', [10].pack('N')], ['s', "kangaroo"]),
     ]
   end
 
@@ -41,7 +41,7 @@ class CassandraMockTest < CassandraTest
     assert @blogs
     assert @blogs_long
   end
-  
+
   def test_schema_for_keyspace
     data = @test_schema['Twitter']
     stuff = @twitter.send(:schema_for_keyspace, 'Twitter')
@@ -55,44 +55,44 @@ class CassandraMockTest < CassandraTest
     @twitter.insert(:Statuses, 'a', {:text => 'foo'})
     assert_equal ['a'], @twitter.get_range(:Statuses, :key_count => 1).keys
   end
-  
+
   def test_get_range_reversed
     data = 3.times.map { |i| ["body-#{i.to_s}", "v"] }
-    hash = Cassandra::OrderedHash[data]
-    reversed_hash = Cassandra::OrderedHash[data.reverse]
-    
+    hash = CassandraOld::OrderedHash[data]
+    reversed_hash = CassandraOld::OrderedHash[data.reverse]
+
     @twitter.insert(:Statuses, "all-keys", hash)
-    
+
     columns = @twitter.get_range(:Statuses, :reversed => true)["all-keys"]
     columns.each do |column|
       assert_equal reversed_hash.shift, column
     end
   end
-  
+
   def test_get_range_reversed_slice
     data = 4.times.map { |i| ["body-#{i.to_s}", "v"] }
-    hash = Cassandra::OrderedHash[data]
-    sliced_hash = Cassandra::OrderedHash[data.reverse[1..-1]]
-    
+    hash = CassandraOld::OrderedHash[data]
+    sliced_hash = CassandraOld::OrderedHash[data.reverse[1..-1]]
+
     @twitter.insert(:Statuses, "all-keys", hash)
-    
+
     columns = @twitter.get_range(
       :Statuses,
       :start => sliced_hash.keys.first,
       :reversed => true
     )["all-keys"]
-    
+
     columns.each do |column|
       assert_equal sliced_hash.shift, column
     end
   end
-  
+
   def test_get_range_count
     data = 3.times.map { |i| ["body-#{i.to_s}", "v"] }
-    hash = Cassandra::OrderedHash[data]
-    
+    hash = CassandraOld::OrderedHash[data]
+
     @twitter.insert(:Statuses, "all-keys", hash)
-    
+
     columns = @twitter.get_range(:Statuses, :count => 2)["all-keys"]
     assert_equal 2, columns.count
   end
@@ -106,7 +106,7 @@ class CassandraMockTest < CassandraTest
       @twitter.insert(:UserRelationships, 'a', ['u1','u2'])
     }
   end
-  
+
   def test_column_timestamps
     base_time = Time.now
     @twitter.insert(:Statuses, "time-key", { "body" => "value" })
@@ -114,14 +114,14 @@ class CassandraMockTest < CassandraTest
     results = @twitter.get(:Statuses, "time-key")
     assert(results.timestamps["body"] / 1000000 >= base_time.to_i)
   end
-  
+
   def test_supercolumn_timestamps
     base_time = Time.now
     @twitter.insert(:StatusRelationships, "time-key", { "super" => { @uuids[1] => "value" }})
 
     results = @twitter.get(:StatusRelationships, "time-key")
     assert_nil(results.timestamps["super"])
-    
+
     columns = results["super"]
     assert(columns.timestamps[@uuids[1]] / 1000000 >= base_time.to_i)
   end

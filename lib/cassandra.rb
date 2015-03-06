@@ -8,13 +8,13 @@ require 'json' unless defined?(JSON)
 
 here = File.expand_path(File.dirname(__FILE__))
 
-class Cassandra ; end
-unless Cassandra.respond_to?(:VERSION)
+class CassandraOld ; end
+unless CassandraOld.respond_to?(:VERSION)
   require "#{here}/cassandra/0.8"
 end
 
-$LOAD_PATH << "#{here}/../vendor/#{Cassandra.VERSION}/gen-rb"
-require "#{here}/../vendor/#{Cassandra.VERSION}/gen-rb/cassandra"
+$LOAD_PATH << "#{here}/../vendor/#{CassandraOld.VERSION}/gen-rb"
+require "#{here}/../vendor/#{CassandraOld.VERSION}/gen-rb/cassandra"
 
 $LOAD_PATH << "#{here}"
 
@@ -27,13 +27,13 @@ require 'cassandra/composite'
 require 'cassandra/dynamic_composite'
 require 'cassandra/ordered_hash'
 require 'cassandra/columns'
-require 'cassandra/protocol'
+require "#{here}/cassandra/protocol"
 require 'cassandra/batch'
-require "cassandra/#{Cassandra.VERSION}/columns"
-require "cassandra/#{Cassandra.VERSION}/protocol"
+require "cassandra/#{CassandraOld.VERSION}/columns"
+require "cassandra/#{CassandraOld.VERSION}/protocol"
 require "cassandra/cassandra"
-require "cassandra/#{Cassandra.VERSION}/cassandra"
-unless Cassandra.VERSION.eql?("0.6")
+require "cassandra/#{CassandraOld.VERSION}/cassandra"
+unless CassandraOld.VERSION.eql?("0.6")
   require "cassandra/column_family"
   require "cassandra/keyspace"
 end

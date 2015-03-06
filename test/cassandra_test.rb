@@ -1,41 +1,41 @@
 require File.expand_path(File.dirname(__FILE__) + '/test_helper')
 
 class CassandraTest < Test::Unit::TestCase
-  include Cassandra::Constants
+  include CassandraOld::Constants
 
   def assert_has_keys(keys, hash)
     assert_equal Set.new(keys), Set.new(hash.keys)
   end
 
   def setup
-    @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :timeout => 5, :exception_classes => [])
+    @twitter = CassandraOld.new('Twitter', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :timeout => 5, :exception_classes => [])
     @twitter.clear_keyspace!
 
-    @blogs = Cassandra.new('Multiblog', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :timeout => 5, :exception_classes => [])
+    @blogs = CassandraOld.new('Multiblog', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :timeout => 5, :exception_classes => [])
     @blogs.clear_keyspace!
 
-    @blogs_long = Cassandra.new('MultiblogLong', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :timeout => 5, :exception_classes => [])
+    @blogs_long = CassandraOld.new('MultiblogLong', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :timeout => 5, :exception_classes => [])
     @blogs_long.clear_keyspace!
 
-    @type_conversions = Cassandra.new('TypeConversions', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :timeout => 5, :exception_classes => [])
+    @type_conversions = CassandraOld.new('TypeConversions', "127.0.0.1:9160", :retries => 2, :connect_timeout => 1, :timeout => 5, :exception_classes => [])
     @type_conversions.clear_keyspace!
 
-    Cassandra::WRITE_DEFAULTS[:consistency] = Cassandra::Consistency::ONE
-    Cassandra::READ_DEFAULTS[:consistency]  = Cassandra::Consistency::ONE
+    CassandraOld::WRITE_DEFAULTS[:consistency] = CassandraOld::Consistency::ONE
+    CassandraOld::READ_DEFAULTS[:consistency]  = CassandraOld::Consistency::ONE
 
     @uuids = (0..6).map {|i| SimpleUUID::UUID.new(Time.at(2**(24+i))) }
     @longs = (0..6).map {|i| Long.new(Time.at(2**(24+i))) }
     @composites = [
-      Cassandra::Composite.new([5].pack('N'), "zebra"),
-      Cassandra::Composite.new([5].pack('N'), "aardvark"),
-      Cassandra::Composite.new([1].pack('N'), "elephant"),
-      Cassandra::Composite.new([10].pack('N'), "kangaroo"),
+      CassandraOld::Composite.new([5].pack('N'), "zebra"),
+      CassandraOld::Composite.new([5].pack('N'), "aardvark"),
+      CassandraOld::Composite.new([1].pack('N'), "elephant"),
+      CassandraOld::Composite.new([10].pack('N'), "kangaroo"),
     ]
     @dynamic_composites = [
-      Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "zebra"]),
-      Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "aardvark"]),
-      Cassandra::DynamicComposite.new(['IntegerType', [1].pack('N')], ['s', "elephant"]),
-      Cassandra::DynamicComposite.new(['IntegerType', [10].pack('N')], ['s', "kangaroo"]),
+      CassandraOld::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "zebra"]),
+      CassandraOld::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "aardvark"]),
+      CassandraOld::DynamicComposite.new(['IntegerType', [1].pack('N')], ['s', "elephant"]),
+      CassandraOld::DynamicComposite.new(['IntegerType', [10].pack('N')], ['s', "kangaroo"]),
     ]
   end
 
@@ -48,14 +48,14 @@ class CassandraTest < Test::Unit::TestCase
 
   def test_setting_default_consistency
     assert_nothing_raised do
-      @twitter.default_read_consistency = Cassandra::Consistency::ALL
+      @twitter.default_read_consistency = CassandraOld::Consistency::ALL
     end
-    assert_equal(Cassandra::READ_DEFAULTS[:consistency], Cassandra::Consistency::ALL)
+    assert_equal(CassandraOld::READ_DEFAULTS[:consistency], CassandraOld::Consistency::ALL)
 
     assert_nothing_raised do
-      @twitter.default_write_consistency = Cassandra::Consistency::ALL
+      @twitter.default_write_consistency = CassandraOld::Consistency::ALL
     end
-    assert_equal(Cassandra::WRITE_DEFAULTS[:consistency], Cassandra::Consistency::ALL)
+    assert_equal(CassandraOld::WRITE_DEFAULTS[:consistency], CassandraOld::Consistency::ALL)
   end
 
   def test_get_key
@@ -322,8 +322,8 @@ class CassandraTest < Test::Unit::TestCase
 
   def test_get_range_reversed
     data = 3.times.map { |i| ["body-#{i.to_s}", "v"] }
-    hash = Cassandra::OrderedHash[data]
-    reversed_hash = Cassandra::OrderedHash[data.reverse]
+    hash = CassandraOld::OrderedHash[data]
+    reversed_hash = CassandraOld::OrderedHash[data.reverse]
 
     @twitter.insert(:Statuses, "all-keys", hash)
 
@@ -718,7 +718,7 @@ class CassandraTest < Test::Unit::TestCase
 
   def test_disconnect_when_not_connected!
     assert_nothing_raised do
-      @twitter = Cassandra.new('Twitter', "127.0.0.1:9160", :retries => 2, :exception_classes => [])
+      @twitter = CassandraOld.new('Twitter', "127.0.0.1:9160", :retries => 2, :exception_classes => [])
       @twitter.disconnect!
     end
   end
@@ -1176,7 +1176,7 @@ class CassandraTest < Test::Unit::TestCase
 
       # Verify add_column_family works as desired.
       @twitter.add_column_family(
-        Cassandra::ColumnFamily.new(
+        CassandraOld::ColumnFamily.new(
           :keyspace => 'Twitter',
           :name     => k
         )
@@ -1245,40 +1245,40 @@ class CassandraTest < Test::Unit::TestCase
     def test_composite_column_type_conversion
       columns = {}
       @composites.push(
-        Cassandra::Composite.new_from_parts([[20].pack('N'), "meerkat"])
+        CassandraOld::Composite.new_from_parts([[20].pack('N'), "meerkat"])
       )
       @composites.each_with_index do |c, index|
         columns[c] = "value-#{index}"
       end
       @type_conversions.insert(:CompositeColumnConversion, key, columns)
       columns_in_order = [
-        Cassandra::Composite.new([1].pack('N'), "elephant"),
-        Cassandra::Composite.new([5].pack('N'), "aardvark"),
-        Cassandra::Composite.new([5].pack('N'), "zebra"),
-        Cassandra::Composite.new([10].pack('N'), "kangaroo"),
-        Cassandra::Composite.new([20].pack('N'), "meerkat"),
+        CassandraOld::Composite.new([1].pack('N'), "elephant"),
+        CassandraOld::Composite.new([5].pack('N'), "aardvark"),
+        CassandraOld::Composite.new([5].pack('N'), "zebra"),
+        CassandraOld::Composite.new([10].pack('N'), "kangaroo"),
+        CassandraOld::Composite.new([20].pack('N'), "meerkat"),
       ]
       assert_equal(columns_in_order, @type_conversions.get(:CompositeColumnConversion, key).keys)
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
-        :start => Cassandra::Composite.new([1].pack('N')),
-        :finish => Cassandra::Composite.new([20].pack('N'))
+        :start => CassandraOld::Composite.new([1].pack('N')),
+        :finish => CassandraOld::Composite.new([20].pack('N'))
       ).keys
       assert_equal(columns_in_order[0..-2], column_slice)
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
-        :start => Cassandra::Composite.new([5].pack('N')),
-        :finish => Cassandra::Composite.new([5].pack('N'), :slice => :after)
+        :start => CassandraOld::Composite.new([5].pack('N')),
+        :finish => CassandraOld::Composite.new([5].pack('N'), :slice => :after)
       ).keys
       assert_equal(columns_in_order[1..2], column_slice)
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
-        :start => Cassandra::Composite.new([5].pack('N'), :slice => :after).to_s
+        :start => CassandraOld::Composite.new([5].pack('N'), :slice => :after).to_s
       ).keys
       assert_equal(columns_in_order[-2..-1], column_slice)
 
       column_slice = @type_conversions.get(:CompositeColumnConversion, key,
-        :finish => Cassandra::Composite.new([10].pack('N'), :slice => :before).to_s
+        :finish => CassandraOld::Composite.new([10].pack('N'), :slice => :before).to_s
       ).keys
       assert_equal(columns_in_order[0..-3], column_slice)
 
@@ -1293,32 +1293,32 @@ class CassandraTest < Test::Unit::TestCase
       @type_conversions.insert(:DynamicComposite, key, columns)
 
       columns_in_order = [
-        Cassandra::DynamicComposite.new(['IntegerType', [1].pack('N')], ['s', "elephant"]),
-        Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "aardvark"]),
-        Cassandra::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "zebra"]),
-        Cassandra::DynamicComposite.new(['IntegerType', [10].pack('N')], ['s', "kangaroo"]),
+        CassandraOld::DynamicComposite.new(['IntegerType', [1].pack('N')], ['s', "elephant"]),
+        CassandraOld::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "aardvark"]),
+        CassandraOld::DynamicComposite.new(['i', [5].pack('N')], ['UTF8Type', "zebra"]),
+        CassandraOld::DynamicComposite.new(['IntegerType', [10].pack('N')], ['s', "kangaroo"]),
       ]
       assert_equal(columns_in_order, @type_conversions.get(:DynamicComposite, key).keys)
 
       column_slice = @type_conversions.get(:DynamicComposite, key,
-        :start => Cassandra::DynamicComposite.new(['i', [1].pack('N')]),
-        :finish => Cassandra::DynamicComposite.new(['i', [10].pack('N')])
+        :start => CassandraOld::DynamicComposite.new(['i', [1].pack('N')]),
+        :finish => CassandraOld::DynamicComposite.new(['i', [10].pack('N')])
       ).keys
       assert_equal(columns_in_order[0..-2], column_slice)
 
       column_slice = @type_conversions.get(:DynamicComposite, key,
-        :start => Cassandra::DynamicComposite.new(['IntegerType', [5].pack('N')]),
-        :finish => Cassandra::DynamicComposite.new(['IntegerType', [5].pack('N')], :slice => :after)
+        :start => CassandraOld::DynamicComposite.new(['IntegerType', [5].pack('N')]),
+        :finish => CassandraOld::DynamicComposite.new(['IntegerType', [5].pack('N')], :slice => :after)
       ).keys
       assert_equal(columns_in_order[1..2], column_slice)
 
       column_slice = @type_conversions.get(:DynamicComposite, key,
-        :start => Cassandra::DynamicComposite.new(['i', [5].pack('N')], :slice => :after).to_s
+        :start => CassandraOld::DynamicComposite.new(['i', [5].pack('N')], :slice => :after).to_s
       ).keys
       assert_equal([columns_in_order[-1]], column_slice)
 
       column_slice = @type_conversions.get(:DynamicComposite, key,
-        :finish => Cassandra::DynamicComposite.new(['i', [10].pack('N')], :slice => :before).to_s
+        :finish => CassandraOld::DynamicComposite.new(['i', [10].pack('N')], :slice => :before).to_s
       ).keys
       assert_equal(columns_in_order[0..-2], column_slice)
 
@@ -1346,9 +1346,9 @@ class CassandraTest < Test::Unit::TestCase
   end
 
   def test_keyspace_operations
-    system = Cassandra.new 'system'
+    system = CassandraOld.new 'system'
     keyspace_name = 'robots'
-    keyspace_definition = Cassandra::Keyspace.new :name => keyspace_name,
+    keyspace_definition = CassandraOld::Keyspace.new :name => keyspace_name,
       :strategy_class => 'SimpleStrategy',
       :strategy_options => { 'replication_factor' => '2' },
       :cf_defs => []
@@ -1359,7 +1359,7 @@ class CassandraTest < Test::Unit::TestCase
     assert system.keyspaces.none? {|it| it == keyspace_name }
 
     system.add_keyspace keyspace_definition
-    Cassandra.new(keyspace_name).drop_keyspace
+    CassandraOld.new(keyspace_name).drop_keyspace
     assert system.keyspaces.none? {|it| it == keyspace_name }
   end
 

@@ -1,4 +1,4 @@
-class Cassandra
+class CassandraOld
   def self.VERSION
     "1.2"
   end

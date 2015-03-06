@@ -1,4 +1,4 @@
-class Cassandra
+class CassandraOld
   # A bunch of crap, mostly related to introspecting on column types
   module Columns #:nodoc:
     private
@@ -35,7 +35,7 @@ class Cassandra
     end
 
     def _super_insert_mutation(column_family, super_column_name, sub_columns, timestamp, _=nil)
-      CassandraThrift::Mutation.new(:column_or_supercolumn => 
+      CassandraThrift::Mutation.new(:column_or_supercolumn =>
         CassandraThrift::ColumnOrSuperColumn.new(
           :super_column => CassandraThrift::SuperColumn.new(
             :name => column_name_class(column_family).new(super_column_name).to_s,
@@ -53,12 +53,12 @@ class Cassandra
 
     # General info about a deletion object within a mutation
     # timestamp - required. If this is the only param, it will cause deletion of the whole key at that TS
-    # supercolumn - opt. If passed, the deletes will only occur within that supercolumn (only subcolumns 
+    # supercolumn - opt. If passed, the deletes will only occur within that supercolumn (only subcolumns
     #               will be deleted). Otherwise the normal columns will be deleted.
-    # predicate - opt. Defines how to match the columns to delete. if supercolumn passed, the slice will 
+    # predicate - opt. Defines how to match the columns to delete. if supercolumn passed, the slice will
     #               be scoped to subcolumns of that supercolumn.
-    
-    # Deletes a single column from the containing key/CF (and possibly supercolumn), at a given timestamp. 
+
+    # Deletes a single column from the containing key/CF (and possibly supercolumn), at a given timestamp.
     # Although mutations (as opposed to 'remove' calls) support deleting slices and lists of columns in one shot, this is not implemented here.
     # The main reason being that the batch function takes removes, but removes don't have that capability...so we'd need to change the remove
     # methods to use delete mutation calls...although that might have performance implications. We'll leave that refactoring for later.

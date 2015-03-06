@@ -31,7 +31,7 @@ For the initial client instantiation, you may also pass in <tt>:thrift_client<tt
 
 =end
 
-class Cassandra
+class CassandraOld
   include Columns
   include Protocol
   include Helpers
@@ -79,7 +79,7 @@ class Cassandra
     @column_name_maker = {}
     @sub_column_name_maker = {}
     @auto_discover_nodes = true
-    thrift_client_options[:transport_wrapper] ||= Cassandra.DEFAULT_TRANSPORT_WRAPPER
+    thrift_client_options[:transport_wrapper] ||= CassandraOld.DEFAULT_TRANSPORT_WRAPPER
     @thrift_client_options = THRIFT_DEFAULTS.merge(thrift_client_options)
     @thrift_client_class = @thrift_client_options[:thrift_client_class]
     @keyspace = keyspace
@@ -131,7 +131,7 @@ class Cassandra
   end
 
   def inspect
-    "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
+    "#<CassandraOld:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       Array(schema(false).cf_defs).map {|cfdef| ":#{cfdef.name} => #{cfdef.column_type}"}.join(', ')
     }}, @servers=#{servers.inspect}>"
   end
@@ -141,7 +141,7 @@ class Cassandra
   #
   # Please note that this only works on version 0.7.0 and higher.
   def keyspace=(ks)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     client.set_keyspace(ks)
     @schema = nil; @keyspace = ks
@@ -152,7 +152,7 @@ class Cassandra
   #
   # Please note that this only works on version 0.7.0 and higher.
   def keyspaces
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     client.describe_keyspaces.to_a.collect {|ksdef| ksdef.name }
   end
@@ -161,7 +161,7 @@ class Cassandra
   # Return a hash of column_family definitions indexed by their
   # names
   def column_families
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     schema.cf_defs.inject(Hash.new){|memo, cf_def| memo[cf_def.name] = cf_def; memo;}
   end
@@ -172,10 +172,10 @@ class Cassandra
   #
   # Please note that this only works on version 0.7.0 and higher.
   def schema(load=true)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     if !load && !@schema
-      Cassandra::Keyspace.new
+      CassandraOld::Keyspace.new
     else
       @schema ||= client.describe_keyspace(@keyspace)
     end
@@ -186,7 +186,7 @@ class Cassandra
   #
   # Please note that this only works on version 0.7.0 and higher.
   def schema_agreement?
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     client.describe_schema_versions().length == 1
   end
@@ -196,7 +196,7 @@ class Cassandra
   #
   # Please note that this only works on version 0.7.0 and higher.
   def version
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     client.describe_version()
   end
@@ -206,7 +206,7 @@ class Cassandra
   #
   # Please note that this only works on version 0.7.0 and higher.
   def cluster_name
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     @cluster_name ||= client.describe_cluster_name()
   end
@@ -218,7 +218,7 @@ class Cassandra
   #
   # Please note that this only works on version 0.7.0 and higher.
   def ring
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     client.describe_ring(@keyspace)
   end
@@ -230,7 +230,7 @@ class Cassandra
   #
   # Please note that this only works on version 0.7.0 and higher.
   def partitioner
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     client.describe_partitioner()
   end
@@ -257,7 +257,7 @@ class Cassandra
   # Please note that this only works on version 0.7.0 and higher.
   #
   def clear_keyspace!
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     schema.cf_defs.each { |cfdef| truncate!(cfdef.name) }
   end
@@ -267,7 +267,7 @@ class Cassandra
   # Cassandra::ColumnFamily instance, and returns the schema id.
   #
   def add_column_family(cf_def)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     @schema = nil
     return client.system_add_column_family(cf_def)
@@ -279,7 +279,7 @@ class Cassandra
   # * column_family - The column_family name to drop.
   #
   def drop_column_family(column_family)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     @schema = nil
     return client.system_drop_column_family(column_family)
@@ -292,7 +292,7 @@ class Cassandra
   # * new_name - The desired column_family name.
   #
   def rename_column_family(old_name, new_name)
-    return false if Cassandra.VERSION.to_f != 0.7
+    return false if CassandraOld.VERSION.to_f != 0.7
 
     @schema = nil
     return client.system_rename_column_family(old_name, new_name)
@@ -302,7 +302,7 @@ class Cassandra
   # Update the column family based on the passed in definition.
   #
   def update_column_family(cf_def)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     @schema = nil
     return client.system_update_column_family(cf_def)
@@ -314,7 +314,7 @@ class Cassandra
   # Returns the new schema id.
   #
   def add_keyspace(ks_def)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     @keyspaces = nil
     return client.system_add_keyspace(ks_def)
@@ -326,7 +326,7 @@ class Cassandra
   # Returns the new schema id.
   #
   def drop_keyspace(keyspace=@keyspace)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     @keyspaces = nil
     ret = client.system_drop_keyspace(keyspace)
@@ -342,7 +342,7 @@ class Cassandra
   #
   # Returns the new schema id
   def rename_keyspace(old_name, new_name)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     @keyspaces = nil
     ret = client.system_rename_keyspace(old_name, new_name)
@@ -354,7 +354,7 @@ class Cassandra
   # Update the keyspace using the passed in keyspace definition.
   #
   def update_keyspace(ks_def)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     @keyspaces = nil
     return client.system_update_keyspace(ks_def)
@@ -804,7 +804,7 @@ class Cassandra
   # the individual commands.
   #
   def batch(options = {})
-    @batch = Cassandra::Batch.new(self, options)
+    @batch = CassandraOld::Batch.new(self, options)
 
     _, _, _, options =
       extract_and_validate_params(schema.cf_defs.first.name, "", [options], WRITE_DEFAULTS)
@@ -841,7 +841,7 @@ class Cassandra
   # * validation_class
   #
   def create_index(keyspace, column_family, column_name, validation_class)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     cf_def = client.describe_keyspace(keyspace).cf_defs.find{|x| x.name == column_family}
     if !cf_def.nil? and !cf_def.column_metadata.find{|x| x.name == column_name}
@@ -863,7 +863,7 @@ class Cassandra
   # * column_name
   #
   def drop_index(keyspace, column_family, column_name)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     cf_def = client.describe_keyspace(keyspace).cf_defs.find{|x| x.name == column_family}
     if !cf_def.nil? and cf_def.column_metadata.find{|x| x.name == column_name}
@@ -881,7 +881,7 @@ class Cassandra
   # * comparison  - Type of comparison to do.
   #
   def create_index_expression(column_name, value, comparison)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     CassandraThrift::IndexExpression.new(
       :column_name => column_name,
@@ -911,7 +911,7 @@ class Cassandra
   # * count             - The count of items to be returned
   #
   def create_index_clause(index_expressions, start = "", count = 100)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     CassandraThrift::IndexClause.new(
       :start_key    => start,
@@ -940,7 +940,7 @@ class Cassandra
   #
   # TODO: Supercolumn support.
   def get_indexed_slices(column_family, index_clause, *columns_and_options)
-    return false if Cassandra.VERSION.to_f < 0.7
+    return false if CassandraOld.VERSION.to_f < 0.7
 
     column_family, columns, _, options =
       extract_and_validate_params(column_family, [], columns_and_options,

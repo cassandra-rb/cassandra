@@ -1,4 +1,4 @@
-class Cassandra
+class CassandraOld
   module Columns #:nodoc:
     def _standard_counter_mutation(column_family, column_name, value)
       CassandraThrift::Mutation.new(

@@ -1,4 +1,4 @@
-class Cassandra
+class CassandraOld
   def self.DEFAULT_TRANSPORT_WRAPPER
     Thrift::BufferedTransport
   end
@@ -16,7 +16,7 @@ class Cassandra
   end
 
   def inspect
-    "#<Cassandra:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
+    "#<CassandraOld:#{object_id}, @keyspace=#{keyspace.inspect}, @schema={#{
       schema(false).map {|name, hash| ":#{name} => #{hash['type'].inspect}"}.join(', ')
     }}, @servers=#{servers.inspect}>"
   end
@@ -56,16 +56,16 @@ class Cassandra
   # the <tt>:consistency</tt> option, which overrides the consistency set in
   # the individual commands.
   def batch(options = {})
-    _, _, _, options = 
+    _, _, _, options =
       extract_and_validate_params(schema.keys.first, "", [options], WRITE_DEFAULTS)
 
     @batch = []
     yield(self)
     compacted_map,seen_clevels = compact_mutations!
-    clevel = if options[:consistency] != nil # Override any clevel from individual mutations if 
+    clevel = if options[:consistency] != nil # Override any clevel from individual mutations if
                options[:consistency]
              elsif seen_clevels.length > 1 # Cannot choose which CLevel to use if there are several ones
-               raise "Multiple consistency levels used in the batch, and no override...cannot pick one" 
+               raise "Multiple consistency levels used in the batch, and no override...cannot pick one"
              else # if no consistency override has been provided but all the clevels in the batch are the same: use that one
                seen_clevels.first
              end
@@ -102,7 +102,7 @@ class Cassandra
         ips = ::JSON.parse(temp_client.get_string_property('token map')).values
         port = @servers.first.split(':').last
         ips.map{|ip| "#{ip}:#{port}" }
-      ensure 
+      ensure
         temp_client.disconnect!
       end
     else
