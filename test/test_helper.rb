@@ -1,11 +1,11 @@
 CASSANDRA_VERSION = ENV['CASSANDRA_VERSION'] || '0.8' unless defined?(CASSANDRA_VERSION)
 
 require 'test/unit'
-require "#{File.expand_path(File.dirname(__FILE__))}/../lib/cassandra/#{CASSANDRA_VERSION}"
+require "#{File.expand_path(File.dirname(__FILE__))}/../lib/cassandra_old/#{CASSANDRA_VERSION}"
 begin; require 'ruby-debug'; rescue LoadError; end
 
 begin
-  @test_client = Cassandra.new('Twitter', 'localhost:9160', :thrift_client_options => {
+  @test_client = CassandraOld.new('Twitter', 'localhost:9160', :thrift_client_options => {
     :retries         => 3,
     :timeout         => 5,
     :connect_timeout => 1
