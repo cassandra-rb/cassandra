@@ -490,16 +490,16 @@ class CassandraOld
 
       columns.each do |column_name, value|
         timestamp = columns.timestamps[column_name]
-        column = column_class.new(column_name)
+        column = column_class.new(column_name.dup)
 
         if [Hash, OrderedHash].include?(value.class)
           output[column] ||= OrderedHash.new
           value.each do |sub_column, sub_column_value|
             timestamp = value.timestamps[sub_column]
-            output[column].[]=(sub_column_class.new(sub_column), sub_column_value, timestamp)
+            output[column].[]=(sub_column_class.new(sub_column.dup), sub_column_value, timestamp)
           end
         else
-          output.[]=(column_class.new(column_name), value, timestamp)
+          output.[]=(column_class.new(column_name.dup), value, timestamp)
         end
       end
 
